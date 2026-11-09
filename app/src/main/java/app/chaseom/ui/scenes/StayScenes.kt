@@ -277,8 +277,12 @@ private fun ClimateLine(s: ClimateSetting) {
         s.recircOn?.let { add(changeLabel(ClimateChange.Recirc(it))) }
         s.driverSeatHeat?.let { add(changeLabel(ClimateChange.SeatHeat(it))) }
     }
-    Text(items.joinToString(" · "), style = PleosType.bodyMedium, color = Pleos.colors.textSecondary,
-        modifier = Modifier.padding(top = PleosDimens.space16))
+    // Wrap only between items, never inside one (panel §12-①: a lone "0" fell to the next line on Small).
+    androidx.compose.foundation.layout.FlowRow(Modifier.padding(top = PleosDimens.space16)) {
+        items.forEachIndexed { n, item ->
+            Text(if (n < items.lastIndex) "$item · " else item, style = PleosType.bodyMedium, color = Pleos.colors.textSecondary, softWrap = false)
+        }
+    }
 }
 
 @Composable
@@ -414,12 +418,19 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                         ExchangeRule.X2_FAN -> stringResource(R.string.x2, gain)
                         ExchangeRule.X3_AC -> stringResource(R.string.x3, gain)
                     }
-                    val at = full.indexOf(gain).takeIf { it >= 0 } ?: full.length
+                    // Panel ART_GAP_TO_8 §12-②: on the Small window X1 is two fixed lines, broken before "=" (same words).
+                    val small = with(androidx.compose.ui.platform.LocalDensity.current) {
+                        androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp() < 1200.dp
+                    }
+                    val eq = full.indexOf(" = ")
+                    if (small && eq > 0) Text(full.substring(0, eq), style = PleosType.titleMedium, color = c.textPrimary)
+                    val line = if (small && eq > 0) full.substring(eq + 1) else full
+                    val at = line.indexOf(gain).takeIf { it >= 0 } ?: line.length
                     // Small window (~840 dp, found 11-10 with a task resize): the circle + minutes move to the next
                     // line as one unit instead of being squeezed into a one-letter column.
                     androidx.compose.foundation.layout.FlowRow(itemVerticalAlignment = Alignment.CenterVertically) {
-                        Text(full.substring(0, at), style = PleosType.titleMedium, color = c.textPrimary)
-                        if (at < full.length) {
+                        Text(line.substring(0, at), style = PleosType.titleMedium, color = c.textPrimary)
+                        if (at < line.length) {
                             val up = x.gainMinutes > 0
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
@@ -430,7 +441,7 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                                     Text(if (up) "\u25B2" else "\u25BC", style = PleosType.bodyMedium, color = Color(0xFF131417))
                                 }
                                 Spacer(Modifier.width(8.dp))
-                                Text(full.substring(at), style = PleosType.titleMedium, color = c.textPrimary, softWrap = false)
+                                Text(line.substring(at), style = PleosType.titleMedium, color = c.textPrimary, softWrap = false)
                             }
                         }
                     }
