@@ -1025,7 +1025,7 @@
 </method>
 <method name="waterStep" desc="(ILjava/lang/Integer;)I">
 <counter type="INSTRUCTION" missed="0" covered="37"/>
-<counter type="BRANCH" missed="1" covered="9"/>
+<counter type="BRANCH" missed="0" covered="10"/>
 <counter type="LINE" missed="0" covered="4"/>
 </method>
 <method name="getWATER_UP_AT" desc="()[I">
@@ -1034,7 +1034,7 @@
 <counter type="LINE" missed="0" covered="1"/>
 </method>
 <counter type="INSTRUCTION" missed="17" covered="230"/>
-<counter type="BRANCH" missed="11" covered="47"/>
+<counter type="BRANCH" missed="10" covered="48"/>
 <counter type="LINE" missed="1" covered="31"/>
 <counter type="METHOD" missed="0" covered="7"/>
 </class>
@@ -1705,53 +1705,53 @@
 <counter type="METHOD" missed="0" covered="3"/>
 </class>
 <sourcefile name="IslandInfo.kt">
-<line nr="16" mi="0" ci="2" mb="0" cb="0"/>
-<line nr="18" mi="0" ci="5" mb="0" cb="0"/>
+<line nr="18" mi="0" ci="2" mb="0" cb="0"/>
 <line nr="20" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="22" mi="0" ci="5" mb="0" cb="0"/>
-<line nr="23" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="24" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="25" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="26" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="27" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="28" mi="0" ci="5" mb="0" cb="0"/>
-<line nr="35" mi="0" ci="22" mb="0" cb="0"/>
+<line nr="29" mi="0" ci="5" mb="0" cb="0"/>
+<line nr="30" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="37" mi="0" ci="22" mb="0" cb="0"/>
-<line nr="40" mi="0" ci="1" mb="0" cb="0"/>
-<line nr="41" mi="0" ci="7" mb="0" cb="4"/>
-<line nr="42" mi="0" ci="12" mb="0" cb="2"/>
-<line nr="43" mi="0" ci="5" mb="1" cb="1"/>
-<line nr="44" mi="1" ci="0" mb="0" cb="0"/>
-<line nr="48" mi="0" ci="1" mb="0" cb="0"/>
-<line nr="49" mi="0" ci="5" mb="0" cb="2"/>
-<line nr="50" mi="0" ci="5" mb="0" cb="2"/>
+<line nr="39" mi="0" ci="22" mb="0" cb="0"/>
+<line nr="42" mi="0" ci="1" mb="0" cb="0"/>
+<line nr="43" mi="0" ci="7" mb="0" cb="4"/>
+<line nr="44" mi="0" ci="12" mb="0" cb="2"/>
+<line nr="45" mi="0" ci="5" mb="1" cb="1"/>
+<line nr="46" mi="1" ci="0" mb="0" cb="0"/>
+<line nr="50" mi="0" ci="1" mb="0" cb="0"/>
 <line nr="51" mi="0" ci="5" mb="0" cb="2"/>
 <line nr="52" mi="0" ci="5" mb="0" cb="2"/>
-<line nr="53" mi="0" ci="1" mb="0" cb="0"/>
-<line nr="58" mi="0" ci="13" mb="0" cb="2"/>
-<line nr="59" mi="0" ci="11" mb="1" cb="3"/>
-<line nr="60" mi="0" ci="12" mb="0" cb="4"/>
-<line nr="61" mi="0" ci="1" mb="0" cb="0"/>
-<line nr="65" mi="0" ci="10" mb="0" cb="0"/>
-<line nr="66" mi="0" ci="8" mb="0" cb="4"/>
-<line nr="67" mi="0" ci="7" mb="0" cb="2"/>
-<line nr="68" mi="0" ci="3" mb="0" cb="0"/>
-<line nr="69" mi="2" ci="11" mb="1" cb="3"/>
-<line nr="70" mi="0" ci="21" mb="0" cb="0"/>
-<line nr="71" mi="2" ci="9" mb="1" cb="1"/>
-<line nr="72" mi="0" ci="3" mb="0" cb="0"/>
-<line nr="73" mi="2" ci="16" mb="1" cb="1"/>
-<line nr="74" mi="0" ci="6" mb="0" cb="2"/>
-<line nr="75" mi="2" ci="8" mb="1" cb="1"/>
-<line nr="76" mi="2" ci="11" mb="1" cb="3"/>
-<line nr="77" mi="2" ci="11" mb="1" cb="3"/>
-<line nr="78" mi="2" ci="11" mb="2" cb="2"/>
-<line nr="79" mi="2" ci="9" mb="1" cb="1"/>
-<line nr="86" mi="0" ci="2" mb="0" cb="0"/>
-<line nr="88" mi="0" ci="13" mb="0" cb="0"/>
-<line nr="89" mi="0" ci="3" mb="0" cb="0"/>
+<line nr="53" mi="0" ci="5" mb="0" cb="2"/>
+<line nr="54" mi="0" ci="5" mb="0" cb="2"/>
+<line nr="55" mi="0" ci="1" mb="0" cb="0"/>
+<line nr="60" mi="0" ci="13" mb="0" cb="2"/>
+<line nr="61" mi="0" ci="11" mb="0" cb="4"/>
+<line nr="62" mi="0" ci="12" mb="0" cb="4"/>
+<line nr="63" mi="0" ci="1" mb="0" cb="0"/>
+<line nr="67" mi="0" ci="10" mb="0" cb="0"/>
+<line nr="68" mi="0" ci="8" mb="0" cb="4"/>
+<line nr="69" mi="0" ci="7" mb="0" cb="2"/>
+<line nr="70" mi="0" ci="3" mb="0" cb="0"/>
+<line nr="71" mi="2" ci="11" mb="1" cb="3"/>
+<line nr="72" mi="0" ci="21" mb="0" cb="0"/>
+<line nr="73" mi="2" ci="9" mb="1" cb="1"/>
+<line nr="74" mi="0" ci="3" mb="0" cb="0"/>
+<line nr="75" mi="2" ci="16" mb="1" cb="1"/>
+<line nr="76" mi="0" ci="6" mb="0" cb="2"/>
+<line nr="77" mi="2" ci="8" mb="1" cb="1"/>
+<line nr="78" mi="2" ci="11" mb="1" cb="3"/>
+<line nr="79" mi="2" ci="11" mb="1" cb="3"/>
+<line nr="80" mi="2" ci="11" mb="2" cb="2"/>
+<line nr="81" mi="2" ci="9" mb="1" cb="1"/>
+<line nr="88" mi="0" ci="2" mb="0" cb="0"/>
+<line nr="90" mi="0" ci="13" mb="0" cb="0"/>
+<line nr="91" mi="0" ci="3" mb="0" cb="0"/>
 <counter type="INSTRUCTION" missed="17" covered="337"/>
-<counter type="BRANCH" missed="11" covered="47"/>
+<counter type="BRANCH" missed="10" covered="48"/>
 <counter type="LINE" missed="1" covered="46"/>
 </sourcefile>
 <sourcefile name="StayService.kt">
@@ -2364,7 +2364,7 @@
 <counter type="LINE" missed="107" covered="0"/>
 </sourcefile>
 <counter type="INSTRUCTION" missed="1314" covered="3922"/>
-<counter type="BRANCH" missed="197" covered="385"/>
+<counter type="BRANCH" missed="196" covered="386"/>
 <counter type="LINE" missed="140" covered="490"/>
 <counter type="METHOD" missed="35" covered="101"/>
 <counter type="CLASS" missed="13" covered="42"/>
@@ -5769,7 +5769,7 @@
 <counter type="CLASS" missed="16" covered="0"/>
 </package>
 <counter type="INSTRUCTION" missed="26424" covered="4977"/>
-<counter type="BRANCH" missed="1223" covered="448"/>
+<counter type="BRANCH" missed="1222" covered="449"/>
 <counter type="LINE" missed="1780" covered="594"/>
 <counter type="METHOD" missed="356" covered="124"/>
 <counter type="CLASS" missed="87" covered="54"/>

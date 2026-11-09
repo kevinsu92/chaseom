@@ -45,19 +45,29 @@ class IslandInfoTest {
         assertEquals(listOf(0, 0, 1, 1, 2, 2, 3, 3, 4, 4), socs.map { IslandInfo.waterStepFresh(it) })
     }
 
-    @Test fun waterHysteresisOnePercentPoint() {
+    @Test fun waterHysteresisOnlyEverShowsLess() {
         val w = WaterStepper()
-        assertEquals(0, w.next(19))
-        assertEquals(0, w.next(20)) // not up yet
-        assertEquals(1, w.next(21)) // up at 21
-        assertEquals(1, w.next(20)) // stays: down only at 19
-        assertEquals(0, w.next(19)) // down at 19
         assertEquals(0, w.next(20))
-        assertEquals(1, w.next(21))
+        assertEquals(0, w.next(21)) // SOC is in step 1, the picture waits one point
+        assertEquals(1, w.next(22)) // up at 22
+        assertEquals(1, w.next(21)) // stays while still in step 1
+        assertEquals(0, w.next(20)) // down at once at 20
+        assertEquals(0, w.next(21))
         assertEquals(3, w.next(70)) // a jump crosses several steps at once
-        assertEquals(2, w.next(59))
+        assertEquals(2, w.next(60)) // down at once at the step top
         w.reset()
         assertEquals(1, w.next(40)) // fresh again after the stay ends
+    }
+
+    @Test fun pictureStepNeverAboveTheSocStep() {
+        // QA ROUND1B_GATE check 2: round trips 1 -> 100 -> 1 and a zig-zag around every boundary.
+        val w = WaterStepper()
+        val seq = (1..100) + (100 downTo 1) + listOf(19, 20, 21, 22, 21, 20, 39, 40, 41, 42, 41, 40, 59, 60, 61, 62, 61, 60, 79, 80, 81, 82, 81, 80)
+        seq.forEach { soc ->
+            val step = w.next(soc)
+            assertTrue("soc $soc -> step $step", step <= IslandInfo.waterStepFresh(soc))
+            assertTrue("soc $soc -> step $step", step >= IslandInfo.waterStepFresh(soc) - 1) // at most one step behind
+        }
     }
 
     @Test fun temperatureMovesOnlyTheSunAndTimeMovesOnlyTheBuoys() {

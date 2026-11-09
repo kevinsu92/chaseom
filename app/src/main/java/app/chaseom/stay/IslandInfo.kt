@@ -8,8 +8,10 @@ package app.chaseom.stay
  *  - sun size  = set temperature (small < 20 C or climate off, middle, large >= 24.5 C; height fixed)
  *  - buoys     = today's stay time: floor(minutes / 30), at most 6 (3 hours or more stays 6). The picture never
  *                says more than the number (2:26 -> 4, 1:28 -> 2, under 30 min -> 0). K2 or no hero -> 0.
- *  - water     = battery SOC in 5 steps (1-20 / 21-40 / 41-60 / 61-80 / 81-100 %) with a 1 %p hysteresis:
- *                up at 21 / 41 / 61 / 81, down at 19 / 39 / 59 / 79. The boat always floats.
+ *  - water     = battery SOC in 5 steps (1-20 / 21-40 / 41-60 / 61-80 / 81-100 %) with a 1 %p hysteresis that
+ *                only ever shows less: down at once at 20 / 40 / 60 / 80, up one point late at 22 / 42 / 62 / 82
+ *                (QA ROUND1B_GATE check 2). The picture step is never above the step the SOC belongs to.
+ *                The boat always floats.
  *  - crates    = tomorrow's share: always 3, amber outline at K1 / K2
  *  - weather   = climate (wind = fan, cool = A/C, cloud = recirculation, warm rocks = seat heat)
  */
@@ -31,10 +33,10 @@ data class IslandInfo(
         const val MAX_BUOYS = 6
         const val MINUTES_PER_BUOY = 30
         const val WATER_STEPS = 5
-        /** SOC at which the water goes up into step i+1 (from step i). */
-        val WATER_UP_AT = intArrayOf(21, 41, 61, 81)
-        /** SOC at which the water goes down into step i (from step i+1). */
-        val WATER_DOWN_AT = intArrayOf(19, 39, 59, 79)
+        /** SOC at which the water goes up into step i+1 (from step i): one point after the step starts. */
+        val WATER_UP_AT = intArrayOf(22, 42, 62, 82)
+        /** SOC at or below which the water goes down into step i (from step i+1): the step's own top, at once. */
+        val WATER_DOWN_AT = intArrayOf(20, 40, 60, 80)
 
         /** QA H-1: rounded down, so the buoys never promise more than the hero number. */
         fun buoys(hero: Hero?): Int = when {
@@ -53,7 +55,7 @@ data class IslandInfo(
             else -> 4
         }
 
-        /** Next water step from [previous] with the 1 %p hysteresis (QA L-2). */
+        /** Next water step from [previous] with the 1 %p hysteresis (QA L-2, never above [waterStepFresh]). */
         fun waterStep(soc: Int, previous: Int?): Int {
             var s = previous?.coerceIn(0, WATER_STEPS - 1) ?: return waterStepFresh(soc)
             while (s < WATER_STEPS - 1 && soc >= WATER_UP_AT[s]) s++
