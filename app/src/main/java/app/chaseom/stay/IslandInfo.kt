@@ -33,10 +33,12 @@ data class IslandInfo(
         const val MAX_BUOYS = 6
         const val MINUTES_PER_BUOY = 30
         const val WATER_STEPS = 5
-        /** SOC at which the water goes up into step i+1 (from step i): one point after the step starts. */
-        val WATER_UP_AT = intArrayOf(22, 42, 62, 82)
+        /** Top SOC of water steps 0..3 (step 4 = above the last). The one value the design sets (v2.1 now). */
+        val WATER_STEP_TOPS = intArrayOf(20, 40, 60, 80)
         /** SOC at or below which the water goes down into step i (from step i+1): the step's own top, at once. */
-        val WATER_DOWN_AT = intArrayOf(20, 40, 60, 80)
+        val WATER_DOWN_AT = WATER_STEP_TOPS
+        /** SOC at which the water goes up into step i+1 (from step i): one point after the step starts. */
+        val WATER_UP_AT = IntArray(WATER_STEP_TOPS.size) { WATER_STEP_TOPS[it] + 2 }
 
         /** QA H-1: rounded down, so the buoys never promise more than the hero number. */
         fun buoys(hero: Hero?): Int = when {
@@ -47,13 +49,7 @@ data class IslandInfo(
         }
 
         /** First reading (no previous step): plain 20 %-wide steps. */
-        fun waterStepFresh(soc: Int): Int = when {
-            soc <= 20 -> 0
-            soc <= 40 -> 1
-            soc <= 60 -> 2
-            soc <= 80 -> 3
-            else -> 4
-        }
+        fun waterStepFresh(soc: Int): Int = WATER_STEP_TOPS.indexOfFirst { soc <= it }.let { if (it < 0) WATER_STEP_TOPS.size else it }
 
         /** Next water step from [previous] with the 1 %p hysteresis (QA L-2, never above [waterStepFresh]). */
         fun waterStep(soc: Int, previous: Int?): Int {

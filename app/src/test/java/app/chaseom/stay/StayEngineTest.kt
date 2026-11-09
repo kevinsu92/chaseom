@@ -249,6 +249,20 @@ class StayEngineTest {
         assertTrue(e.at(1000, ev.copy(hvacPowerOn = false)).hero!!.hvacOff)
     }
 
+    @Test fun heroSaysThreeHoursOrMoreFromExactly180Minutes() {
+        // QA M-1 / M-11: the hero never shows "4시간 0분"; at or above 180 min it is "3시간 이상" (overCap).
+        var sawBelow = false
+        var sawAbove = false
+        for (soc in 0..100) {
+            val h = StayEngine().at(0, ev.copy(socPercent = soc)).hero ?: continue
+            val m = h.minutes ?: continue
+            assertEquals("soc $soc minutes $m", m >= EnergyModel.DISPLAY_CAP_MINUTES, h.overCap)
+            if (m in 1 until 180) sawBelow = true
+            if (m >= 180) sawAbove = true
+        }
+        assertTrue(sawBelow && sawAbove)
+    }
+
     @Test fun keepBanners() {
         assertEquals(KeepBanner.BELOW, StayEngine().at(0, ev.copy(socPercent = 9)).keepBanner)
         // 10 % SOC, keep ~9.3 %: ~0.54 kWh at ~1.3 kW -> under 30 minutes

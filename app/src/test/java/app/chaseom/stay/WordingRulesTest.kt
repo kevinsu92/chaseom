@@ -46,6 +46,10 @@ class WordingRulesTest {
         assertEquals("design-rule words: $offenders", emptyMap<String, String>(), offenders)
     }
 
+    @Test fun capWordingIsThreeHoursOrMore() {
+        assertEquals("3시간 이상", strings["h_hero_cap"]) // shown instead of any value >= 180 min
+    }
+
     @Test fun manualQuoteVerbatimWithSource() {
         assertEquals("\"히터나 에어컨을 켠 채 차량 안에서 수면을 취하지 마십시오. 질식으로 인해 사망할 수 있습니다.\"", strings["manual_quote"])
         assertEquals("현대자동차 취급설명서", strings["manual_source"])
