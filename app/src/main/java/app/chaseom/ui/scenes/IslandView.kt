@@ -80,7 +80,13 @@ import androidx.compose.runtime.snapshotFlow
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun IslandPanel(ui: StayUi, modifier: Modifier = Modifier, cards: @Composable () -> Unit = {}) {
+fun IslandPanel(
+    ui: StayUi,
+    modifier: Modifier = Modifier,
+    /** Drawn inside the top centre of the picture (HANDOFF 9.6 v7 Small toast). */
+    pictureTop: @Composable () -> Unit = {},
+    cards: @Composable () -> Unit = {},
+) {
     val s0 = Island.state(ui, android.os.SystemClock.elapsedRealtime()) ?: return // same clock as the engine
     val ctx = LocalContext.current
     // System animation scale 0 -> picture swaps without transitions (HANDOFF 8.6 stop condition 5).
@@ -127,6 +133,7 @@ fun IslandPanel(ui: StayUi, modifier: Modifier = Modifier, cards: @Composable ()
             IslandPicture(s, Modifier.matchParentSize(), ui.moorAtMs, ui.lastClimateChangeMs, motionOff = animOff)
             // Night theme: same daytime picture, black veil 0.3 only (HANDOFF 9.7, never night colours).
             if (night) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.3f)))
+            Box(Modifier.align(Alignment.TopCenter)) { pictureTop() }
         }
         // HANDOFF 9.2: chips outside the picture, right under it (QA E-08).
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

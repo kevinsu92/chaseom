@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
@@ -93,41 +94,64 @@ fun StayFullScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
         BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
             val twoCol = maxWidth >= 1200.dp && hasSide && !islandFace
             val heroSize = if (maxWidth >= 2000.dp) 96.sp else 60.sp
+            // HANDOFF 9.6 v7 (and the 11-10 Small-window check): the toast covers no number or text line. Wide
+            // (>= 1200 dp): right end of the hero row. Small: inside the top of the island picture (sky only).
+            val toastPlace = toastPlace(ui, wide = maxWidth >= 1200.dp, islandFace = islandFace)
             if (twoCol) {
                 Row(Modifier.fillMaxWidth().fillMaxHeight(), horizontalArrangement = Arrangement.spacedBy(PleosDimens.space40)) {
-                    MainColumn(ui, heroSize, Modifier.weight(1.35f).fillMaxHeight())
+                    MainColumn(ui, heroSize, Modifier.weight(1.35f).fillMaxHeight(), toastPlace = toastPlace)
                     SideColumn(ui, actions, Modifier.weight(1f))
                 }
             } else {
                 Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-                    MainColumn(ui, heroSize, Modifier.fillMaxWidth(), actions)
+                    MainColumn(ui, heroSize, Modifier.fillMaxWidth(), actions, toastPlace)
                     if (!islandFace) {
                         Spacer(Modifier.height(PleosDimens.space24))
                         SideColumn(ui, actions, Modifier.fillMaxWidth())
                     }
                 }
             }
-            ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, Modifier.align(Alignment.BottomCenter)) }
+            if (toastPlace == ToastPlace.BOTTOM) {
+                ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, Modifier.align(Alignment.BottomCenter).padding(bottom = PleosDimens.space24)) }
+            }
         }
     }
 }
 
 @Composable
-private fun MainColumn(ui: StayUi, heroSize: androidx.compose.ui.unit.TextUnit, modifier: Modifier, actions: StayActions? = null) {
+private fun MainColumn(
+    ui: StayUi, heroSize: androidx.compose.ui.unit.TextUnit, modifier: Modifier, actions: StayActions? = null,
+    toastPlace: ToastPlace = ToastPlace.BOTTOM,
+) {
     // Face of the stay screen: only the keep bar is replaced; numbers "(추정)", toast and cards stay.
     val face = when {
         ui.hero == null -> Face.BAR
         app.chaseom.BuildConfig.KICK_ISLAND -> Face.ISLAND // CEO 2026-11-09
         else -> Face.BAR
     }
-    MainColumnContent(ui, heroSize, modifier, face, actions)
+    MainColumnContent(ui, heroSize, modifier, face, actions, toastPlace)
 }
 
 private enum class Face { BAR, ISLAND }
 
+/** HANDOFF 9.6 v7 toast positions. */
+internal enum class ToastPlace { HERO_ROW, ISLAND_TOP, BOTTOM }
+
+/** The hero row exists only with a number (not climate off, not below tomorrow's share). */
+internal fun toastPlace(ui: StayUi, wide: Boolean, islandFace: Boolean): ToastPlace {
+    val h = ui.hero
+    val heroRow = h != null && !h.hvacOff && !h.belowKeep
+    return when {
+        wide && heroRow -> ToastPlace.HERO_ROW
+        !wide && islandFace -> ToastPlace.ISLAND_TOP
+        else -> ToastPlace.BOTTOM
+    }
+}
+
 @Composable
 private fun MainColumnContent(
     ui: StayUi, heroSize: androidx.compose.ui.unit.TextUnit, modifier: Modifier, face: Face, actions: StayActions? = null,
+    toastPlace: ToastPlace = ToastPlace.BOTTOM,
 ) {
     val c = Pleos.colors
     Column(modifier, verticalArrangement = Arrangement.spacedBy(PleosDimens.space16)) {
@@ -152,12 +176,17 @@ private fun MainColumnContent(
             } else {
                 val value = if (hero.overCap) stringResource(R.string.h_hero_cap)
                 else stringResource(R.string.h_hero_value, duration(hero.minutes ?: 0))
-                Row(verticalAlignment = Alignment.Bottom) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
                     Text(value, style = TextStyle(fontSize = heroSize, lineHeight = heroSize * 1.2f, fontWeight = PleosType.headlineLarge.fontWeight),
                         color = c.textPrimary)
                     Spacer(Modifier.width(PleosDimens.space16))
                     Text(stringResource(R.string.estimate), style = PleosType.titleMedium, color = c.textSecondary,
                         modifier = Modifier.padding(bottom = 12.dp))
+                    if (toastPlace == ToastPlace.HERO_ROW) {
+                        Spacer(Modifier.weight(1f))
+                        // v7: same row, bottom-aligned 4 dp, no shadow.
+                        ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, Modifier.padding(bottom = 4.dp)) }
+                    }
                 }
                 // Bundle 5: say why the number stops at 3 hours.
                 if (hero.overCap) Text(stringResource(R.string.h_cap_note), style = PleosType.bodyMedium, color = c.textSecondary)
@@ -166,7 +195,16 @@ private fun MainColumnContent(
         when (face) {
             Face.BAR -> ui.bar?.let { KeepBar(it) }
             Face.ISLAND -> {
-                IslandPanel(ui, Modifier.fillMaxWidth()) { if (actions != null) IslandCards(ui, actions) }
+                IslandPanel(
+                    ui, Modifier.fillMaxWidth(),
+                    pictureTop = {
+                        // v7 Small: inside the top of the picture (16 dp, centred, shadow 0 4 16 25 %); sky only.
+                        if (toastPlace == ToastPlace.ISLAND_TOP) ui.toast?.let { t ->
+                            DialToast(t.items, t.deltaMinutes, t.heldAboveCap,
+                                Modifier.padding(top = 16.dp).shadow(16.dp, RoundedCornerShape(PleosDimens.radiusCard), ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.25f)))
+                        }
+                    },
+                ) { if (actions != null) IslandCards(ui, actions) }
                 ui.bar?.let { b ->
                     Text(stringResource(R.string.h_bar_meta, b.socPercent, b.keepPercent.roundToInt()),
                         style = PleosType.bodyMedium, color = c.textSecondary)
@@ -260,7 +298,7 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
         else -> Color(0xFFFFB020) to "▼"
     }
     Row(
-        modifier.padding(bottom = PleosDimens.space24).clip(RoundedCornerShape(PleosDimens.radiusCard)).background(pill)
+        modifier.clip(RoundedCornerShape(PleosDimens.radiusCard)).background(pill)
             .padding(start = PleosDimens.space16, end = PleosDimens.space40, top = PleosDimens.space16, bottom = PleosDimens.space16),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -345,6 +383,7 @@ private fun InfoCard(text: String) {
  * one per row under the island's chips. First line large with the direction circle before the minutes,
  * second line small. Green only inside the up circle (QA).
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun IslandCards(ui: StayUi, actions: StayActions) {
     val c = Pleos.colors
@@ -368,19 +407,23 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                         ExchangeRule.X3_AC -> stringResource(R.string.x3, gain)
                     }
                     val at = full.indexOf(gain).takeIf { it >= 0 } ?: full.length
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Small window (~840 dp, found 11-10 with a task resize): the circle + minutes move to the next
+                    // line as one unit instead of being squeezed into a one-letter column.
+                    androidx.compose.foundation.layout.FlowRow(itemVerticalAlignment = Alignment.CenterVertically) {
                         Text(full.substring(0, at), style = PleosType.titleMedium, color = c.textPrimary)
                         if (at < full.length) {
                             val up = x.gainMinutes > 0
-                            Box(
-                                Modifier.size(40.dp).clip(RoundedCornerShape(50))
-                                    .background(if (up) Color(0xFF00E074) else Color(0xFFFFB020)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text(if (up) "\u25B2" else "\u25BC", style = PleosType.bodyMedium, color = Color(0xFF131417))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    Modifier.size(40.dp).clip(RoundedCornerShape(50))
+                                        .background(if (up) Color(0xFF00E074) else Color(0xFFFFB020)),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Text(if (up) "\u25B2" else "\u25BC", style = PleosType.bodyMedium, color = Color(0xFF131417))
+                                }
+                                Spacer(Modifier.width(8.dp))
+                                Text(full.substring(at), style = PleosType.titleMedium, color = c.textPrimary, softWrap = false)
                             }
-                            Spacer(Modifier.width(8.dp))
-                            Text(full.substring(at), style = PleosType.titleMedium, color = c.textPrimary)
                         }
                     }
                     val second = buildList {
