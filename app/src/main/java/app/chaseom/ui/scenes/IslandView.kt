@@ -58,6 +58,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.foundation.border
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -91,17 +96,27 @@ internal class H1Set(
     val batX: Float, val batY: Float,
     val buoyX: Float, val buoyY: Float, val buoyAnchor: Float,
     val keepX: Float, val keepY: Float, val keepAnchor: Float,
+    /** POLISH v1.4 §0.9-①: picture scale about the bottom-right corner (water line fixed). */
+    val zoom: Float = 1f,
+    /** Small v1.9: the buoy label follows the crate label in one row (no own anchor). */
+    val buoyAfterKeep: Boolean = false,
 ) {
     val h = 600f
     companion object {
         val Large = H1Set(H1Layers.L, 1600f, 40f, 1450f, 108f,
-            batX = 40f, batY = 569f, buoyX = 1466f, buoyY = 569f, buoyAnchor = 0.5f, keepX = 1172f, keepY = 569f, keepAnchor = 0.5f)
+            batX = 40f, batY = 569f, buoyX = 1466f, buoyY = 569f, buoyAnchor = 0.5f, keepX = 1172f, keepY = 569f, keepAnchor = 0.5f,
+            zoom = 1.15f)
+        // H1 v1.9 README: Small buoys to the right of the boat; rail line 1 battery, line 2 crates then buoys.
         val Small = H1Set(H1Layers.S, 960f, 24f, 836f, 118f,
-            batX = 28f, batY = 530f, buoyX = 28f, buoyY = 576f, buoyAnchor = 0f, keepX = 932f, keepY = 576f, keepAnchor = 1f)
+            batX = 28f, batY = 530f, buoyX = 28f, buoyY = 576f, buoyAnchor = 0f, keepX = 28f, keepY = 576f, keepAnchor = 0f,
+            buoyAfterKeep = true)
         /** Sun disc radius per size (S / M / L), for the "설정 °C" label next to it. */
-        val SUN_R = floatArrayOf(28f, 44f, 64f) // H1 v1.7 (POLISH_PASS §0.6)
+        val SUN_R = floatArrayOf(28f, 44f, 64f) // H1 v1.7 / v1.9
     }
 }
+
+/** Sun radius change (POLISH v1.4 §0.10): 600 ms, cubic-bezier(0, 0, 0.2, 1), only across an S/M/L step. */
+internal const val SUN_MS = 600
 
 /** What the picture shows; changes are batched and cross-faded (platform ISLAND_V2_SIGNALS, MOTION v3). */
 internal data class H1Pic(val sun: Int, val wind: Int, val level: Int, val buoys: Int, val k2: Boolean) {
@@ -171,16 +186,17 @@ fun IslandPanel(
             // Large: card width, at most 1760 dp so a full-screen window keeps the picture under 660 dp tall.
             val picW: Dp = if (set === H1Set.Large) minOf(maxWidth, 1760.dp) else maxWidth
             val k = picW.value / set.w // dp per canvas px
+            // POLISH v1.4 §0.9-⑤: night = brightness -10 % and a 1 dp #3A3D42 outline ("always day").
+            val outline = if (night) Modifier.border(1.dp, Color(0xFF3A3D42), ChaseomUi.rContainer) else Modifier
             Box(
-                Modifier.width(picW).height(picW * (set.h / set.w)).clip(ChaseomUi.rContainer)
+                Modifier.width(picW).height(picW * (set.h / set.w) * set.zoom).clip(ChaseomUi.rContainer).then(outline)
                     .semantics { contentDescription = cd; liveRegion = LiveRegionMode.Polite },
             ) {
-                val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize())
-                // Night theme: same daytime picture, black veil 0.3 only (HANDOFF 9.7, never night colours).
-                if (night) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.3f)))
+                val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize(), sunMotion = !animOff && s.animating)
+                if (night) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.1f)))
                 // H1: the sun and its label sit top right, so the toast takes the top-left sky up to the label.
                 var sunLabelLeft by remember { mutableFloatStateOf(Float.NaN) }
-                IslandLabels(ui, set, k, shown) { sunLabelLeft = it }
+                IslandLabels(ui, set, k, picW.value, shown) { sunLabelLeft = it }
                 val toastMax = if (sunLabelLeft.isNaN()) Modifier else Modifier.widthIn(max = with(LocalDensity.current) { sunLabelLeft.toDp() } - 32.dp)
                 Box(Modifier.align(Alignment.TopStart).padding(start = 16.dp).then(toastMax)) { pictureTop() }
             }
@@ -216,7 +232,12 @@ fun IslandPanel(
 
 /** Screen text on the picture (24 sp): "설정 °C" next to the sun, and the rail under the water. */
 @Composable
-private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, pic: H1Pic, sunLabelLeft: (Float) -> Unit) {
+private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, shown: H1Shown, sunLabelLeft: (Float) -> Unit) {
+    val pic = shown.pic
+    // Canvas px -> dp in the box: scaled by zoom about the bottom-right corner (water line and buoys stay).
+    val z = k * set.zoom
+    fun x(cx: Float) = picW - (set.w - cx) * z
+    fun y(cy: Float) = cy * z
     val bar = ui.bar ?: return
     val c = ui.climate
     val sunText = if (c?.powerOn == true && c.setTempC != null) stringResource(R.string.hvac_temp, tempText(c.setTempC))
@@ -224,16 +245,35 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, pic: H1Pic, sunLabelL
     // H1: ink text with a white glow on the sky; white text on the navy rail (POLISH: picture label role).
     val bare = ChaseomUi.pictureLabel.copy(color = Color(0xFF131417), shadow = Shadow(Color.White, Offset.Zero, 8f))
     val rail = bare.copy(color = Color.White, shadow = Shadow(Color.Black.copy(alpha = 0.35f), Offset(0f, 1f), 2f))
-    PicText(sunText, bare, (set.sunX - H1Set.SUN_R[pic.sun] - 22f) * k, set.sunY * k, 1f, sunLabelLeft)
-    // POLISH_PASS v1.2 §0.4: a 24 dp line icon in front of each rail label makes "A = B" read as a legend.
-    PicText(stringResource(R.string.is_rail_bat, bar.socPercent), rail, set.batX * k, set.batY * k, 0f, icon = R.drawable.ic_rail_wave)
-    if (pic.buoys > 0) PicText(stringResource(R.string.is_rail_buoy), rail, set.buoyX * k, set.buoyY * k, set.buoyAnchor, icon = R.drawable.ic_rail_buoy)
-    PicText(stringResource(R.string.is_rail_keep, bar.keepKm), rail, set.keepX * k, set.keepY * k, set.keepAnchor, icon = R.drawable.ic_crate)
+    // The label keeps 22 px from the disc while the sun radius animates (POLISH v1.4 §0.10).
+    PicText(AnnotatedString(sunText), bare, x(set.sunX - shown.sunR - 22f), y(set.sunY), 1f, sunLabelLeft)
+    // POLISH v1.4 §0.9-④: 28 dp line icon, "name **value**" (name Medium white 80 %, value Bold white).
+    val bat = railText(stringResource(R.string.is_rail_bat, bar.socPercent))
+    val keep = railText(stringResource(R.string.is_rail_keep, bar.keepKm))
+    val buoy = railText(stringResource(R.string.is_rail_buoy))
+    PicText(bat, rail, x(set.batX), y(set.batY), 0f, icon = R.drawable.ic_rail_wave)
+    if (set.buoyAfterKeep) {
+        PicText(keep, rail, x(set.keepX), y(set.keepY), 0f, icon = R.drawable.ic_rail_crate,
+            next = if (pic.buoys > 0) Pair(buoy, R.drawable.ic_rail_buoy) else null)
+    } else {
+        if (pic.buoys > 0) PicText(buoy, rail, x(set.buoyX), y(set.buoyY), set.buoyAnchor, icon = R.drawable.ic_rail_buoy)
+        PicText(keep, rail, x(set.keepX), y(set.keepY), set.keepAnchor, icon = R.drawable.ic_rail_crate)
+    }
+}
+
+/** "name value": the last word is the value (Bold, white), the rest the name (Medium, white 80 %). */
+internal fun railText(s: String): AnnotatedString {
+    val cut = s.lastIndexOf(' ').let { if (it < 0) 0 else it + 1 }
+    return buildAnnotatedString {
+        withStyle(SpanStyle(fontWeight = FontWeight.Medium, color = Color.White.copy(alpha = 0.8f))) { append(s.substring(0, cut)) }
+        withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = Color.White)) { append(s.substring(cut)) }
+    }
 }
 
 /** Text whose anchor point (0 start, 0.5 centre, 1 end; vertical centre) sits at (x, y) dp in the picture. */
 @Composable
-private fun PicText(text: String, style: TextStyle, xDp: Float, yDp: Float, anchor: Float, onLeft: ((Float) -> Unit)? = null, icon: Int? = null) {
+private fun PicText(text: AnnotatedString, style: TextStyle, xDp: Float, yDp: Float, anchor: Float, onLeft: ((Float) -> Unit)? = null, icon: Int? = null,
+                    next: Pair<AnnotatedString, Int>? = null) {
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.layout { m, cons ->
         val p = m.measure(cons.copy(minWidth = 0, minHeight = 0))
         layout(p.width, p.height) {
@@ -243,10 +283,16 @@ private fun PicText(text: String, style: TextStyle, xDp: Float, yDp: Float, anch
         }
     }) {
         if (icon != null) {
-            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(icon), null, tint = style.color, modifier = Modifier.size(24.dp))
+            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(icon), null, tint = style.color, modifier = Modifier.size(28.dp))
             Spacer(Modifier.width(ChaseomUi.line))
         }
         Text(text, style = style, softWrap = false, maxLines = 1)
+        if (next != null) {
+            Spacer(Modifier.width(24.dp))
+            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(next.second), null, tint = style.color, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.width(ChaseomUi.line))
+            Text(next.first, style = style, softWrap = false, maxLines = 1)
+        }
     }
 }
 
@@ -277,7 +323,8 @@ private fun rememberBitmaps(): H1Bitmaps {
  * the water. Mooring slides the boat in from the right (HANDOFF 10.3 ① v5 distance rule).
  */
 @Composable
-private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring: Boolean, motionOff: Boolean, modifier: Modifier): H1Pic {
+private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring: Boolean, motionOff: Boolean, modifier: Modifier,
+                          sunMotion: Boolean = false): H1Shown {
     val target = H1Pic.of(info)
     val bmp = rememberBitmaps()
     var shown by remember { mutableStateOf(target) } // first value at once: never an empty island first
@@ -295,6 +342,15 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         }
         withFrameNanos { } // one frame of the end state, then drop the faded-out layers
         bmp.trim()
+    }
+    // POLISH v1.4 §0.10 signature motion: the sun radius moves 600 ms when the set temperature crosses a step.
+    // Once, never repeated; only right after a dial change (Island.state animating: not under a notice or the receipt),
+    // never with animations off; leaving P removes the island, so the motion ends with it.
+    val sunR = remember { Animatable(H1Set.SUN_R[shown.sun]) }
+    LaunchedEffect(shown.sun) {
+        val to = H1Set.SUN_R[shown.sun]
+        if (!sunMotion || sunR.value == to) sunR.snapTo(to)
+        else sunR.animateTo(to, tween(SUN_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0f, 0f, 0.2f, 1f)))
     }
     // 1 = out at sea, 0 = moored.
     val moor = remember { Animatable(if (mooring && !motionOff) 1f else 0f) }
@@ -315,20 +371,28 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
     val before = rememberUpdatedState(prev)
     Spacer(modifier.drawBehind {
         bmp.frame()
-        val k = size.width / set.w
+        val k = size.width / set.w * set.zoom
         val boat = set.layers.getValue("boat_l1")
         val boatRight = boat.x + bmp(boat.id).width
         // v5: the boat starts inside the visible picture: min(360 dp, right edge - boat right - 8 dp).
-        val slide = minOf(Island.MOOR_SLIDE_DP.dp.toPx(), size.width - boatRight * k - 8.dp.toPx()).coerceAtLeast(0f)
-        scale(k, k, pivot = Offset.Zero) {
-            drawH1(set, bmp, cur.value, before.value, t.value, boatDx = moor.value * slide / k, boatDy = bob.value.dp.toPx() / k)
+        val slide = minOf(Island.MOOR_SLIDE_DP.dp.toPx(), (set.w - boatRight) * k - 8.dp.toPx()).coerceAtLeast(0f)
+        // Zoom about the bottom-right corner: the canvas right edge stays at the box's right edge.
+        translate(left = size.width - set.w * k) {
+            scale(k, k, pivot = Offset.Zero) {
+                drawH1(set, bmp, cur.value, before.value, t.value, boatDx = moor.value * slide / k, boatDy = bob.value.dp.toPx() / k,
+                    sunScale = sunR.value / H1Set.SUN_R[cur.value.sun])
+            }
         }
     })
-    return shown
+    return H1Shown(shown, sunR.value)
 }
 
+/** The picture state on screen and the sun radius now (canvas px), for the labels. */
+internal data class H1Shown(val pic: H1Pic, val sunR: Float)
+
 /** The 13-layer stack (ART_H.md section 8 order), in canvas px. [t] cross-fades [prev] -> [cur]. */
-internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, prev: H1Pic?, t: Float, boatDx: Float = 0f, boatDy: Float = 0f) {
+internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, prev: H1Pic?, t: Float, boatDx: Float = 0f, boatDy: Float = 0f,
+                              sunScale: Float = 1f) {
     val p = prev ?: cur
     val a = if (prev == null) 1f else t
     val dyCur = -(cur.level - 1) * set.step
@@ -348,7 +412,9 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
     val sun = "SML"
     one("base", 1f)
     slot("trees_w${p.wind}", "trees_w${cur.wind}")
-    slot("sun_${sun[p.sun]}", "sun_${sun[cur.sun]}")
+    // The sun is one layer scaled about its centre (POLISH §0.10), not a cross-fade; its glow is in the bitmap.
+    if (sunScale == 1f) one("sun_${sun[cur.sun]}", 1f)
+    else scale(sunScale, sunScale, pivot = Offset(set.sunX, set.sunY)) { one("sun_${sun[cur.sun]}", 1f) }
     slot(if (p.wind > 0) "wind_w${p.wind}" else null, if (cur.wind > 0) "wind_w${cur.wind}" else null)
     slot("wet_l${p.level}", "wet_l${cur.level}")
     one("boat_l1", 1f, boatDx, dy + boatDy)
@@ -359,7 +425,6 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
     slot("ticks_l${p.level}", "ticks_l${cur.level}")
     // The crate frame rides on the boat (K1 / K2: IslandInfo.crateOutline).
     slot(if (p.k2) "k2_l1" else null, if (cur.k2) "k2_l1" else null, boatDx, dy + boatDy)
-    one("sheen", 1f)
 }
 
 /**
@@ -388,7 +453,7 @@ private fun StillIsland(set: H1Set, pic: H1Pic, modifier: Modifier) {
             bmp.frame()
             val k = size.width / set.w
             scale(k, k, pivot = Offset.Zero) { drawH1(set, bmp, pic, null, 1f) }
-            if (night) drawRect(Color.Black.copy(alpha = 0.3f))
+            if (night) drawRect(Color.Black.copy(alpha = 0.1f))
         },
     )
 }

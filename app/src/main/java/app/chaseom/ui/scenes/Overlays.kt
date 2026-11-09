@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.chaseom.R
 import app.chaseom.stay.ModePolicy
 import app.chaseom.stay.NoticeKind
@@ -104,9 +105,10 @@ fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app
             // HANDOFF 10.4: pier + boat + plank still picture on top of the receipt only. The island itself
             // never reacts to the door; no people, no check marks.
             ui?.let { ReceiptHeaderPicture(it) }
-            Spacer(Modifier.height(ChaseomUi.line))
+            // POLISH v1.4: thumbnail -> 24 -> title 32 SemiBold (two steps above the 26 rows).
+            Spacer(Modifier.height(24.dp - ChaseomUi.line))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.e_title), style = ChaseomUi.title, color = k.text1, modifier = Modifier.weight(1f))
+                Text(stringResource(R.string.e_title), style = ChaseomUi.title.copy(fontSize = 32.sp, lineHeight = 40.sp), color = k.text1, modifier = Modifier.weight(1f))
                 Text(SimpleDateFormat("HH:mm", Locale.KOREA).format(Date(remember(r) { System.currentTimeMillis() })) /* wall time for display only; engine times are monotonic */, style = ChaseomUi.body, color = k.text3)
             }
             Column {
@@ -120,8 +122,7 @@ fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app
                 }
             }
             Spacer(Modifier.height(ChaseomUi.line))
-            BigButton(stringResource(R.string.close), { actions.closeReceipt() }, size = ButtonSize.Large,
-                kind = ButtonKind.Basic, modifier = Modifier.fillMaxWidth())
+            LightPillButton(stringResource(R.string.close), { actions.closeReceipt() }, Modifier.fillMaxWidth())
         }
     }
 }

@@ -7,7 +7,7 @@ import org.junit.Test
 /** 04_design art_v3 layers_h1: every state the island can show has its layer in both window sets. */
 class H1LayersTest {
     private val expected = buildSet {
-        addAll(listOf("base", "boat_l1", "k2_l1", "sheen"))
+        addAll(listOf("base", "boat_l1", "k2_l1")) // v1.9: no sheen
         (0..2).forEach { add("trees_w$it") }
         listOf("S", "M", "L").forEach { add("sun_$it") }
         (1..2).forEach { add("wind_w$it") }
@@ -16,7 +16,7 @@ class H1LayersTest {
     }
 
     @Test fun bothSetsHaveEveryLayer() {
-        assertEquals(44, expected.size)
+        assertEquals(43, expected.size)
         assertEquals(expected, H1Layers.L.keys)
         assertEquals(expected, H1Layers.S.keys)
     }

@@ -129,8 +129,9 @@ fun OnboardingScene(mode: AppMode, actions: StayActions, modifier: Modifier) {
     if (size == ChaseomUi.Size.Large) {
         Row(modifier.verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(ChaseomUi.block * 2),
             verticalAlignment = Alignment.CenterVertically) {
-            picture(Modifier.weight(1f))
-            text(Modifier.weight(1f).widthIn(max = ChaseomUi.readableMax))
+            // POLISH v1.4: picture 890 dp on the left, text column at most 720, both centred vertically.
+            picture(Modifier.width(890.dp))
+            text(Modifier.weight(1f).widthIn(max = 720.dp))
         }
     } else {
         Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(ChaseomUi.block)) {

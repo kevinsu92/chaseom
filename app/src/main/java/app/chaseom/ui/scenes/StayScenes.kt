@@ -90,16 +90,18 @@ internal fun WarnBanner(text: String, danger: Boolean, trailing: (@Composable ()
     val bg = if (danger) k.dangerBg else k.safeBg
     val bar = if (danger) k.dangerBar else k.safeBar
     val fg = if (danger) k.dangerFg else k.safeFg
+    // POLISH v1.3 / v1.4 §0.9-②: N0 = filled yellow + ink (56 dp); K2 = #C5221F + white 26 SemiBold, 64 dp, icon 32.
     Row(
-        Modifier.fillMaxWidth().heightIn(min = ChaseomUi.bannerHeight).clip(ChaseomUi.rBanner).background(bg)
+        Modifier.fillMaxWidth().heightIn(min = if (danger) 64.dp else ChaseomUi.bannerHeight).clip(ChaseomUi.rBanner).background(bg)
             .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.width(ChaseomUi.bannerBar).fillMaxHeight().background(bar))
         Spacer(Modifier.width(ChaseomUi.related))
-        Icon(painterResource(R.drawable.ic_warn_line), null, tint = fg, modifier = Modifier.size(ChaseomUi.bannerIcon))
+        Icon(painterResource(R.drawable.ic_warn_line), null, tint = fg, modifier = Modifier.size(if (danger) 32.dp else ChaseomUi.bannerIcon))
         Spacer(Modifier.width(ChaseomUi.related))
-        Text(text, style = ChaseomUi.banner, color = fg, modifier = Modifier.weight(1f).padding(vertical = ChaseomUi.line))
+        Text(text, style = if (danger) ChaseomUi.banner.copy(fontSize = 26.sp, lineHeight = 34.sp) else ChaseomUi.banner, color = fg,
+            modifier = Modifier.weight(1f).padding(vertical = ChaseomUi.line))
         trailing?.invoke()
         Spacer(Modifier.width(ChaseomUi.line))
     }
@@ -358,17 +360,17 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
     }
     // HANDOFF 9.6 v1.1: neutral pill (red is for K2 only). Direction circle (HANDOFF 8, round1b): amber down,
     // ink up with a white symbol, grey dot for no change. The symbol always goes with the colour.
-    // POLISH §0.6: one-line pill, 64 dp, title 28 SemiBold, 32 dp direction circle with a vector triangle.
+    // POLISH v1.3: one-line pill, 48 dp, caption 24 SemiBold, 28 dp direction circle with a vector triangle.
     val k = cui()
     Row(
         modifier.height(ChaseomUi.toastHeight).clip(ChaseomUi.rPill).background(k.toast)
-            .padding(start = ChaseomUi.related, end = 24.dp),
+            .padding(start = 10.dp, end = 20.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DirectionCircle(if (none) 0 else delta, on = k.toast)
-        Spacer(Modifier.width(ChaseomUi.related))
+        DirectionCircle(if (none) 0 else delta, on = k.toast, size = ChaseomUi.toastDirCircle)
+        Spacer(Modifier.width(ChaseomUi.line))
         Text(if (label.isEmpty()) deltaText else stringResource(R.string.d_toast_fmt, label, deltaText),
-            style = ChaseomUi.title, color = k.onToast, maxLines = 1, softWrap = false)
+            style = ChaseomUi.banner, color = k.onToast, maxLines = 1, softWrap = false)
     }
 }
 
@@ -495,19 +497,22 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                     val small = with(androidx.compose.ui.platform.LocalDensity.current) {
                         androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp() < 1200.dp
                     }
-                    val twoLines = small && x.rule == ExchangeRule.X1_SEAT_HEAT
+                    // POLISH v1.4 §0.9-③: X1 is always two lines; line 2 = [▲] +16분 (32 Bold) · 비슷한 체감 (추정).
+                    val twoLines = x.rule == ExchangeRule.X1_SEAT_HEAT
                     if (twoLines) Text(stringResource(R.string.x1_l1), style = ChaseomUi.title, color = k.text1)
                     val line = if (twoLines) stringResource(R.string.x1_l2, gain) else full
                     val at = line.indexOf(gain).takeIf { it >= 0 } ?: line.length
                     // Small window (~840 dp, found 11-10 with a task resize): the circle + minutes move to the next
                     // line as one unit instead of being squeezed into a one-letter column.
                     androidx.compose.foundation.layout.FlowRow(itemVerticalAlignment = Alignment.CenterVertically) {
-                        Text(line.substring(0, at), style = ChaseomUi.title, color = k.text1)
+                        if (at > 0) Text(line.substring(0, at), style = ChaseomUi.title, color = k.text1)
                         if (at < line.length) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                DirectionCircle(x.gainMinutes, on = k.surface)
+                                DirectionCircle(x.gainMinutes, on = k.surface, size = 36.dp)
                                 Spacer(Modifier.width(ChaseomUi.line))
-                                Text(line.substring(at), style = ChaseomUi.title, color = k.text1, softWrap = false)
+                                Text(gain, style = ChaseomUi.title.copy(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                                    color = k.text1, softWrap = false)
+                                Text(line.substring(at + gain.length), style = ChaseomUi.title, color = k.text1, softWrap = false)
                             }
                         }
                     }
@@ -535,18 +540,30 @@ private fun IslandCard(onClose: (() -> Unit)?, content: @Composable androidx.com
             .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.width(ChaseomUi.cardBar).fillMaxHeight().background(ChaseomUi.amber))
-        Column(Modifier.weight(1f).padding(horizontal = ChaseomUi.cardPadH, vertical = ChaseomUi.cardPadV),
+        // POLISH v1.4 §0.9-③: the amber bar sits inside (6 wide, radius 3, 24 from top and bottom, 16 from the left).
+        Spacer(Modifier.width(ChaseomUi.related))
+        Box(Modifier.padding(vertical = 24.dp).width(6.dp).fillMaxHeight().clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp)).background(ChaseomUi.amber))
+        Column(Modifier.weight(1f).padding(start = 24.dp, end = ChaseomUi.related, top = 28.dp, bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(ChaseomUi.line), content = content)
-        if (onClose != null) {
-            Box(
-                Modifier.heightIn(min = ChaseomUi.touchMin).widthIn(min = ChaseomUi.touchMin).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClose)
-                    .padding(horizontal = ChaseomUi.related),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(stringResource(R.string.close), style = ChaseomUi.title.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline), color = k.text1)
-            }
-            Spacer(Modifier.width(ChaseomUi.related))
+        if (onClose != null) LightPillButton(stringResource(R.string.close), onClose)
+        Spacer(Modifier.width(24.dp))
+    }
+}
+
+/** POLISH v1.4: light pill (#EEEFF1), 56 dp, 26 Medium, 76 dp touch area. Card close and receipt close. */
+@Composable
+internal fun LightPillButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val night = androidx.compose.foundation.isSystemInDarkTheme()
+    Box(
+        modifier.heightIn(min = ChaseomUi.touchMin).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier.height(56.dp).clip(ChaseomUi.rPill).background(if (night) Color(0xFF34373D) else Color(0xFFEEEFF1))
+                .padding(horizontal = 28.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(label, style = ChaseomUi.body.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), color = cui().text1)
         }
     }
 }

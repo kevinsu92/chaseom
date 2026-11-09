@@ -7,6 +7,8 @@ package app.chaseom.ui.theme
 //   Space  : 32 between blocks, 16 between related items, 8 between lines. Window margin 40 (Large) / 24 (Small).
 //   Radius : 16 inline (banner 12 is the one exception, inside the inline family), 28 container, pill.
 //   Colour : ink, navy (island water), amber (island sun), warning yellow / danger red (banners only). No blue, no green.
+//   Line break: Korean by word (Compose TextStyle(lineBreak = LineBreak.Paragraph.copy(wordBreak = LineBreak.WordBreak.Phrase)), API 33+;
+//               below 33 keep softWrap and avoid long unbroken runs). Never split a word (panel §4-②).
 //   Shadow : one level, only for the Small toast over the picture, day theme only.
 
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +26,9 @@ object ChaseomUi {
     enum class Size { Large, Small }
 
     /* ---------------------------------------------------------------- Type */
-    private val Base = TextStyle(fontFamily = FontFamily.Default, fontFeatureSettings = "tnum")
+    // 03_engineering: Korean breaks by word (API 33+; older platforms ignore it and keep softWrap).
+    private val Base = TextStyle(fontFamily = FontFamily.Default, fontFeatureSettings = "tnum",
+        lineBreak = androidx.compose.ui.text.style.LineBreak.Paragraph.copy(wordBreak = androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase))
 
     /** Hero number "약 2시간 47분". The one display-size text. */
     fun hero(s: Size) = Base.copy(fontSize = if (s == Size.Large) 72.sp else 56.sp, lineHeight = if (s == Size.Large) 80.sp else 64.sp,
@@ -69,7 +73,7 @@ object ChaseomUi {
 
     /* ---------------------------------------------------------------- Sizes */
     val bannerHeight = 56.dp; val bannerBar = 6.dp; val bannerIcon = 28.dp; val bannerGap = 8.dp
-    val toastHeight = 64.dp; val dirCircle = 32.dp
+    val toastHeight = 48.dp; val dirCircle = 32.dp; val toastDirCircle = 28.dp   // v1.3: toast 48 fixed, text = caption 24 SemiBold
     val buttonHeight = 64.dp; val pillHeight = 48.dp; val touchMin = 76.dp   // visual 64 / 48, hit area always 76
     val cardBar = 8.dp; val cardPadH = 32.dp; val cardPadV = 24.dp; val cardOutline = 1.dp
     val iconInline = 28.dp; val iconPoint = 36.dp; val iconPointCircle = 64.dp; val iconButton = 40.dp; val glanceIcon = 160.dp
@@ -96,9 +100,10 @@ object ChaseomUi {
         bg = Color(0xFFF7F8FA), surface = Color.White, line = Color(0xFFE3E6EB), tint = Color(0x0D131417),
         text1 = Color(0xFF131417), text2 = Color(0xFF4A4E57), text3 = Color(0xFF6E727B),
         primary = navy, onPrimary = Color.White, selected = Color(0xFF131417), onSelected = Color.White,
-        safeBg = Color(0xFFFFF3CC), safeBar = Color(0xFFFFC224),   // = warning token, same as the crate K2 outline (REFERENCES H1)
-         safeFg = Color(0xFF4A3700),
-        dangerBg = Color(0xFFFDE7E4), dangerBar = Color(0xFFD93025), dangerFg = Color(0xFF8A1C12),
+        safeBg = Color(0xFFFFC224), safeBar = Color(0xFFFFC224),   // v1.3: N0 back to the filled warning yellow (safety strength, QA)
+           // = warning token, same as the crate K2 outline (REFERENCES H1)
+         safeFg = Color(0xFF131417),
+        dangerBg = Color(0xFFC5221F), dangerBar = Color(0xFFC5221F), dangerFg = Color.White,   // QA P2: #C5221F + white 5.80:1
         toast = Color(0xF01C2129), onToast = Color.White, scrim = Color(0x730B0F14),
         pictureSkyTop = Color(0xFFC9E0F3),
     )
@@ -107,8 +112,8 @@ object ChaseomUi {
         text1 = Color(0xF5FFFFFF), text2 = Color(0xFFC3C7CE),   // white 96 % (REFERENCES H10 / AAOS)
          text3 = Color(0xFF9AA0A8),
         primary = Color(0xFF8DB4D9), onPrimary = Color(0xFF0F1D2E), selected = Color(0xFFF2F3F5), onSelected = Color(0xFF131417),
-        safeBg = Color(0xFF3A3115), safeBar = Color(0xFFFFC224), safeFg = Color(0xFFFFE7A1),
-        dangerBg = Color(0xFF3D1C18), dangerBar = Color(0xFFFF5A3C), dangerFg = Color(0xFFFFC9BF),
+        safeBg = Color(0xFFFFC224), safeBar = Color(0xFFFFC224), safeFg = Color(0xFF131417),
+        dangerBg = Color(0xFFC5221F), dangerBar = Color(0xFFC5221F), dangerFg = Color.White,   // banners sit above the night veil, same fills
         toast = Color(0xF5F2F3F5), onToast = Color(0xFF131417), scrim = Color(0x99000000),
         pictureSkyTop = Color(0xFF8D9DAA),   // #C9E0F3 under the 0.3 night veil
     )

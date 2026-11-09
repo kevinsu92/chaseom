@@ -66,7 +66,7 @@
     <!-- H·X exchange-rate cards -->
     <string name="x1">설정 21°C + 운전석 열선 2단 = 비슷한 체감, %1$s (추정)</string>
     <string name="x1_l1">설정 21°C + 운전석 열선 2단</string>
-    <string name="x1_l2">비슷한 체감 · %1$s (추정)</string>
+    <string name="x1_l2">%1$s · 비슷한 체감 (추정)</string>
     <string name="x2">풍량 3단으로 낮추면 %1$s (추정)</string>
     <string name="x3">A/C를 끄면 %1$s (추정)</string>
     <string name="x3_sub">유리에 김이 서리면 A/C를 켜 두세요</string>
@@ -107,7 +107,7 @@
     <string name="e_port_closed">닫힘</string>
     <string name="e_rear">뒷좌석</string>
     <string name="e_rear_detected">탑승 감지됨</string>
-    <string name="e_rear_not_detected">감지 안 됨 — 직접 확인하세요</string>
+    <string name="e_rear_not_detected">감지 안 됨 · 직접 확인하세요</string>
     <string name="e_rear_always">뒷좌석 직접 확인</string>
 
     <!-- S: settings -->
@@ -132,8 +132,8 @@
     <!-- Face: small weather island (HANDOFF section 8, flag FACE_ISLAND). Picture has no text; chips only. -->
     <string name="is_legend">섬은 공조 설정·배터리로 그려요 · 실내 측정 아님</string>
     <string name="is_rail_bat">배터리 %1$d%%</string>
-    <string name="is_rail_buoy">부표 1개 = 30분</string>
-    <string name="is_rail_keep">짐 = 내일 몫 %1$dkm</string>
+    <string name="is_rail_buoy">부표 1개 · 30분</string>
+    <string name="is_rail_keep">짐 · 내일 몫 %1$dkm</string>
     <string name="is_cd">섬 그림: 공조 설정·배터리로 그려요. 지금 설정으로 %1$s 머물 수 있어요 (추정), 배터리 %2$d%%, 내일 몫 %3$dkm</string>
     <!-- Toast when both before/after are over the 3-hour cap (QA M-11, moved from 03_engineering strings.xml) -->
     <string name="d_toast_cap">3시간 이상 유지 (추정)</string>
