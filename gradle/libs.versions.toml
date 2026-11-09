@@ -9,6 +9,8 @@ composeBom = "2026.09.00"
 junit = "4.13.2"
 # Pleos Playground Vehicle SDK (docs reference 2.3.2).
 pleosVehicle = "2.3.2"
+# Coverage report (README verification table). Build-time only, not in the APK.
+kover = "0.9.11"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -28,3 +30,4 @@ pleos-vehicle = { group = "ai.pleos.playground", name = "Vehicle", version.ref =
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

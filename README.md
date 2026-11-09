@@ -4,7 +4,14 @@
 
 Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**로 공조·좌석·문·창문·조명 신호를 읽습니다.
 
-![tests](https://img.shields.io/badge/unit%20tests-97%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-3.4%20MB-informational)
+![tests](https://img.shields.io/badge/unit%20tests-97%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-3.4%20MB-informational) ![domain coverage](https://img.shields.io/badge/domain%20line%20coverage-98%25-2ea44f)
+
+### 구조
+![차섬 구조: 차량 신호 → 어댑터 → 순수 도메인 → Compose 화면](docs/images/architecture.svg)
+
+- **어댑터**(`cabin/`, `vehicle/`)만 Pleos·AAOS SDK 타입을 압니다. SDK 오류는 값 `null`(= 모름)로 바꿔 넘깁니다.
+- **도메인**(`stay/` StayEngine·EnergyModel·Island·IslandInfo)은 Android 없는 순수 Kotlin이라, 안전 규칙과 숫자를 모두 JVM 단위 테스트로 검사합니다.
+- **화면**(`ui/`)은 불변 모델 `StayUi`만 그리고, 문구는 `strings_stay.xml`에만 있습니다. 포그라운드 서비스는 P에서 머무는 동안만 켜집니다.
 
 | 히터를 올리면 해가 커지고 남은 시간이 줄어듦 | 열선을 켜면 바위가 따뜻해짐 | 운전석 문을 열면 떠나기 전 영수증 |
 |---|---|---|
@@ -16,6 +23,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 | 항목 | 값 |
 |---|---|
 | 단위 테스트 | **97개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
+| 테스트 커버리지 (Kover, 라인) | 도메인 **98.4%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 24.7% (화면·SDK 어댑터는 에뮬레이터 시나리오로 검증). `./gradlew koverXmlReportDebug`, 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
 | 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **55 ms**, 최대 117 ms (섬을 끈 빌드 43 ms) |
 | 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **55 ms** (중앙값 11 ms) |
 | 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **45 ms**, 최대 76 ms |
