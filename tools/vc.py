@@ -170,6 +170,47 @@ def shot(out_dir, name):
         f.write(adb("exec-out", "screencap", "-p", binary=True))
 
 
+# ---- window size (QA R-02b: Pleos splits the app area 1:1 when two apps are open, ~840 dp each) --------
+
+LARGE_BOUNDS = ("853", "90", "2535", "1300")  # Pleos Connect 2.1.0 app area, 1682 x 1210
+SMALL_BOUNDS = ("853", "90", "1694", "1300")  # 841 x 1210 = one half of a 1:1 split (density 160 -> 841 dp)
+
+
+def task_id(pkg):
+    """Task id of [pkg]'s activity, from `dumpsys activity containers`."""
+    m = re.search(re.escape(pkg) + r"/\S*Activity t(\d+)", adb("shell", "dumpsys", "activity", "containers"))
+    return m.group(1) if m else None
+
+
+def task_bounds(pkg):
+    for line in adb("shell", "dumpsys", "activity", "containers").splitlines():
+        if pkg + "/" in line and "Activity" in line:
+            b = re.findall(r" bounds=(\[[^ ]+)", line)
+            if b:
+                return b[0]
+    return None
+
+
+class small_window:
+    """`with vc.small_window(pkg):` resizes the app task to the 841 dp half and always restores it."""
+
+    def __init__(self, pkg):
+        self.pkg = pkg
+        self.tid = None
+
+    def __enter__(self):
+        self.tid = task_id(self.pkg)
+        if self.tid is None:
+            raise SystemExit(f"{self.pkg} is not running")
+        adb("shell", "am", "task", "resize", self.tid, *SMALL_BOUNDS)
+        time.sleep(4)
+        return self
+
+    def __exit__(self, *exc):
+        adb("shell", "am", "task", "resize", self.tid, *LARGE_BOUNDS)
+        time.sleep(2)
+
+
 # ---- timing (PROBE lines: wall clock of a vehicle callback or of a drawn frame) -------------------
 
 def clock_offset_ms():
