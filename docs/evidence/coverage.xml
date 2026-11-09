@@ -982,56 +982,61 @@
 <counter type="METHOD" missed="0" covered="12"/>
 </class>
 <class name="app/chaseom/stay/IslandInfo" sourcefilename="IslandInfo.kt">
+<method name="&lt;init&gt;" desc="(IIIZIZZII)V">
+<counter type="INSTRUCTION" missed="0" covered="47"/>
+<counter type="BRANCH" missed="0" covered="0"/>
+<counter type="LINE" missed="0" covered="10"/>
+</method>
 <method name="&lt;clinit&gt;" desc="()V">
 <counter type="INSTRUCTION" missed="0" covered="42"/>
 <counter type="BRANCH" missed="0" covered="0"/>
 <counter type="LINE" missed="0" covered="2"/>
 </method>
-<method name="&lt;init&gt;" desc="(IILjava/lang/Integer;ZIZZIII)V">
-<counter type="INSTRUCTION" missed="0" covered="52"/>
+<counter type="INSTRUCTION" missed="0" covered="89"/>
 <counter type="BRANCH" missed="0" covered="0"/>
-<counter type="LINE" missed="0" covered="11"/>
-</method>
-<counter type="INSTRUCTION" missed="0" covered="94"/>
-<counter type="BRANCH" missed="0" covered="0"/>
-<counter type="LINE" missed="0" covered="13"/>
+<counter type="LINE" missed="0" covered="12"/>
 <counter type="METHOD" missed="0" covered="2"/>
 </class>
 <class name="app/chaseom/stay/IslandInfo$Companion" sourcefilename="IslandInfo.kt">
-<method name="getSUN_BOUNDS_MIN" desc="()[I">
+<method name="waterStepFresh" desc="(I)I">
+<counter type="INSTRUCTION" missed="0" covered="22"/>
+<counter type="BRANCH" missed="0" covered="8"/>
+<counter type="LINE" missed="0" covered="6"/>
+</method>
+<method name="of" desc="(Lapp/chaseom/stay/IslandInfo$Companion;Lapp/chaseom/stay/StayUi;Ljava/lang/Integer;)Lapp/chaseom/stay/IslandInfo;">
+<counter type="INSTRUCTION" missed="0" covered="10"/>
+<counter type="BRANCH" missed="0" covered="0"/>
+<counter type="LINE" missed="0" covered="1"/>
+</method>
+<method name="getWATER_DOWN_AT" desc="()[I">
 <counter type="INSTRUCTION" missed="0" covered="1"/>
 <counter type="BRANCH" missed="0" covered="0"/>
 <counter type="LINE" missed="0" covered="1"/>
 </method>
-<method name="stepOf" desc="(I[I)I">
-<counter type="INSTRUCTION" missed="0" covered="18"/>
-<counter type="BRANCH" missed="0" covered="4"/>
-<counter type="LINE" missed="0" covered="1"/>
+<method name="buoys" desc="(Lapp/chaseom/stay/Hero;)I">
+<counter type="INSTRUCTION" missed="1" covered="25"/>
+<counter type="BRANCH" missed="1" covered="7"/>
+<counter type="LINE" missed="1" covered="4"/>
 </method>
-<method name="of" desc="(Lapp/chaseom/stay/StayUi;)Lapp/chaseom/stay/IslandInfo;">
-<counter type="INSTRUCTION" missed="20" covered="149"/>
-<counter type="BRANCH" missed="13" covered="21"/>
-<counter type="LINE" missed="0" covered="16"/>
+<method name="of" desc="(Lapp/chaseom/stay/StayUi;Ljava/lang/Integer;)Lapp/chaseom/stay/IslandInfo;">
+<counter type="INSTRUCTION" missed="16" covered="134"/>
+<counter type="BRANCH" missed="9" covered="23"/>
+<counter type="LINE" missed="0" covered="14"/>
 </method>
-<method name="sunStep" desc="(Lapp/chaseom/stay/Hero;)I">
-<counter type="INSTRUCTION" missed="2" covered="21"/>
-<counter type="BRANCH" missed="1" covered="5"/>
+<method name="waterStep" desc="(ILjava/lang/Integer;)I">
+<counter type="INSTRUCTION" missed="0" covered="37"/>
+<counter type="BRANCH" missed="1" covered="9"/>
 <counter type="LINE" missed="0" covered="4"/>
 </method>
-<method name="waterStep" desc="(F)I">
-<counter type="INSTRUCTION" missed="0" covered="6"/>
-<counter type="BRANCH" missed="0" covered="0"/>
-<counter type="LINE" missed="0" covered="1"/>
-</method>
-<method name="getWATER_BOUNDS_SOC" desc="()[I">
+<method name="getWATER_UP_AT" desc="()[I">
 <counter type="INSTRUCTION" missed="0" covered="1"/>
 <counter type="BRANCH" missed="0" covered="0"/>
 <counter type="LINE" missed="0" covered="1"/>
 </method>
-<counter type="INSTRUCTION" missed="22" covered="196"/>
-<counter type="BRANCH" missed="14" covered="30"/>
-<counter type="LINE" missed="0" covered="24"/>
-<counter type="METHOD" missed="0" covered="6"/>
+<counter type="INSTRUCTION" missed="17" covered="230"/>
+<counter type="BRANCH" missed="11" covered="47"/>
+<counter type="LINE" missed="1" covered="31"/>
+<counter type="METHOD" missed="0" covered="7"/>
 </class>
 <class name="app/chaseom/stay/IslandLayer" sourcefilename="Island.kt">
 <method name="&lt;init&gt;" desc="(Ljava/lang/String;F)V">
@@ -1678,45 +1683,76 @@
 <counter type="LINE" missed="0" covered="4"/>
 <counter type="METHOD" missed="0" covered="1"/>
 </class>
+<class name="app/chaseom/stay/WaterStepper" sourcefilename="IslandInfo.kt">
+<method name="next" desc="(I)I">
+<counter type="INSTRUCTION" missed="0" covered="13"/>
+<counter type="BRANCH" missed="0" covered="0"/>
+<counter type="LINE" missed="0" covered="1"/>
+</method>
+<method name="reset" desc="()V">
+<counter type="INSTRUCTION" missed="0" covered="3"/>
+<counter type="BRANCH" missed="0" covered="0"/>
+<counter type="LINE" missed="0" covered="1"/>
+</method>
+<method name="&lt;init&gt;" desc="()V">
+<counter type="INSTRUCTION" missed="0" covered="2"/>
+<counter type="BRANCH" missed="0" covered="0"/>
+<counter type="LINE" missed="0" covered="1"/>
+</method>
+<counter type="INSTRUCTION" missed="0" covered="18"/>
+<counter type="BRANCH" missed="0" covered="0"/>
+<counter type="LINE" missed="0" covered="3"/>
+<counter type="METHOD" missed="0" covered="3"/>
+</class>
 <sourcefile name="IslandInfo.kt">
-<line nr="18" mi="0" ci="2" mb="0" cb="0"/>
+<line nr="16" mi="0" ci="2" mb="0" cb="0"/>
+<line nr="18" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="20" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="22" mi="0" ci="5" mb="0" cb="0"/>
+<line nr="23" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="24" mi="0" ci="5" mb="0" cb="0"/>
+<line nr="25" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="26" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="27" mi="0" ci="5" mb="0" cb="0"/>
 <line nr="28" mi="0" ci="5" mb="0" cb="0"/>
-<line nr="29" mi="0" ci="5" mb="0" cb="0"/>
-<line nr="30" mi="0" ci="5" mb="0" cb="0"/>
-<line nr="31" mi="0" ci="5" mb="0" cb="0"/>
-<line nr="33" mi="0" ci="5" mb="0" cb="0"/>
-<line nr="38" mi="0" ci="22" mb="0" cb="0"/>
-<line nr="41" mi="0" ci="22" mb="0" cb="0"/>
-<line nr="43" mi="0" ci="1" mb="0" cb="0"/>
-<line nr="44" mi="0" ci="5" mb="0" cb="2"/>
-<line nr="45" mi="0" ci="5" mb="0" cb="2"/>
-<line nr="46" mi="2" ci="10" mb="1" cb="1"/>
-<line nr="49" mi="0" ci="6" mb="0" cb="0"/>
-<line nr="51" mi="0" ci="18" mb="0" cb="4"/>
-<line nr="55" mi="0" ci="8" mb="0" cb="4"/>
-<line nr="56" mi="0" ci="7" mb="0" cb="2"/>
-<line nr="57" mi="0" ci="3" mb="0" cb="0"/>
-<line nr="58" mi="0" ci="3" mb="0" cb="0"/>
-<line nr="59" mi="4" ci="9" mb="2" cb="2"/>
-<line nr="60" mi="0" ci="23" mb="0" cb="0"/>
-<line nr="61" mi="0" ci="3" mb="0" cb="0"/>
-<line nr="62" mi="2" ci="14" mb="1" cb="1"/>
-<line nr="63" mi="2" ci="14" mb="1" cb="1"/>
-<line nr="64" mi="0" ci="6" mb="0" cb="2"/>
-<line nr="65" mi="2" ci="8" mb="1" cb="1"/>
-<line nr="66" mi="2" ci="11" mb="2" cb="2"/>
-<line nr="67" mi="2" ci="11" mb="2" cb="2"/>
-<line nr="68" mi="2" ci="11" mb="2" cb="2"/>
-<line nr="69" mi="2" ci="9" mb="1" cb="1"/>
-<line nr="70" mi="2" ci="9" mb="1" cb="1"/>
-<counter type="INSTRUCTION" missed="22" covered="290"/>
-<counter type="BRANCH" missed="14" covered="30"/>
-<counter type="LINE" missed="0" covered="37"/>
+<line nr="35" mi="0" ci="22" mb="0" cb="0"/>
+<line nr="37" mi="0" ci="22" mb="0" cb="0"/>
+<line nr="40" mi="0" ci="1" mb="0" cb="0"/>
+<line nr="41" mi="0" ci="7" mb="0" cb="4"/>
+<line nr="42" mi="0" ci="12" mb="0" cb="2"/>
+<line nr="43" mi="0" ci="5" mb="1" cb="1"/>
+<line nr="44" mi="1" ci="0" mb="0" cb="0"/>
+<line nr="48" mi="0" ci="1" mb="0" cb="0"/>
+<line nr="49" mi="0" ci="5" mb="0" cb="2"/>
+<line nr="50" mi="0" ci="5" mb="0" cb="2"/>
+<line nr="51" mi="0" ci="5" mb="0" cb="2"/>
+<line nr="52" mi="0" ci="5" mb="0" cb="2"/>
+<line nr="53" mi="0" ci="1" mb="0" cb="0"/>
+<line nr="58" mi="0" ci="13" mb="0" cb="2"/>
+<line nr="59" mi="0" ci="11" mb="1" cb="3"/>
+<line nr="60" mi="0" ci="12" mb="0" cb="4"/>
+<line nr="61" mi="0" ci="1" mb="0" cb="0"/>
+<line nr="65" mi="0" ci="10" mb="0" cb="0"/>
+<line nr="66" mi="0" ci="8" mb="0" cb="4"/>
+<line nr="67" mi="0" ci="7" mb="0" cb="2"/>
+<line nr="68" mi="0" ci="3" mb="0" cb="0"/>
+<line nr="69" mi="2" ci="11" mb="1" cb="3"/>
+<line nr="70" mi="0" ci="21" mb="0" cb="0"/>
+<line nr="71" mi="2" ci="9" mb="1" cb="1"/>
+<line nr="72" mi="0" ci="3" mb="0" cb="0"/>
+<line nr="73" mi="2" ci="16" mb="1" cb="1"/>
+<line nr="74" mi="0" ci="6" mb="0" cb="2"/>
+<line nr="75" mi="2" ci="8" mb="1" cb="1"/>
+<line nr="76" mi="2" ci="11" mb="1" cb="3"/>
+<line nr="77" mi="2" ci="11" mb="1" cb="3"/>
+<line nr="78" mi="2" ci="11" mb="2" cb="2"/>
+<line nr="79" mi="2" ci="9" mb="1" cb="1"/>
+<line nr="86" mi="0" ci="2" mb="0" cb="0"/>
+<line nr="88" mi="0" ci="13" mb="0" cb="0"/>
+<line nr="89" mi="0" ci="3" mb="0" cb="0"/>
+<counter type="INSTRUCTION" missed="17" covered="337"/>
+<counter type="BRANCH" missed="11" covered="47"/>
+<counter type="LINE" missed="1" covered="46"/>
 </sourcefile>
 <sourcefile name="StayService.kt">
 <line nr="25" mi="2" ci="0" mb="0" cb="0"/>
@@ -2327,11 +2363,11 @@
 <counter type="BRANCH" missed="116" covered="0"/>
 <counter type="LINE" missed="107" covered="0"/>
 </sourcefile>
-<counter type="INSTRUCTION" missed="1319" covered="3875"/>
-<counter type="BRANCH" missed="200" covered="368"/>
-<counter type="LINE" missed="139" covered="481"/>
-<counter type="METHOD" missed="35" covered="97"/>
-<counter type="CLASS" missed="13" covered="41"/>
+<counter type="INSTRUCTION" missed="1314" covered="3922"/>
+<counter type="BRANCH" missed="197" covered="385"/>
+<counter type="LINE" missed="140" covered="490"/>
+<counter type="METHOD" missed="35" covered="101"/>
+<counter type="CLASS" missed="13" covered="42"/>
 </package>
 <package name="app/chaseom/ui/scenes">
 <class name="app/chaseom/ui/scenes/CommonKt" sourcefilename="Common.kt">
@@ -5732,9 +5768,9 @@
 <counter type="METHOD" missed="81" covered="0"/>
 <counter type="CLASS" missed="16" covered="0"/>
 </package>
-<counter type="INSTRUCTION" missed="26429" covered="4930"/>
-<counter type="BRANCH" missed="1226" covered="431"/>
-<counter type="LINE" missed="1779" covered="585"/>
-<counter type="METHOD" missed="356" covered="120"/>
-<counter type="CLASS" missed="87" covered="53"/>
+<counter type="INSTRUCTION" missed="26424" covered="4977"/>
+<counter type="BRANCH" missed="1223" covered="448"/>
+<counter type="LINE" missed="1780" covered="594"/>
+<counter type="METHOD" missed="356" covered="124"/>
+<counter type="CLASS" missed="87" covered="54"/>
 </report>

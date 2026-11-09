@@ -1,74 +1,90 @@
 package app.chaseom.stay
 
 /**
- * Round 1b "information island" (CEO 2026-11-10, ROUND1_REDO; QA redo/qa.md 2-A): what each picture element
- * means, computed from the same StayUi as the numbers and kept apart from drawing, so the confirmed 04_design
- * layers can be swapped in without touching the rules. One element = one meaning (C-3):
+ * Round 1b "information island" v2.1 (04_design island_v2/ISLAND_REDESIGN.md v2.1, QA REVIEW_ISLAND_REDESIGN_v2
+ * PASS): what each picture element means, computed from the same StayUi as the numbers and kept apart from
+ * drawing, so the design layers can be swapped without touching the rules. One element = one meaning:
  *
- *  - sun size   = today's stay time (H-1: size only, never lower toward the horizon; H-2: >= 3 h is one step)
- *  - water step = battery SOC (W-1..W-5: max 5 steps, changes only when a step is crossed; the boat always floats)
- *  - keep line  = tomorrow's share as a water step (W-4: amber dashed line, never red)
- *  - crates     = tomorrow's share is on board; fixed count (MOTION_PRINCIPLES v3 3.1), outline at K1 / K2
- *  - weather    = climate setting (wind = fan, cool = A/C, cloud = recirculation, warm rocks = seat heat)
- *  - tempLevel  = set temperature, freed from the sun by H-4; 04_design assigns it to a new element
- *
- * Steps, not continuous values (W-3 / H-3): a change plays one transition only when the step changes.
- * Thresholds are named so the design can tune them; tests pin the rules, not the numbers' look.
+ *  - sun size  = set temperature (small < 20 C or climate off, middle, large >= 24.5 C; height fixed)
+ *  - buoys     = today's stay time: floor(minutes / 30), at most 6 (3 hours or more stays 6). The picture never
+ *                says more than the number (2:26 -> 4, 1:28 -> 2, under 30 min -> 0). K2 or no hero -> 0.
+ *  - water     = battery SOC in 5 steps (1-20 / 21-40 / 41-60 / 61-80 / 81-100 %) with a 1 %p hysteresis:
+ *                up at 21 / 41 / 61 / 81, down at 19 / 39 / 59 / 79. The boat always floats.
+ *  - crates    = tomorrow's share: always 3, amber outline at K1 / K2
+ *  - weather   = climate (wind = fan, cool = A/C, cloud = recirculation, warm rocks = seat heat)
  */
 data class IslandInfo(
-    /** 0..[SUN_STEPS]-1; the last step = 3 hours or more, or climate off (base load only). */
-    val sunStep: Int,
-    /** 0..[WATER_STEPS]-1 from SOC. */
+    /** 0 small, 1 middle, 2 large. */
+    val sunLevel: Int,
+    /** 0..[MAX_BUOYS]. */
+    val buoys: Int,
+    /** 0..[WATER_STEPS]-1. */
     val waterStep: Int,
-    /** Water step of tomorrow's share (the amber line); null when unknown. */
-    val keepStep: Int?,
-    /** K1 near / K2 below tomorrow's share: crate outline (amber). The island never looks better at K2 (C-4). */
     val crateOutline: Boolean,
     val wind: Int,
     val cool: Boolean,
     val cloud: Boolean,
     val heatDrv: Int,
     val heatPas: Int,
-    /** 0 low (< 20 C or off), 1 middle, 2 high (>= 24.5 C); same thresholds as the old sun. */
-    val tempLevel: Int,
 ) {
     companion object {
-        const val SUN_STEPS = 5
-        /** Upper bounds (minutes, exclusive) of sun steps 0..3; >= the last bound is step 4 (= 3 hours or more). */
-        val SUN_BOUNDS_MIN = intArrayOf(30, 60, 120, EnergyModel.DISPLAY_CAP_MINUTES)
+        const val MAX_BUOYS = 6
+        const val MINUTES_PER_BUOY = 30
         const val WATER_STEPS = 5
-        /** Upper bounds (SOC %, exclusive) of water steps 0..3. */
-        val WATER_BOUNDS_SOC = intArrayOf(20, 40, 60, 80)
+        /** SOC at which the water goes up into step i+1 (from step i). */
+        val WATER_UP_AT = intArrayOf(21, 41, 61, 81)
+        /** SOC at which the water goes down into step i (from step i+1). */
+        val WATER_DOWN_AT = intArrayOf(19, 39, 59, 79)
 
-        fun sunStep(hero: Hero): Int = when {
-            hero.belowKeep -> 0 // K2: smallest sun, never a "good" picture (C-4)
-            hero.hvacOff -> SUN_STEPS - 1
-            else -> stepOf(hero.minutes ?: 0, SUN_BOUNDS_MIN)
+        /** QA H-1: rounded down, so the buoys never promise more than the hero number. */
+        fun buoys(hero: Hero?): Int = when {
+            hero == null || hero.belowKeep -> 0
+            hero.minutes != null -> (hero.minutes / MINUTES_PER_BUOY).coerceIn(0, MAX_BUOYS)
+            hero.hvacOff -> MAX_BUOYS // climate off: base load only, the hero says "공조 꺼짐"
+            else -> 0
         }
 
-        fun waterStep(socPercent: Float): Int = stepOf(socPercent.toInt(), WATER_BOUNDS_SOC)
+        /** First reading (no previous step): plain 20 %-wide steps. */
+        fun waterStepFresh(soc: Int): Int = when {
+            soc <= 20 -> 0
+            soc <= 40 -> 1
+            soc <= 60 -> 2
+            soc <= 80 -> 3
+            else -> 4
+        }
 
-        private fun stepOf(v: Int, bounds: IntArray): Int = bounds.indexOfFirst { v < it }.let { if (it < 0) bounds.size else it }
+        /** Next water step from [previous] with the 1 %p hysteresis (QA L-2). */
+        fun waterStep(soc: Int, previous: Int?): Int {
+            var s = previous?.coerceIn(0, WATER_STEPS - 1) ?: return waterStepFresh(soc)
+            while (s < WATER_STEPS - 1 && soc >= WATER_UP_AT[s]) s++
+            while (s > 0 && soc <= WATER_DOWN_AT[s - 1]) s--
+            return s
+        }
 
         /** Null when there is no island (not parked, reduced mode, no hero) - same gate as [Island.state]. */
-        fun of(ui: StayUi): IslandInfo? {
+        fun of(ui: StayUi, previousWaterStep: Int? = null): IslandInfo? {
             if (!ui.parked || !ui.policy.energyBudget) return null
             val hero = ui.hero ?: return null
-            val bar = ui.bar
             val c = ui.climate
             val power = c?.powerOn == true
             return IslandInfo(
-                sunStep = sunStep(hero),
-                waterStep = bar?.let { waterStep(it.socPercent.toFloat()) } ?: 0,
-                keepStep = bar?.let { waterStep(it.keepPercent) },
+                sunLevel = Island.sun(power, c?.setTempC).ordinal,
+                buoys = buoys(hero),
+                waterStep = ui.bar?.let { waterStep(it.socPercent, previousWaterStep) } ?: 0,
                 crateOutline = ui.keepBanner != null,
                 wind = Island.wind(power, c?.fanSpeed),
                 cool = power && c?.acOn == true,
                 cloud = power && c?.recircOn == true,
                 heatDrv = (c?.driverSeatHeat ?: 0).coerceIn(0, 3),
                 heatPas = (ui.passengerSeatHeat ?: 0).coerceIn(0, 3),
-                tempLevel = Island.sun(power, c?.setTempC).ordinal,
             )
         }
     }
+}
+
+/** Holds the last water step so the hysteresis works across updates; reset when the stay ends. */
+class WaterStepper {
+    private var last: Int? = null
+    fun next(soc: Int): Int = IslandInfo.waterStep(soc, last).also { last = it }
+    fun reset() { last = null }
 }
