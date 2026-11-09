@@ -71,7 +71,7 @@ def main():
             vc.tap_text("내일 몫 정하기"); time.sleep(1)
             vc.tap_text("저장"); time.sleep(2)
         results.append(ok(vc.screen_has("머물 수 있는 시간"), f"머무는 화면 · 남은 시간 {hero_text()} (추정)"))
-        ok(vc.screen_has("장식 그림"), "작은 날씨 섬과 범례 칩")
+        ok(vc.screen_has("실내 측정 아님"), "작은 날씨 섬과 원인 칩")
 
         step(2, "히터 22→26°C, 풍량 3→7 (해가 커지고 바람이 붐)")
         ms = vc.timed_write("islandFrame", {"temp": 26}, {"fan": 7}, wait=0.8)

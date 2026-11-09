@@ -51,7 +51,7 @@ def main():
         starts.append(int(m.group(1)) if m else None)
         time.sleep(4)
     time.sleep(10)  # warning banner collapses, stay screen settles
-    island = vc.screen_has("장식 그림")
+    island = vc.screen_has("실내 측정 아님")  # the island cause chip (is_legend, island v2.5)
     if a.shot:
         vc.shot(os.path.dirname(a.shot) or ".", os.path.splitext(os.path.basename(a.shot))[0])
 

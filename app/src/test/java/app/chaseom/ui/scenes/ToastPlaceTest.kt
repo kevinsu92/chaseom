@@ -34,4 +34,13 @@ class ToastPlaceTest {
         assertEquals(androidx.compose.ui.graphics.Color(0xFF131417), UP_CIRCLE)
         assertEquals(androidx.compose.ui.graphics.Color(0xFFFFB020), DOWN_CIRCLE)
     }
+
+    @Test fun safetyBannerStaysAboveEveryOverlay() {
+        // QA ROUND1B_GATE §10-①: the receipt or a notice scrim never dims the N0 banner.
+        val base = StayUi(parked = true, policy = ModePolicy.Full, banner = app.chaseom.stay.Banner(expanded = false))
+        assertEquals(false, bannerAboveScrim(base))
+        assertEquals(true, bannerAboveScrim(base.copy(receipt = app.chaseom.stay.Receipt(emptyList(), 0L))))
+        app.chaseom.stay.NoticeKind.entries.forEach { assertEquals(true, bannerAboveScrim(base.copy(notice = it))) }
+        assertEquals(false, bannerAboveScrim(base.copy(banner = null, notice = app.chaseom.stay.NoticeKind.HOUR)))
+    }
 }

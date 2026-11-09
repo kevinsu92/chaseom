@@ -53,8 +53,12 @@ import kotlin.math.roundToInt
 
 // ---- shared header: N0 banner + title row ----------------------------------------------------
 
+/**
+ * N0 safety banner (stays for the whole stay). Also drawn again above the receipt / notice scrim by
+ * [SceneHost] at the same place, so an overlay never dims it (QA ROUND1B_GATE §10-①).
+ */
 @Composable
-private fun StayHeader(ui: StayUi, actions: StayActions, settingsPage: Page) {
+internal fun N0Banner(ui: StayUi, actions: StayActions) {
     val c = Pleos.colors
     ui.banner?.let { b ->
         val text = stringResource(R.string.n0_banner) +
@@ -68,6 +72,15 @@ private fun StayHeader(ui: StayUi, actions: StayActions, settingsPage: Page) {
         }
         Spacer(Modifier.height(PleosDimens.space16))
     }
+}
+
+/** The banner goes above the scrim whenever an overlay is up (receipt N-E, notices N1/N2/N3). */
+internal fun bannerAboveScrim(ui: StayUi): Boolean = ui.banner != null && (ui.receipt != null || ui.notice != null)
+
+@Composable
+private fun StayHeader(ui: StayUi, actions: StayActions, settingsPage: Page) {
+    val c = Pleos.colors
+    N0Banner(ui, actions)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         val title = when {
             ui.elapsedMinutes >= 1 -> stringResource(R.string.h_title, ui.elapsedMinutes)

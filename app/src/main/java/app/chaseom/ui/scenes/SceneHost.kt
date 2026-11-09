@@ -47,6 +47,8 @@ fun SceneHost(container: AppContainer) {
                 if (ui.policy.mode == AppMode.FULL) StayFullScene(ui, actions, content) else StayReducedScene(ui, actions, content)
                 ui.receipt?.let { ReceiptOverlay(it, ui.policy, actions, ui) }
                 ui.notice?.let { NoticeOverlay(it, ui.policy, actions) }
+                // QA ROUND1B_GATE §10-①: the N0 safety banner stays at full contrast above any scrim.
+                if (bannerAboveScrim(ui)) androidx.compose.foundation.layout.Column(content) { N0Banner(ui, actions) }
             }
         }
     }
