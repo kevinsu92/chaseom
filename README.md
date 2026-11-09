@@ -23,7 +23,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 | 항목 | 값 |
 |---|---|
 | 단위 테스트 | **97개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
-| 테스트 커버리지 (Kover, 라인) | 도메인 **98.2%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 25.0% (화면·SDK 어댑터는 에뮬레이터 시나리오로 검증). `./gradlew koverXmlReportDebug`, 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
+| 테스트 커버리지 (Kover, 라인) | 도메인 **98.2%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 24.9% (화면·SDK 어댑터는 에뮬레이터 시나리오로 검증). `./gradlew koverXmlReportDebug`, 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
 | 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **55 ms**, 최대 117 ms (섬을 끈 빌드 43 ms) |
 | 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **55 ms** (중앙값 11 ms) |
 | 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **45 ms**, 최대 76 ms |

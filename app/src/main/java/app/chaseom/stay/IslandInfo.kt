@@ -8,8 +8,9 @@ package app.chaseom.stay
  *  - sun size  = set temperature (small < 20 C or climate off, middle, large >= 24.5 C; height fixed)
  *  - buoys     = today's stay time: floor(minutes / 30), at most 6 (3 hours or more stays 6). The picture never
  *                says more than the number (2:26 -> 4, 1:28 -> 2, under 30 min -> 0). K2 or no hero -> 0.
- *  - water     = battery SOC in 5 steps (1-20 / 21-40 / 41-60 / 61-80 / 81-100 %) with a 1 %p hysteresis that
- *                only ever shows less: down at once at 20 / 40 / 60 / 80, up one point late at 22 / 42 / 62 / 82
+ *  - water     = battery SOC in 5 steps (0-10 / 11-20 / 21-40 / 41-70 / 71-100 %, HQ / QA M-4: finer where the
+ *                battery is low) with a 1 %p hysteresis that only ever shows less: down at once at 10 / 20 / 40 / 70,
+ *                up one point late at 12 / 22 / 42 / 72
  *                (QA ROUND1B_GATE check 2). The picture step is never above the step the SOC belongs to.
  *                The boat always floats.
  *  - crates    = tomorrow's share: always 3, amber outline at K1 / K2
@@ -33,8 +34,8 @@ data class IslandInfo(
         const val MAX_BUOYS = 6
         const val MINUTES_PER_BUOY = 30
         const val WATER_STEPS = 5
-        /** Top SOC of water steps 0..3 (step 4 = above the last). The one value the design sets (v2.1 now). */
-        val WATER_STEP_TOPS = intArrayOf(20, 40, 60, 80)
+        /** Top SOC of water steps 0..3 (step 4 = above the last). The one value the design sets (v2.2, QA M-4). */
+        val WATER_STEP_TOPS = intArrayOf(10, 20, 40, 70)
         /** SOC at or below which the water goes down into step i (from step i+1): the step's own top, at once. */
         val WATER_DOWN_AT = WATER_STEP_TOPS
         /** SOC at which the water goes up into step i+1 (from step i): one point after the step starts. */

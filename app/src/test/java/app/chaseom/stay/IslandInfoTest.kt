@@ -32,6 +32,14 @@ class IslandInfoTest {
         minutes.zip(buoys).forEach { (m, b) -> assertTrue(b * IslandInfo.MINUTES_PER_BUOY <= m) }
     }
 
+    @Test fun threeHourCapIsOnePictureOnTheIsland() {
+        // M-11: at or above 180 min the hero says "3시간 이상" and the island draws the same picture.
+        val at180 = IslandInfo.of(ui(180))!!
+        listOf(181, 240, 600, 9_999).forEach { assertEquals(at180, IslandInfo.of(ui(it))!!) }
+        assertEquals(IslandInfo.MAX_BUOYS, at180.buoys)
+        assertTrue(IslandInfo.of(ui(179))!!.buoys < IslandInfo.MAX_BUOYS)
+    }
+
     @Test fun belowKeepHasNoBuoysAndOutlinedCrates() {
         val k2 = IslandInfo.of(ui(140, soc = 8, below = true, banner = KeepBanner.BELOW))!!
         assertEquals(0, k2.buoys)
@@ -41,28 +49,31 @@ class IslandInfoTest {
     }
 
     @Test fun waterFiveStepsFromAFreshReading() {
-        val socs = listOf(1, 20, 21, 40, 41, 60, 61, 80, 81, 100)
+        // v2.2 (QA M-4): 0-10 / 11-20 / 21-40 / 41-70 / 71-100, boundary values on both sides.
+        val socs = listOf(0, 10, 11, 20, 21, 40, 41, 70, 71, 100)
         assertEquals(listOf(0, 0, 1, 1, 2, 2, 3, 3, 4, 4), socs.map { IslandInfo.waterStepFresh(it) })
     }
 
     @Test fun waterHysteresisOnlyEverShowsLess() {
         val w = WaterStepper()
-        assertEquals(0, w.next(20))
-        assertEquals(0, w.next(21)) // SOC is in step 1, the picture waits one point
-        assertEquals(1, w.next(22)) // up at 22
-        assertEquals(1, w.next(21)) // stays while still in step 1
-        assertEquals(0, w.next(20)) // down at once at 20
-        assertEquals(0, w.next(21))
-        assertEquals(3, w.next(70)) // a jump crosses several steps at once
-        assertEquals(2, w.next(60)) // down at once at the step top
+        assertEquals(1, w.next(20))
+        assertEquals(1, w.next(21)) // SOC is in step 2, the picture waits one point
+        assertEquals(2, w.next(22)) // up at 22
+        assertEquals(2, w.next(21)) // stays while still in step 2
+        assertEquals(1, w.next(20)) // down at once at 20
+        assertEquals(1, w.next(21))
+        assertEquals(3, w.next(60)) // a jump crosses several steps at once
+        assertEquals(2, w.next(40)) // down at once at the step top
+        assertEquals(1, w.next(19))
+        assertEquals(0, w.next(10)) // the low battery has its own step
         w.reset()
-        assertEquals(1, w.next(40)) // fresh again after the stay ends
+        assertEquals(2, w.next(40)) // fresh again after the stay ends
     }
 
     @Test fun pictureStepNeverAboveTheSocStep() {
         // QA ROUND1B_GATE check 2: round trips 1 -> 100 -> 1 and a zig-zag around every boundary.
         val w = WaterStepper()
-        val seq = (1..100) + (100 downTo 1) + listOf(19, 20, 21, 22, 21, 20, 39, 40, 41, 42, 41, 40, 59, 60, 61, 62, 61, 60, 79, 80, 81, 82, 81, 80)
+        val seq = (0..100) + (100 downTo 0) + listOf(9, 10, 11, 12, 11, 10, 19, 20, 21, 22, 21, 20, 39, 40, 41, 42, 41, 40, 69, 70, 71, 72, 71, 70)
         seq.forEach { soc ->
             val step = w.next(soc)
             assertTrue("soc $soc -> step $step", step <= IslandInfo.waterStepFresh(soc))
