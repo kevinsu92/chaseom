@@ -497,33 +497,44 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                     val small = with(androidx.compose.ui.platform.LocalDensity.current) {
                         androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp() < 1200.dp
                     }
-                    // POLISH v1.4 §0.9-③: X1 is always two lines; line 2 = [▲] +16분 (32 Bold) · 비슷한 체감 (추정).
-                    val twoLines = x.rule == ExchangeRule.X1_SEAT_HEAT
-                    if (twoLines) Text(stringResource(R.string.x1_l1), style = ChaseomUi.title, color = k.text1)
-                    val line = if (twoLines) stringResource(R.string.x1_l2, gain) else full
-                    val at = line.indexOf(gain).takeIf { it >= 0 } ?: line.length
-                    // Small window (~840 dp, found 11-10 with a task resize): the circle + minutes move to the next
-                    // line as one unit instead of being squeezed into a one-letter column.
-                    androidx.compose.foundation.layout.FlowRow(itemVerticalAlignment = Alignment.CenterVertically) {
-                        if (at > 0) Text(line.substring(0, at), style = ChaseomUi.title, color = k.text1)
-                        if (at < line.length) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                DirectionCircle(x.gainMinutes, on = k.surface, size = 36.dp)
-                                Spacer(Modifier.width(ChaseomUi.line))
-                                Text(gain, style = ChaseomUi.title.copy(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
-                                    color = k.text1, softWrap = false)
-                                Text(line.substring(at + gain.length), style = ChaseomUi.title, color = k.text1, softWrap = false)
+                    val mainLines = @Composable {
+                        // POLISH v1.4 §0.9-③: X1 is always two lines; line 2 = [▲] +16분 (32 Bold) · 비슷한 체감 (추정).
+                        val twoLines = x.rule == ExchangeRule.X1_SEAT_HEAT
+                        if (twoLines) Text(stringResource(R.string.x1_l1), style = ChaseomUi.title, color = k.text1)
+                        val line = if (twoLines) stringResource(R.string.x1_l2, gain) else full
+                        val at = line.indexOf(gain).takeIf { it >= 0 } ?: line.length
+                        // Small window (~840 dp, found 11-10 with a task resize): the circle + minutes move to the next
+                        // line as one unit instead of being squeezed into a one-letter column.
+                        androidx.compose.foundation.layout.FlowRow(itemVerticalAlignment = Alignment.CenterVertically) {
+                            if (at > 0) Text(line.substring(0, at), style = ChaseomUi.title, color = k.text1)
+                            if (at < line.length) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    DirectionCircle(x.gainMinutes, on = k.surface, size = 36.dp)
+                                    Spacer(Modifier.width(ChaseomUi.line))
+                                    Text(gain, style = ChaseomUi.title.copy(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+                                        color = k.text1, softWrap = false)
+                                    Text(line.substring(at + gain.length), style = ChaseomUi.title, color = k.text1, softWrap = false)
+                                }
                             }
                         }
                     }
-                    // POLISH §0.6: the burn line with an amber caution icon, then the source line in text3.
-                    if (x.rule == ExchangeRule.X1_SEAT_HEAT) Row(verticalAlignment = Alignment.CenterVertically) { // always with X1
-                        Icon(painterResource(R.drawable.ic_warn_line), null, tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
-                        Spacer(Modifier.width(ChaseomUi.line))
-                        Text(stringResource(R.string.x_burn), style = ChaseomUi.caption, color = k.text1)
+                    val notes = @Composable {
+                        // POLISH §0.6: the burn line with an amber caution icon, then the source line in text3.
+                        if (x.rule == ExchangeRule.X1_SEAT_HEAT) Row(verticalAlignment = Alignment.CenterVertically) { // always with X1
+                            Icon(painterResource(R.drawable.ic_warn_line), null, tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
+                            Spacer(Modifier.width(ChaseomUi.line))
+                            Text(stringResource(R.string.x_burn), style = ChaseomUi.caption, color = k.text1)
+                        }
+                        if (x.rule == ExchangeRule.X3_AC) Text(stringResource(R.string.x3_sub), style = ChaseomUi.caption, color = k.text2)
+                        Text(stringResource(R.string.x_footer), style = ChaseomUi.caption, color = k.text3)
                     }
-                    if (x.rule == ExchangeRule.X3_AC) Text(stringResource(R.string.x3_sub), style = ChaseomUi.caption, color = k.text2)
-                    Text(stringResource(R.string.x_footer), style = ChaseomUi.caption, color = k.text3)
+                    // POLISH v1.4 L_card: Large = offer on the left, burn and source lines on the right; Small = one column.
+                    if (!small) Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(ChaseomUi.block)) {
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(ChaseomUi.line)) { mainLines() }
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(ChaseomUi.line)) { notes() }
+                    } else {
+                        mainLines(); notes()
+                    }
                 }
             }
         }

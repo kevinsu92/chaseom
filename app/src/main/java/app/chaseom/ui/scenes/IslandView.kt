@@ -98,6 +98,8 @@ internal class H1Set(
     val keepX: Float, val keepY: Float, val keepAnchor: Float,
     /** POLISH v1.4 §0.9-①: picture scale about the bottom-right corner (water line fixed). */
     val zoom: Float = 1f,
+    /** Box height over the set's own ratio (the zoomed picture's top sky is cropped above this). */
+    val boxGrow: Float = 1f,
     /** Small v1.9: the buoy label follows the crate label in one row (no own anchor). */
     val buoyAfterKeep: Boolean = false,
 ) {
@@ -105,7 +107,7 @@ internal class H1Set(
     companion object {
         val Large = H1Set(H1Layers.L, 1600f, 40f, 1450f, 108f,
             batX = 40f, batY = 569f, buoyX = 1466f, buoyY = 569f, buoyAnchor = 0.5f, keepX = 1172f, keepY = 569f, keepAnchor = 0.5f,
-            zoom = 1.15f)
+            zoom = 1.15f, boxGrow = 1.10f) // about 670 dp on a 1620 dp card: the large sun keeps its top inside
         // H1 v1.9 README: Small buoys to the right of the boat; rail line 1 battery, line 2 crates then buoys.
         val Small = H1Set(H1Layers.S, 960f, 24f, 836f, 118f,
             batX = 28f, batY = 530f, buoyX = 28f, buoyY = 576f, buoyAnchor = 0f, keepX = 28f, keepY = 576f, keepAnchor = 0f,
@@ -189,7 +191,7 @@ fun IslandPanel(
             // POLISH v1.4 §0.9-⑤: night = brightness -10 % and a 1 dp #3A3D42 outline ("always day").
             val outline = if (night) Modifier.border(1.dp, Color(0xFF3A3D42), ChaseomUi.rContainer) else Modifier
             Box(
-                Modifier.width(picW).height(picW * (set.h / set.w) * set.zoom).clip(ChaseomUi.rContainer).then(outline)
+                Modifier.width(picW).height(picW * (set.h / set.w) * set.boxGrow).clip(ChaseomUi.rContainer).then(outline)
                     .semantics { contentDescription = cd; liveRegion = LiveRegionMode.Polite },
             ) {
                 val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize(), sunMotion = !animOff && s.animating)
@@ -236,8 +238,9 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, shown: H
     val pic = shown.pic
     // Canvas px -> dp in the box: scaled by zoom about the bottom-right corner (water line and buoys stay).
     val z = k * set.zoom
+    val boxH = set.h * k * set.boxGrow
     fun x(cx: Float) = picW - (set.w - cx) * z
-    fun y(cy: Float) = cy * z
+    fun y(cy: Float) = boxH - (set.h - cy) * z
     val bar = ui.bar ?: return
     val c = ui.climate
     val sunText = if (c?.powerOn == true && c.setTempC != null) stringResource(R.string.hvac_temp, tempText(c.setTempC))
@@ -251,7 +254,8 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, shown: H
     val bat = railText(stringResource(R.string.is_rail_bat, bar.socPercent))
     val keep = railText(stringResource(R.string.is_rail_keep, bar.keepKm))
     val buoy = railText(stringResource(R.string.is_rail_buoy))
-    PicText(bat, rail, x(set.batX), y(set.batY), 0f, icon = R.drawable.ic_rail_wave)
+    // Screen text, not part of the picture: the battery label keeps the left margin when the picture is zoomed.
+    PicText(bat, rail, maxOf(x(set.batX), set.batX * k), y(set.batY), 0f, icon = R.drawable.ic_rail_wave)
     if (set.buoyAfterKeep) {
         PicText(keep, rail, x(set.keepX), y(set.keepY), 0f, icon = R.drawable.ic_rail_crate,
             next = if (pic.buoys > 0) Pair(buoy, R.drawable.ic_rail_buoy) else null)
@@ -376,8 +380,8 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         val boatRight = boat.x + bmp(boat.id).width
         // v5: the boat starts inside the visible picture: min(360 dp, right edge - boat right - 8 dp).
         val slide = minOf(Island.MOOR_SLIDE_DP.dp.toPx(), (set.w - boatRight) * k - 8.dp.toPx()).coerceAtLeast(0f)
-        // Zoom about the bottom-right corner: the canvas right edge stays at the box's right edge.
-        translate(left = size.width - set.w * k) {
+        // Zoom about the bottom-right corner: the canvas right and bottom edges stay at the box's edges.
+        translate(left = size.width - set.w * k, top = size.height - set.h * k) {
             scale(k, k, pivot = Offset.Zero) {
                 drawH1(set, bmp, cur.value, before.value, t.value, boatDx = moor.value * slide / k, boatDy = bob.value.dp.toPx() / k,
                     sunScale = sunR.value / H1Set.SUN_R[cur.value.sun])
