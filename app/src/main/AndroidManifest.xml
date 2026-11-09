@@ -15,10 +15,9 @@
 
     <!--
         Only what the shipped features read (QA G-7, FINDINGS M-02). All are normal-level:
-        no runtime permission dialog. Pleos: gear (CAR_DRIVE), SOC (CAR_ENERGY), climate,
+        no runtime permission dialog. Pleos: SOC (CAR_ENERGY), climate,
         seats (heat, backrest, occupancy), windows, doors, cabin light.
     -->
-    <uses-permission android:name="pleos.car.permission.CAR_DRIVE" />
     <uses-permission android:name="pleos.car.permission.CAR_ENERGY" />
     <uses-permission android:name="pleos.car.permission.CAR_CLIMATE" />
     <uses-permission android:name="pleos.car.permission.CAR_SEATS" />

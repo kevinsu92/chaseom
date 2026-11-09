@@ -25,7 +25,8 @@ data class ClimateSetting(
 object EnergyModel {
     /** Base load while parked with the car on: INL accessory-off auxiliary load proxy + margin. */
     const val BASE_KW = 0.30f
-    /** Cabin heating at a 22 C set point (ADAC 2022, -10 C outside, upper value of 1.5-2.3 kWh/h). */
+    /** Cabin heating at a 22 C set point. ADAC 2022 (-10 C outside) holds 20 C with 1.5-2.0 kW; the app takes
+     *  more (2.3 kW) so the stay time errs short. (2.3 kWh was an ID.3 warm-up energy, not a holding power.) */
     const val HEAT_KW_AT_22C = 2.3f
     /** Heating scales with (set + 10) / 32: steady-state loss ~ inside-outside difference, -10 C outside. */
     const val HEAT_OUTSIDE_C = -10f

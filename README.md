@@ -90,7 +90,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
   - **내일 지킬 몫**: 내일 처음 갈 거리(여유분 20% 포함)를 배터리에서 따로 표시. 남은 시간은 "(추정)", 3시간 넘으면 "3시간 이상".
   - **따뜻함 환율**: 다이얼을 바꾸는 순간 남은 시간 변화(±, 추정)와 비슷한 체감을 더 적은 전력으로 얻는 조합(운전석 열선, 저온 화상 주의) 제안.
   - **안전 고지와 떠나기 전 영수증**: P 진입·1시간·야간에 공조 사용 경고, 운전석 문을 열면 머문 시간·쓴 전력·내일 몫·창문·실내등·충전 포트와 "뒷좌석 직접 확인" 줄. 앱은 공조를 끄지 않음.
-- **사용 SDK/API**: `ai.pleos.playground:Vehicle:2.3.2` (HVAC, Seat, Door, Window, Light), AAOS `CarPropertyManager` (연료 종류, 배터리 용량, 충전구, 기어 `GEAR_SELECTION`). 공개 문서에 있는 API만 씁니다.
+- **사용 SDK/API**: `ai.pleos.playground:Vehicle:2.3.2` (EvBattery, HVAC, Seat, Door, Window, Light), AAOS `CarPropertyManager` (연료 종류, 배터리 용량, 충전구, 기어 `GEAR_SELECTION`). 공개 문서에 있는 API만 씁니다.
 
 ## 2. 실행 방법
 
@@ -105,9 +105,10 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
    - 기어 **P**, 공조 전원 켬, 배터리(SOC) 19% → 머무는 화면과 섬
    - 운전석 설정온도·풍량·A/C·내기순환·열선 변경 → 시간 토스트, 섬 날씨 변화
    - 운전석 문 열기 → 떠나기 전 영수증 (문을 닫으면 닫힘)
-   - 기어 **D** → 짧은 주행 중 안내 화면
+   - 기어 **D** → 차섬은 섬과 숫자를 바로 접고, 주행 중에는 시스템이 앱 화면을 가립니다
 
 ### 소스에서 빌드
+Android SDK 위치가 필요합니다. 환경 변수 `ANDROID_HOME`을 설정하거나 `local.properties`에 `sdk.dir=...`을 적습니다(이 파일은 git에서 제외).
 ```bash
 ./gradlew assembleDebug        # 디버그 APK: app/build/outputs/apk/debug/ (패키지 app.chaseom.debug)
 ./gradlew installDebug         # 연결된 에뮬레이터에 설치
@@ -128,7 +129,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 | 앱 SDK 수준 | minSdk 28, targetSdk 34 |
 | 패키지 | `app.chaseom` (디버그 `app.chaseom.debug`) |
 | UI | Jetpack Compose, Pleos 디자인 토큰, 대형 터치 타깃 |
-| 권한 (런타임 권한 요청 0, 차량 제어 권한 0) | Pleos `CAR_DRIVE`, `CAR_ENERGY`, `CAR_CLIMATE`, `CAR_SEATS`, `CAR_WINDOWS`, `CAR_DOORS`, `CAR_LIGHTS` / AAOS `CAR_INFO`, `CAR_ENERGY_PORTS`, `CAR_POWERTRAIN` / `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE` |
+| 권한 (런타임 권한 요청 0, 차량 제어 권한 0) | Pleos `CAR_ENERGY`, `CAR_CLIMATE`, `CAR_SEATS`, `CAR_WINDOWS`, `CAR_DOORS`, `CAR_LIGHTS` / AAOS `CAR_INFO`, `CAR_ENERGY_PORTS`, `CAR_POWERTRAIN` / `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE` |
 | 테스트 시나리오 | Virtual Console: 기어 P↔D, 배터리 잔량, 공조(설정온도·풍량·A/C·내기순환), 운전석·조수석 열선, 문, 창문, 실내등, 2열 탑승 |
 
 에뮬레이터 참고: Virtual Console의 등받이 각도는 에뮬레이터 차량 데이터에 반영되지 않아, 등받이 고지는 에뮬레이터에서 동작하지 않습니다(지원 차량에서만 켜짐).
@@ -151,3 +152,8 @@ app/src/debug/   디버그 전용 가짜 차량 데이터 (release APK에는 코
 tools/           에뮬레이터 Virtual Console 자동 재현·측정 도구 (APK에 들어가지 않음)
 docs/            ENERGY_MODEL(계수 출처), PLATFORM_NOTES(실측으로 알게 된 것), evidence(측정 원자료)
 ```
+
+## 계수 기준과 오픈소스
+
+- 남은 시간은 차의 공조 상태에 공개 계수표를 곱한 추정입니다. 출처는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에 있습니다. 계수는 영하 10°C 정상상태 기준입니다. 더 추운 날, 처음 데우는 동안, 한여름 직사광선에서는 실제 소모가 더 클 수 있습니다(추정).
+- 이 저장소의 코드는 [LICENSE](LICENSE)를 따릅니다. 사용한 SDK·오픈소스 구성 요소(Pleos Playground Vehicle SDK, Jetpack Compose, AndroidX, Kotlin, kotlinx.coroutines, JUnit)의 버전과 라이선스는 [docs/THIRD_PARTY.md](docs/THIRD_PARTY.md)에 밝혔습니다. 외부 그림·캐릭터는 쓰지 않았습니다.

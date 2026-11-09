@@ -11,7 +11,7 @@ Pleos Connect Emulator 2.1.0과 Virtual Console(VC)에서 차섬이 읽는 신�
 | 2열 탑승 | Seat Occupancy | 이벤트는 즉시 옴. **값이 VC와 반대**(VC "Occupied" → SDK `false`) | VC 기준으로 반전(`OCCUPANCY_SDK_INVERTED`). 어느 쪽이든 앱은 "비었음"이라고 말하지 않음 |
 | 연료 종류 | AAOS `INFO_FUEL_TYPE` | `[10]` = 전기 | 전기 단독 + SOC·용량을 읽을 때만 전체 모드, 그 밖에는 축소 모드 |
 | 배터리 용량 | AAOS `INFO_EV_BATTERY_CAPACITY` | 77,400 Wh | kWh로 변환 |
-| 전비 | `EvBattery.getCurrentEvEfficiency` | `ERROR_NOT_SUPPORTED_PROPERTY` | 기본값 5 km/kWh ([ENERGY_MODEL](ENERGY_MODEL.md)) |
+| 전비 | `EvBattery.getCumulativeEvEfficiency` | `ERROR_NOT_SUPPORTED_PROPERTY` | 기본값 5 km/kWh ([ENERGY_MODEL](ENERGY_MODEL.md)) |
 | 충전 포트 | AAOS `EV_CHARGE_PORT_OPEN` | 즉시 수신 | 영수증 줄 |
 | 문·트렁크 | Door | 운전석 `ROW_1_LEFT`, 트렁크 = `DoorValue.REAR` | 운전석 문이 열리는 순간 영수증 |
 | 창문 | Window | VC 30% → SDK 3 (범위 0..10) | 0 초과 = 열림 |
