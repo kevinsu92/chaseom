@@ -208,20 +208,25 @@ fun IslandPanel(
             // Panel §7-④: Large without cards fills the height left too (never below its natural height).
             val fill = ui.exchange == null && ui.airMinutes == null && !ui.seatHeatLong && !ui.firstStayHint
             val minH = if (set === H1Set.Small) H1Set.SMALL_MIN_DP.dp else natural
-            val boxH = if (!fill || topInWindow.isNaN()) natural else
+            val filled = if (!fill || topInWindow.isNaN()) natural else
                 maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp)
+            // Critique final ①: Small never grows past 1.25x its picture (no 55 % empty sky).
+            val boxH = if (set === H1Set.Small) minOf(filled, natural * 1.25f) else filled
             Box(
                 // POLISH v1.6: the whole picture is clipped once here (no per-layer clip).
                 Modifier.width(picW).height(boxH).onGloballyPositioned { topInWindow = it.positionInWindow().y }
                     .clip(ChaseomUi.rContainer).then(outline)
                     .semantics { contentDescription = cd; liveRegion = LiveRegionMode.Polite },
             ) {
+                // Critique final ①: in a taller Small box the sun (and its label) sit at 24 % and the wind at 36 % of
+                // the box height. The sun's position carries no meaning; only its size does.
+                val skyLift = if (set === H1Set.Small && boxH > natural) skyLiftFor(set, k, boxH.value) else SkyLift.NONE
                 val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize(), sunMotion = !animOff && s.animating,
-                    setTemp = ui.climate?.takeIf { it.powerOn == true }?.setTempC)
+                    setTemp = ui.climate?.takeIf { it.powerOn == true }?.setTempC, lift = skyLift)
                 if (night) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.1f)))
                 // H1: the sun and its label sit top right, so the toast takes the top-left sky up to the label.
                 var sunLabelLeft by remember { mutableFloatStateOf(Float.NaN) }
-                IslandLabels(ui, set, k, picW.value, boxH.value, shown) { sunLabelLeft = it }
+                IslandLabels(ui, set, k, picW.value, boxH.value, shown, sunLiftDp = skyLift.sun * k) { sunLabelLeft = it }
                 val toastMax = if (sunLabelLeft.isNaN()) Modifier else Modifier.widthIn(max = with(LocalDensity.current) { sunLabelLeft.toDp() } - 32.dp)
                 Box(Modifier.align(Alignment.TopStart).padding(start = 16.dp).then(toastMax)) { pictureTop() }
             }
@@ -257,7 +262,8 @@ fun IslandPanel(
 
 /** Screen text on the picture (24 sp): "설정 °C" next to the sun, and the rail under the water. */
 @Composable
-private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: Float, shown: H1Shown, sunLabelLeft: (Float) -> Unit) {
+private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: Float, shown: H1Shown, sunLiftDp: Float = 0f,
+                         sunLabelLeft: (Float) -> Unit) {
     val pic = shown.pic
     // Canvas px -> dp in the box: scaled by zoom about the bottom-right corner (water line and buoys stay).
     val z = k * set.zoom
@@ -272,7 +278,7 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: 
     val bare = ChaseomUi.pictureLabel.copy(color = Color(0xFF131417), shadow = Shadow(Color.White, Offset.Zero, 8f))
     val rail = bare.copy(color = Color.White, shadow = Shadow(Color.Black.copy(alpha = 0.35f), Offset(0f, 1f), 2f))
     // The label keeps 22 px from the disc while the sun radius animates (POLISH v1.4 §0.10).
-    PicText(AnnotatedString(sunText), bare, x(set.sunX - shown.sunR - 22f), y(set.sunY), 1f, sunLabelLeft)
+    PicText(AnnotatedString(sunText), bare, x(set.sunX - shown.sunR - 22f), y(set.sunY) + sunLiftDp, 1f, sunLabelLeft)
     // POLISH v1.4 §0.9-④: 28 dp line icon, "name **value**" (name Medium white 80 %, value Bold white).
     val bat = railText(stringResource(R.string.is_rail_bat, bar.socPercent))
     val keep = railText(stringResource(R.string.is_rail_keep, bar.keepKm))
@@ -339,7 +345,7 @@ private fun rememberBitmaps(): H1Bitmaps {
  */
 @Composable
 private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring: Boolean, motionOff: Boolean, modifier: Modifier,
-                          sunMotion: Boolean = false, setTemp: Float? = null): H1Shown {
+                          sunMotion: Boolean = false, setTemp: Float? = null, lift: SkyLift = SkyLift.NONE): H1Shown {
     val target = H1Pic.of(info)
     val bmp = rememberBitmaps()
     var shown by remember { mutableStateOf(target) } // first value at once: never an empty island first
@@ -416,7 +422,7 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         translate(left = size.width - set.w * k, top = size.height - set.h * k) {
             scale(k, k, pivot = Offset.Zero) {
                 drawH1(set, bmp, cur.value, before.value, t.value, boatDx = moor.value * slide / k, boatDy = bob.value.dp.toPx() / k,
-                    sunScale = sunR.value / H1Set.SUN_R[cur.value.sun], glow = glow.value * GLOW_EXTRA)
+                    sunScale = sunR.value / H1Set.SUN_R[cur.value.sun], glow = glow.value * GLOW_EXTRA, lift = lift)
             }
         }
     })
@@ -428,7 +434,7 @@ internal data class H1Shown(val pic: H1Pic, val sunR: Float)
 
 /** The 13-layer stack (ART_H.md section 8 order), in canvas px. [t] cross-fades [prev] -> [cur]. */
 internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, prev: H1Pic?, t: Float, boatDx: Float = 0f, boatDy: Float = 0f,
-                              sunScale: Float = 1f, glow: Float = 0f) {
+                              sunScale: Float = 1f, glow: Float = 0f, lift: SkyLift = SkyLift.NONE) {
     val p = prev ?: cur
     val a = if (prev == null) 1f else t
     val dyCur = -(cur.level - 1) * set.step
@@ -449,6 +455,7 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
     one("base", 1f)
     slot("trees_w${p.wind}", "trees_w${cur.wind}")
     // The sun is one layer scaled about its centre (POLISH §0.10), not a cross-fade; its glow is in the bitmap.
+    translate(top = lift.sun) {
     if (sunScale == 1f) one("sun_${sun[cur.sun]}", 1f)
     else scale(sunScale, sunScale, pivot = Offset(set.sunX, set.sunY)) { one("sun_${sun[cur.sun]}", 1f) }
     if (glow > 0.01f) {
@@ -458,7 +465,8 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
         }
         clipPath(disc, androidx.compose.ui.graphics.ClipOp.Difference) { one("sun_${sun[cur.sun]}", glow) }
     }
-    slot(if (p.wind > 0) "wind_w${p.wind}" else null, if (cur.wind > 0) "wind_w${cur.wind}" else null)
+    }
+    slot(if (p.wind > 0) "wind_w${p.wind}" else null, if (cur.wind > 0) "wind_w${cur.wind}" else null, y = lift.wind)
     slot("wet_l${p.level}", "wet_l${cur.level}")
     one("boat_l1", 1f, boatDx, dy + boatDy)
     slot("buoys_n${p.buoys}_l1", "buoys_n${cur.buoys}_l1", y = dy)
@@ -499,4 +507,18 @@ private fun StillIsland(set: H1Set, pic: H1Pic, modifier: Modifier) {
             if (night) drawRect(Color.Black.copy(alpha = 0.1f))
         },
     )
+}
+
+/** Canvas-px lift (negative = up) for the sun and the wind lines when a Small box is taller than its picture. */
+internal data class SkyLift(val sun: Float, val wind: Float) {
+    companion object { val NONE = SkyLift(0f, 0f) }
+}
+
+/** Sun centre at 24 % and wind lines at 36 % of the box height (critique final ①), never lower than drawn. */
+internal fun skyLiftFor(set: H1Set, k: Float, boxHdp: Float): SkyLift {
+    val boxPx = boxHdp / k                       // box height in canvas px (Small zoom is 1)
+    val top = set.h - boxPx                      // canvas y of the box top (negative: the picture is bottom-aligned)
+    fun lift(canvasY: Float, frac: Float) = minOf(0f, top + frac * boxPx - canvasY)
+    val windY = set.layers["wind_w1"]?.let { it.y + 20f } ?: 131f
+    return SkyLift(sun = lift(set.sunY, 0.24f), wind = lift(windY, 0.36f))
 }

@@ -27,7 +27,7 @@ object ChaseomUi {
 
     /* ---------------------------------------------------------------- Type */
     // 03_engineering: Korean breaks by word (API 33+; older platforms ignore it and keep softWrap).
-    private val Base = TextStyle(fontFamily = FontFamily.Default, fontFeatureSettings = "tnum",
+    private val Base = TextStyle(fontFamily = ChaseomFonts.family, fontFeatureSettings = "tnum",
         lineBreak = androidx.compose.ui.text.style.LineBreak.Paragraph.copy(wordBreak = androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase))
 
     /** Hero number "약 2시간 47분". The one display-size text. */

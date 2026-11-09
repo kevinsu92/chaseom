@@ -34,4 +34,17 @@ class H1LayersTest {
         assertEquals(520f - 4 * 40f, H1Layers.L.getValue("water_l5").y)
         assertEquals(480f - 4 * 24f, H1Layers.S.getValue("water_l5").y)
     }
+
+    @Test fun tallSmallBoxPutsTheSunAt24AndTheWindAt36Percent() {
+        // Critique final ①: box 1.25x the picture; positions are fractions of the box, measured from its top.
+        val set = H1Set.Small
+        val k = 0.8f
+        val boxDp = set.h * k * 1.25f
+        val lift = skyLiftFor(set, k, boxDp)
+        val boxPx = boxDp / k
+        val top = set.h - boxPx
+        assertEquals(0.24f * boxPx, set.sunY + lift.sun - top, 0.5f)
+        assertTrue(lift.sun <= 0f && lift.wind <= 0f)
+        assertEquals(SkyLift.NONE, skyLiftFor(set, k, set.h * k).let { if (it.sun == 0f && it.wind == 0f) SkyLift.NONE else it })
+    }
 }

@@ -76,7 +76,8 @@ internal fun N0Banner(ui: StayUi, actions: StayActions) {
         } else {
             WarnBanner(text, danger = false) // stays for the whole stay
         }
-        Spacer(Modifier.height(ChaseomUi.related))
+        // Critique final ④: N0 -> 8 -> K2 -> 16 -> status line (the two warnings read as one group).
+        Spacer(Modifier.height(if (ui.keepBanner == KeepBanner.BELOW && ui.policy.energyBudget) ChaseomUi.line else ChaseomUi.related))
     }
 }
 
@@ -114,6 +115,10 @@ internal fun bannerAboveScrim(ui: StayUi): Boolean = ui.banner != null && (ui.re
 private fun StayHeader(ui: StayUi, actions: StayActions, settingsPage: Page) {
     val c = Pleos.colors
     N0Banner(ui, actions)
+    if (ui.keepBanner == KeepBanner.BELOW && ui.policy.energyBudget) {
+        WarnBanner(stringResource(R.string.k2), danger = true)
+        Spacer(Modifier.height(ChaseomUi.related))
+    }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         val title = when {
             ui.elapsedMinutes >= 1 -> stringResource(R.string.h_title, ui.elapsedMinutes)
@@ -212,7 +217,7 @@ private fun MainColumnContent(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(ChaseomUi.line)) {
         when (ui.keepBanner) {
             KeepBanner.NEAR -> InfoCard(stringResource(R.string.k1)) // HANDOFF 9.6: K1 is information, not an alarm
-            KeepBanner.BELOW -> WarnBanner(stringResource(R.string.k2), danger = true)
+            KeepBanner.BELOW -> Unit // drawn in the header right under N0 (critique final ④)
             null -> Unit
         }
         val hero = ui.hero
@@ -228,7 +233,8 @@ private fun MainColumnContent(
             Text(
                 androidx.compose.ui.text.buildAnnotatedString {
                     append(k2.substring(0, cut))
-                    pushStyle(ChaseomUi.estimate(size).toSpanStyle().copy(color = k.text3)); append(k2.substring(cut)); pop()
+                    // Critique final ④: 24 Regular #6E727B at both sizes (never removed, QA).
+                    pushStyle(ChaseomUi.estimate(ChaseomUi.Size.Small).toSpanStyle().copy(color = Color(0xFF6E727B))); append(k2.substring(cut)); pop()
                 },
                 style = ChaseomUi.heroSentence(size), color = k.text1,
             )
