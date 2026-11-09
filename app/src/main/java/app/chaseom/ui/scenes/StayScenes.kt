@@ -221,7 +221,17 @@ private fun MainColumnContent(
         } else if (hero.belowKeep) {
             // QA E4-2 / REVIEW_COPY_B: below tomorrow's share the hero states the situation only (no "약 0분",
             // no "time you can stay" label); the K2 banner above asks for the action.
-            Text(stringResource(R.string.h_k2_hero), style = ChaseomUi.heroSentence(size), color = k.text1)
+            // Panel APP_GAP_TO_85 §7-①: the "(추정)" at the end takes the estimate role (same string, two styles).
+            val k2 = stringResource(R.string.h_k2_hero)
+            val est = stringResource(R.string.estimate)
+            val cut = k2.lastIndexOf(est).takeIf { it > 0 } ?: k2.length
+            Text(
+                androidx.compose.ui.text.buildAnnotatedString {
+                    append(k2.substring(0, cut))
+                    pushStyle(ChaseomUi.estimate(size).toSpanStyle().copy(color = k.text3)); append(k2.substring(cut)); pop()
+                },
+                style = ChaseomUi.heroSentence(size), color = k.text1,
+            )
             hero.coveredKm?.let { Text(stringResource(R.string.h_k2_meta, ui.settings.keepKm, it), style = ChaseomUi.body, color = k.text2) }
         } else {
             // ISLAND_REDESIGN v2.4: with the island the label line goes; "머물 수 있어요" joins the number.

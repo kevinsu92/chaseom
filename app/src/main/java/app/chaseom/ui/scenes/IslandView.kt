@@ -127,7 +127,7 @@ internal const val SUN_MS = 600
 /** Sun glow pulse (POLISH v1.6 (b), QA conditional PASS): 200 ms, glow only, within one step, at most once per 1.2 s. */
 internal const val GLOW_MS = 200
 internal const val GLOW_GAP_MS = 1_200L
-internal const val GLOW_EXTRA = 0.35f
+internal const val GLOW_EXTRA = 0.6f // QA ROUND1B_GATE: glow 1 -> 1.6 PASS (glow only, colour unchanged)
 
 /** What the picture shows; changes are batched and cross-faded (platform ISLAND_V2_SIGNALS, MOTION v3). */
 internal data class H1Pic(val sun: Int, val wind: Int, val level: Int, val buoys: Int, val k2: Boolean) {
@@ -205,9 +205,11 @@ fun IslandPanel(
             val density = LocalDensity.current
             val windowH = with(density) { LocalWindowInfo.current.containerSize.height.toDp() }
             var topInWindow by remember { mutableFloatStateOf(Float.NaN) }
-            val fill = set === H1Set.Small && ui.exchange == null && ui.airMinutes == null && !ui.seatHeatLong && !ui.firstStayHint
+            // Panel §7-④: Large without cards fills the height left too (never below its natural height).
+            val fill = ui.exchange == null && ui.airMinutes == null && !ui.seatHeatLong && !ui.firstStayHint
+            val minH = if (set === H1Set.Small) H1Set.SMALL_MIN_DP.dp else natural
             val boxH = if (!fill || topInWindow.isNaN()) natural else
-                maxOf(natural, H1Set.SMALL_MIN_DP.dp, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp)
+                maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp)
             Box(
                 // POLISH v1.6: the whole picture is clipped once here (no per-layer clip).
                 Modifier.width(picW).height(boxH).onGloballyPositioned { topInWindow = it.positionInWindow().y }
@@ -366,7 +368,7 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         else sunR.animateTo(to, tween(SUN_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0f, 0f, 0.2f, 1f)))
     }
     // POLISH v1.6 (b) glow pulse: the set temperature changed but stayed in the same S/M/L step (the sun keeps its
-    // size), so only the glow brightens 1 -> 1.35 -> 1 in 200 ms. Same batching as the picture; at most once per
+    // size), so only the glow brightens 1 -> 1.6 -> 1 in 200 ms. Same batching as the picture; at most once per
     // 1.2 s; never together with the 600 ms size change; same gate as the size motion (P, no notice / receipt, animator).
     val glow = remember { Animatable(0f) }
     val lastTemp = remember { floatArrayOf(Float.NaN) }

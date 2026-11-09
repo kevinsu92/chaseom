@@ -47,6 +47,8 @@ import app.chaseom.ui.theme.cui
 import app.chaseom.ui.theme.uiSize
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.draw.clip
 
 // ---- G: driving glance. One static view: no numbers, no buttons, no click handlers, no motion. -
@@ -97,11 +99,20 @@ fun OnboardingScene(mode: AppMode, actions: StayActions, modifier: Modifier) {
     val picture = @Composable { m: Modifier ->
         Column(m, verticalArrangement = Arrangement.spacedBy(ChaseomUi.related)) {
             OnboardingIsland(Modifier.fillMaxWidth())
-            Row(verticalAlignment = Alignment.Top) {
-                Icon(painterResource(R.drawable.ic_warn_line), null, tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
+            // POLISH v1.3 #4 / panel §7-③: caption 24 Medium on a pale yellow panel with a 6 dp yellow bar.
+            Row(
+                Modifier.fillMaxWidth().clip(ChaseomUi.rBanner).background(androidx.compose.ui.graphics.Color(0xFFFFF3CC))
+                    .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.width(ChaseomUi.bannerBar).fillMaxHeight().background(androidx.compose.ui.graphics.Color(0xFFFFC224)))
+                Spacer(Modifier.width(ChaseomUi.related))
+                Icon(painterResource(R.drawable.ic_warn_line), null, tint = androidx.compose.ui.graphics.Color(0xFF4A3700), modifier = Modifier.size(ChaseomUi.iconInline))
                 Spacer(Modifier.width(ChaseomUi.line))
                 Text(stringResource(R.string.manual_quote) + " — " + stringResource(R.string.manual_source),
-                    style = ChaseomUi.caption, color = k.text2)
+                    style = ChaseomUi.caption, color = androidx.compose.ui.graphics.Color(0xFF4A3700),
+                    modifier = Modifier.weight(1f).padding(vertical = ChaseomUi.related))
+                Spacer(Modifier.width(ChaseomUi.related))
             }
         }
     }

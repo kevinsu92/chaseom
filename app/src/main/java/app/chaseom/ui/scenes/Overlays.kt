@@ -115,14 +115,23 @@ fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app
                 r.rows.forEach { row -> ReceiptLine(row, size) }
             }
             if (r.rearCheckAlways) {
-                Row(Modifier.heightIn(min = ChaseomUi.receiptRow), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(painterResource(R.drawable.ic_eye), null, tint = k.text1, modifier = Modifier.size(ChaseomUi.iconInline))
+                // Panel §7-②: the always-last check line reads as a title (28 SemiBold, eye 24, 16 above).
+                Row(Modifier.padding(top = ChaseomUi.related).heightIn(min = ChaseomUi.receiptRow), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(painterResource(R.drawable.ic_eye), null, tint = k.text1, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(ChaseomUi.line))
                     Text(stringResource(R.string.e_rear_always), style = ChaseomUi.title, color = k.text1)
                 }
             }
             Spacer(Modifier.height(ChaseomUi.line))
-            LightPillButton(stringResource(R.string.close), { actions.closeReceipt() }, Modifier.fillMaxWidth())
+            // Panel §7-②: closing the receipt is the sheet's one action -> navy primary, 64 dp, full width.
+            Box(
+                Modifier.fillMaxWidth().heightIn(min = ChaseomUi.touchMin).clickable(role = androidx.compose.ui.semantics.Role.Button) { actions.closeReceipt() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(Modifier.fillMaxWidth().height(ChaseomUi.buttonHeight).clip(ChaseomUi.rPill).background(k.primary), contentAlignment = Alignment.Center) {
+                    Text(stringResource(R.string.close), style = ChaseomUi.title, color = k.onPrimary)
+                }
+            }
         }
     }
 }
