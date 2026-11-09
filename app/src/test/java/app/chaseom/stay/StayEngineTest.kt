@@ -154,6 +154,16 @@ class StayEngineTest {
         assertTrue(r.rearCheckAlways)
     }
 
+    // QA v1.6 (c): the rear row shows the sensor state only, and the "뒷좌석 직접 확인" line always closes the receipt.
+    @Test fun rearCheckLineIsAlwaysTheLastLine() {
+        listOf(null, true, false).forEach { occ ->
+            val e = StayEngine(); e.at(0)
+            val r = e.at(5 * min, ev.copy(driverDoorOpen = true, rearLeftOccupied = occ)).receipt!!
+            assertTrue(r.rows.last() is ReceiptRow.Rear)
+            assertTrue(r.rearCheckAlways) // drawn after every row (Overlays.ReceiptOverlay)
+        }
+    }
+
     @Test fun rearRowNeverHasADotForAnyOccupancy() {
         listOf(null, true, false).forEach { l ->
             listOf(null, true, false).forEach { rr ->

@@ -107,7 +107,7 @@
     <string name="e_port_closed">닫힘</string>
     <string name="e_rear">뒷좌석</string>
     <string name="e_rear_detected">탑승 감지됨</string>
-    <string name="e_rear_not_detected">감지 안 됨 · 직접 확인하세요</string>
+    <string name="e_rear_not_detected">감지 안 됨</string>
     <string name="e_rear_always">뒷좌석 직접 확인</string>
 
     <!-- S: settings -->

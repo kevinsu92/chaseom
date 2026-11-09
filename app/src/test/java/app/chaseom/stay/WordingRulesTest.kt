@@ -78,7 +78,7 @@ class WordingRulesTest {
 
     @Test fun rearSeatWording() {
         assertEquals("탑승 감지됨", strings["e_rear_detected"])
-        assertEquals("감지 안 됨 · 직접 확인하세요", strings["e_rear_not_detected"])
+        assertEquals("감지 안 됨", strings["e_rear_not_detected"]) // QA v1.6 (c): sensor state only
         assertEquals("뒷좌석 직접 확인", strings["e_rear_always"])
         listOf("e_rear", "e_rear_detected", "e_rear_not_detected", "e_rear_always").forEach {
             assertFalse(it, Regex("비었|비어|없음|없어요").containsMatchIn(strings.getValue(it)))

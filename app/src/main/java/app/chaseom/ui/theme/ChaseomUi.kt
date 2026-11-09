@@ -37,7 +37,9 @@ object ChaseomUi {
     fun heroSentence(s: Size) = hero(s).copy(fontSize = if (s == Size.Large) 56.sp else 44.sp, lineHeight = if (s == Size.Large) 64.sp else 52.sp)
     /** "머물 수 있어요" after the number, on its baseline. */
     fun heroTail(s: Size) = Base.copy(fontSize = if (s == Size.Large) 32.sp else 26.sp, lineHeight = 40.sp, fontWeight = FontWeight.SemiBold)
-    /** "(추정)" = 40 % of the hero, Regular, text3. Same size wherever it follows a hero. */
+    /** "(추정)" = 40 % of the hero, Regular, text3. Same size wherever it follows a hero.
+     *  QA 11-11: every "(추정)" stays (17 lines, all different estimates). text3 #6E727B passes only on bg #F7F8FA / white (4.54:1);
+     *  on any darker grey surface use text2. */
     fun estimate(s: Size) = Base.copy(fontSize = if (s == Size.Large) 29.sp else 24.sp,   // Small 24 = the 24 sp floor (REFERENCES H3), not 40 %
         lineHeight = 36.sp, fontWeight = FontWeight.Normal)
 

@@ -28,10 +28,10 @@ class H1LayersTest {
     }
 
     @Test fun waterStepsMoveTheBoatByTheDesignStep() {
-        // manifest water_top_y_by_step: Large 520..360 (40 px), Small 488..392 (24 px).
+        // manifest water_top_y_by_step: Large 520..360 (40 px), Small 480..384 (24 px; v1.12 rail 104 moved it up 8).
         assertEquals(40f, H1Set.Large.step)
         assertEquals(24f, H1Set.Small.step)
         assertEquals(520f - 4 * 40f, H1Layers.L.getValue("water_l5").y)
-        assertEquals(488f - 4 * 24f, H1Layers.S.getValue("water_l5").y)
+        assertEquals(480f - 4 * 24f, H1Layers.S.getValue("water_l5").y)
     }
 }

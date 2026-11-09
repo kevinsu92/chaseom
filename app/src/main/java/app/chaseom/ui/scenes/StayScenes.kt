@@ -239,7 +239,8 @@ private fun MainColumnContent(
                         Text(value, style = ChaseomUi.hero(size), color = k.text1, modifier = Modifier.alignByBaseline())
                         if (face == Face.ISLAND) {
                             Spacer(Modifier.width(ChaseomUi.related))
-                            Text(stringResource(R.string.h_hero_stay), style = ChaseomUi.heroTail(size), color = k.text1, modifier = Modifier.alignByBaseline())
+                            Text(stringResource(R.string.h_hero_stay), style = ChaseomUi.heroTail(size).copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium), // v1.6
+                                color = k.text1, modifier = Modifier.alignByBaseline())
                         }
                         Spacer(Modifier.width(ChaseomUi.related))
                         Text(stringResource(R.string.estimate), style = ChaseomUi.estimate(size), color = k.text3, modifier = Modifier.alignByBaseline())
