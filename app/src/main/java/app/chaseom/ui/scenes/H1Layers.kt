@@ -2,7 +2,7 @@ package app.chaseom.ui.scenes
 
 import app.chaseom.R
 
-/** Generated from 04_design/art_v3/layers_h1/manifest.json: each layer is cropped to its drawn area; x, y = its top-left in the canvas. */
+/** Generated from 04_design/art_v3/layers_h1/manifest.json (v1.6 lines from v1_6_for_engineering): each layer is cropped to its drawn area; x, y = its top-left in the canvas. */
 internal object H1Layers {
     val L = mapOf(
         "base" to H1Layer(R.drawable.isl_l_base, 0f, 0f),
@@ -61,11 +61,11 @@ internal object H1Layers {
         "buoys_n5_l1" to H1Layer(R.drawable.isl_s_buoys_n5_l1, 20f, 416f),
         "buoys_n6_l1" to H1Layer(R.drawable.isl_s_buoys_n6_l1, 20f, 416f),
         "k2_l1" to H1Layer(R.drawable.isl_s_k2_l1, 744f, 357f),
-        "refl_l1" to H1Layer(R.drawable.isl_s_refl_l1, 253f, 479f),
-        "refl_l2" to H1Layer(R.drawable.isl_s_refl_l2, 262f, 455f),
-        "refl_l3" to H1Layer(R.drawable.isl_s_refl_l3, 272f, 431f),
-        "refl_l4" to H1Layer(R.drawable.isl_s_refl_l4, 283f, 407f),
-        "refl_l5" to H1Layer(R.drawable.isl_s_refl_l5, 288f, 383f),
+        "refl_l1" to H1Layer(R.drawable.isl_s_refl_l1, 228f, 479f),
+        "refl_l2" to H1Layer(R.drawable.isl_s_refl_l2, 238f, 455f),
+        "refl_l3" to H1Layer(R.drawable.isl_s_refl_l3, 249f, 431f),
+        "refl_l4" to H1Layer(R.drawable.isl_s_refl_l4, 263f, 407f),
+        "refl_l5" to H1Layer(R.drawable.isl_s_refl_l5, 278f, 383f),
         "sheen" to H1Layer(R.drawable.isl_s_sheen, 0f, 0f),
         "sun_L" to H1Layer(R.drawable.isl_s_sun_l, 691f, 0f),
         "sun_M" to H1Layer(R.drawable.isl_s_sun_m, 728f, 10f),
@@ -80,19 +80,19 @@ internal object H1Layers {
         "ticks_l3" to H1Layer(R.drawable.isl_s_ticks_l3, 619f, 391f),
         "ticks_l4" to H1Layer(R.drawable.isl_s_ticks_l4, 619f, 391f),
         "ticks_l5" to H1Layer(R.drawable.isl_s_ticks_l5, 619f, 389f),
-        "trees_w0" to H1Layer(R.drawable.isl_s_trees_w0, 358f, 93f),
-        "trees_w1" to H1Layer(R.drawable.isl_s_trees_w1, 358f, 93f),
-        "trees_w2" to H1Layer(R.drawable.isl_s_trees_w2, 358f, 93f),
+        "trees_w0" to H1Layer(R.drawable.isl_s_trees_w0, 358f, 135f),
+        "trees_w1" to H1Layer(R.drawable.isl_s_trees_w1, 358f, 135f),
+        "trees_w2" to H1Layer(R.drawable.isl_s_trees_w2, 358f, 135f),
         "water_l1" to H1Layer(R.drawable.isl_s_water_l1, 0f, 488f),
         "water_l2" to H1Layer(R.drawable.isl_s_water_l2, 0f, 464f),
         "water_l3" to H1Layer(R.drawable.isl_s_water_l3, 0f, 440f),
         "water_l4" to H1Layer(R.drawable.isl_s_water_l4, 0f, 416f),
         "water_l5" to H1Layer(R.drawable.isl_s_water_l5, 0f, 392f),
-        "wet_l1" to H1Layer(R.drawable.isl_s_wet_l1, 252f, 472f),
-        "wet_l2" to H1Layer(R.drawable.isl_s_wet_l2, 261f, 448f),
-        "wet_l3" to H1Layer(R.drawable.isl_s_wet_l3, 271f, 424f),
-        "wet_l4" to H1Layer(R.drawable.isl_s_wet_l4, 282f, 400f),
-        "wet_l5" to H1Layer(R.drawable.isl_s_wet_l5, 295f, 376f),
+        "wet_l1" to H1Layer(R.drawable.isl_s_wet_l1, 227f, 472f),
+        "wet_l2" to H1Layer(R.drawable.isl_s_wet_l2, 237f, 448f),
+        "wet_l3" to H1Layer(R.drawable.isl_s_wet_l3, 249f, 424f),
+        "wet_l4" to H1Layer(R.drawable.isl_s_wet_l4, 262f, 400f),
+        "wet_l5" to H1Layer(R.drawable.isl_s_wet_l5, 278f, 376f),
         "wind_w1" to H1Layer(R.drawable.isl_s_wind_w1, 40f, 111f),
         "wind_w2" to H1Layer(R.drawable.isl_s_wind_w2, 40f, 111f),
     )
