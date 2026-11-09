@@ -40,6 +40,8 @@
     <string name="h_title">머무는 중 · %1$d분째</string>
     <string name="h_hero_label">지금 공조 설정으로 머물 수 있는 시간</string>
     <string name="h_hero_value">약 %1$s</string>
+    <string name="h_hero_stay">머물 수 있어요</string>
+    <string name="h_island_meta">배터리 %1$d%% · 내일 몫 %2$dkm는 남겨 두고 계산했어요</string>
     <string name="h_hero_cap">3시간 이상</string>
     <string name="estimate">(추정)</string>
     <string name="h_hvac_off">공조 꺼짐</string>
@@ -126,20 +128,16 @@
 
 
     <!-- Face: small weather island (HANDOFF section 8, flag FACE_ISLAND). Picture has no text; chips only. -->
-    <string name="is_legend">장식 그림 · 실내 온도·공기질 아님</string>
-    <string name="is_key_rock_l">왼쪽 바위 = 운전석 열선</string>
-    <string name="is_key_rock_r">오른쪽 바위 = 조수석 열선</string>
-    <string name="is_cd">섬 그림: 장식이에요. 지금 설정으로 %1$s 머물 수 있어요 (추정), 내일 몫 %2$dkm</string>
+    <string name="is_legend">섬은 공조 설정·배터리로 그려요 · 실내 측정 아님</string>
+    <string name="is_rail_bat">배터리 %1$d%%</string>
+    <string name="is_rail_buoy">부표 1개 = 30분</string>
+    <string name="is_rail_keep">짐 = 내일 몫 %1$dkm</string>
+    <string name="is_cd">섬 그림: 공조 설정·배터리로 그려요. 지금 설정으로 %1$s 머물 수 있어요 (추정), 배터리 %2$d%%, 내일 몫 %3$dkm</string>
     <!-- Toast when both before/after are over the 3-hour cap (QA M-11, moved from 03_engineering strings.xml) -->
     <string name="d_toast_cap">3시간 이상 유지 (추정)</string>
 
     <!-- ===== GAP_FIX 묶음 B (CEO 승인 2026-11-09). 05_qa 판정본 `05_qa/REVIEW_COPY_B.md` §1 확정 문구 반영(2026-11-09). 엔지니어링 사본: 쓰지 않는 st_loading·st_disconnected·h_soc_unknown·is_unsupported·hg_*·is_key_rock은 뺐다. =====
          is_day / is_keep 은 지금 엔지니어링 res/values/strings.xml에 있다: 그쪽 두 줄을 지우고 이 파일 값을 쓴다(중복 리소스 방지). -->
-    <string name="is_day">오늘 머물 시간 (3시간까지 표시)</string>
-    <string name="is_keep">배의 짐 = 내일 몫 %1$dkm · %2$s</string>
-    <string name="is_keep_default">배의 짐 = 내일 몫 %1$dkm · 기본값 (설정에서 바꿀 수 있어요)</string>
-    <string name="is_key_follow">공조 설정·열선을 따라 바뀌어요</string>
-    <string name="is_key_keep_k2">배의 짐 = 내일 몫 · 지금 짐을 쓰고 있어요 (추정)</string>
     <string name="is_hint_first">공조 다이얼을 바꾸면 섬과 남은 시간이 함께 바뀌어요</string>
     <string name="is_hint_first_cap">공조 다이얼을 바꾸면 섬이 바뀌어요</string>
     <string name="h_cap_note">3시간까지만 계산해 보여 줘요 · 1시간마다 경고를 다시 띄워요</string>

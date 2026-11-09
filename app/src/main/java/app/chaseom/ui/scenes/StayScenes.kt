@@ -169,7 +169,8 @@ private fun MainColumnContent(
             Text(stringResource(R.string.h_k2_hero), style = PleosType.headlineMedium, color = c.textPrimary)
             hero.coveredKm?.let { Text(stringResource(R.string.h_k2_meta, ui.settings.keepKm, it), style = PleosType.titleMedium, color = c.textSecondary) }
         } else {
-            Text(stringResource(R.string.h_hero_label), style = PleosType.titleMedium, color = c.textSecondary)
+            // ISLAND_REDESIGN v2.4: with the island the label line goes; "머물 수 있어요" joins the number.
+            if (face == Face.BAR) Text(stringResource(R.string.h_hero_label), style = PleosType.titleMedium, color = c.textSecondary)
             if (hero.hvacOff) {
                 Text(stringResource(R.string.h_hvac_off), style = PleosType.titleMedium, color = c.textPrimary)
                 Text(stringResource(R.string.h_hvac_off_sub), style = PleosType.bodyMedium, color = c.textSecondary)
@@ -179,6 +180,13 @@ private fun MainColumnContent(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
                     Text(value, style = TextStyle(fontSize = heroSize, lineHeight = heroSize * 1.2f, fontWeight = PleosType.headlineLarge.fontWeight),
                         color = c.textPrimary)
+                    if (face == Face.ISLAND) {
+                        // Same ink and weight as the number, smaller (Large 44 / Small 36 sp).
+                        val stay = if (heroSize.value >= 90f) 44.sp else 36.sp
+                        Spacer(Modifier.width(PleosDimens.space16))
+                        Text(stringResource(R.string.h_hero_stay), style = TextStyle(fontSize = stay, lineHeight = stay * 1.2f, fontWeight = PleosType.headlineLarge.fontWeight),
+                            color = c.textPrimary, modifier = Modifier.padding(bottom = 6.dp))
+                    }
                     Spacer(Modifier.width(PleosDimens.space16))
                     Text(stringResource(R.string.estimate), style = PleosType.titleMedium, color = c.textSecondary,
                         modifier = Modifier.padding(bottom = 12.dp))
@@ -192,23 +200,23 @@ private fun MainColumnContent(
                 if (hero.overCap) Text(stringResource(R.string.h_cap_note), style = PleosType.bodyMedium, color = c.textSecondary)
             }
         }
+        // ISLAND_REDESIGN v2.5 line 2: one description line under the hero (the island's meta line moved here).
+        if (face == Face.ISLAND && hero != null && !hero.belowKeep) ui.bar?.let { b ->
+            Text(stringResource(R.string.h_island_meta, b.socPercent, b.keepKm), style = PleosType.bodyMedium, color = c.textSecondary)
+        }
         when (face) {
             Face.BAR -> ui.bar?.let { KeepBar(it) }
             Face.ISLAND -> {
                 IslandPanel(
                     ui, Modifier.fillMaxWidth(),
                     pictureTop = {
-                        // v7 Small: inside the top of the picture (16 dp, centred, shadow 0 4 16 25 %); sky only.
+                        // v7 Small: inside the top-left sky of the picture (16 dp, shadow 0 4 16 25 %), up to the "설정 °C" label (H1).
                         if (toastPlace == ToastPlace.ISLAND_TOP) ui.toast?.let { t ->
                             DialToast(t.items, t.deltaMinutes, t.heldAboveCap,
                                 Modifier.padding(top = 16.dp).shadow(16.dp, RoundedCornerShape(PleosDimens.radiusCard), ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.25f)))
                         }
                     },
                 ) { if (actions != null) IslandCards(ui, actions) }
-                ui.bar?.let { b ->
-                    Text(stringResource(R.string.h_bar_meta, b.socPercent, b.keepPercent.roundToInt()),
-                        style = PleosType.bodyMedium, color = c.textSecondary)
-                }
             }
         }
         ui.climate?.let { ClimateLine(it) }

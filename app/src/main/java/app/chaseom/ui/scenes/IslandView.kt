@@ -1,102 +1,146 @@
 package app.chaseom.ui.scenes
 
+import android.graphics.BitmapFactory
 import android.provider.Settings
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.AnimationSpec
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.keyframes
-import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.chaseom.R
 import app.chaseom.stay.Island
-import app.chaseom.stay.IslandState
-import app.chaseom.stay.IslandSun
+import app.chaseom.stay.IslandInfo
 import app.chaseom.stay.StayUi
 import app.chaseom.ui.theme.Pleos
-import app.chaseom.ui.theme.PleosDimens
 import app.chaseom.ui.theme.PleosType
-import androidx.compose.ui.graphics.Canvas as GraphicsCanvas
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
-import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.math.roundToInt
+
+/** One H1 layer: a WebP cropped to its drawn area, placed at (x, y) in the layer set's canvas. */
+internal data class H1Layer(val id: Int, val x: Float, val y: Float)
 
 /**
- * Weather island face (flag BuildConfig.KICK_ISLAND, 04_design/HANDOFF.md section 8): the 04_design
- * VectorDrawable layers (res/drawable/is_*.xml) stacked in z order. Always-on layers are rasterised
- * once per size into three bitmaps; only the changing layers are vector-drawn on top. Changes play
- * one short, one-shot transition inside [Island.EMPHASIS_MS] and snap otherwise. No frame loop:
- * with no value change nothing is redrawn.
+ * The two H1 layer sets (04_design art_v3/ART_H.md section 8): Large 1600x600 for windows >= 1200 dp,
+ * Small 960x600 for the 1:1 split (about 840 dp). Label anchors come from the H1 renderer art_h.html (d=4).
  */
-@OptIn(ExperimentalLayoutApi::class)
+internal class H1Set(
+    val layers: Map<String, H1Layer>,
+    val w: Float,
+    /** Canvas px between two water steps; the boat, buoys and K2 frame move up by this per step. */
+    val step: Float,
+    val sunX: Float,
+    val sunY: Float,
+    /** Rail label centres: battery (start-anchored), buoy legend, crates. */
+    val batX: Float, val batY: Float,
+    val buoyX: Float, val buoyY: Float, val buoyAnchor: Float,
+    val keepX: Float, val keepY: Float, val keepAnchor: Float,
+) {
+    val h = 600f
+    companion object {
+        val Large = H1Set(H1Layers.L, 1600f, 40f, 1450f, 108f,
+            batX = 40f, batY = 569f, buoyX = 1466f, buoyY = 569f, buoyAnchor = 0.5f, keepX = 1172f, keepY = 569f, keepAnchor = 0.5f)
+        val Small = H1Set(H1Layers.S, 960f, 24f, 836f, 118f,
+            batX = 28f, batY = 530f, buoyX = 28f, buoyY = 576f, buoyAnchor = 0f, keepX = 932f, keepY = 576f, keepAnchor = 1f)
+        /** Sun disc radius per size (S / M / L), for the "설정 °C" label next to it. */
+        val SUN_R = floatArrayOf(30f, 42f, 56f)
+    }
+}
+
+/** What the picture shows; changes are batched and cross-faded (platform ISLAND_V2_SIGNALS, MOTION v3). */
+internal data class H1Pic(val sun: Int, val wind: Int, val level: Int, val buoys: Int, val k2: Boolean) {
+    companion object {
+        fun of(i: IslandInfo) = H1Pic(i.sunLevel, i.wind, i.waterStep + 1, i.buoys, i.crateOutline)
+    }
+}
+
+/** Window-width rule (ISLAND_REDESIGN 3.1): below 1200 dp the Small set. */
+internal fun h1SetFor(widthDp: Float): H1Set = if (widthDp >= 1200f) H1Set.Large else H1Set.Small
+
+/** Picture batching after the last input (numbers and toast still change at once). */
+private const val BATCH_MS = 300L
+/** Water step change (MOTION v3); other changes use [Island.FADE_MS]. */
+private const val WATER_MS = 600
+
+/**
+ * Information island, H1 art (04_design art_v3 layers_h1). Each element has one meaning (IslandInfo):
+ * sun size = set temperature, buoys = stay time, water = battery (5 steps), crate frame = tomorrow's share.
+ * Labels are screen text (24 sp) laid on the picture, never baked into it. Bitmaps are decoded once and
+ * drawn as they are; no frame loop: with no value change nothing is redrawn.
+ */
 @Composable
 fun IslandPanel(
     ui: StayUi,
     modifier: Modifier = Modifier,
-    /** Drawn inside the top centre of the picture (HANDOFF 9.6 v7 Small toast). */
+    /** Drawn inside the top-left sky of the picture, never over the "설정 °C" label (HANDOFF 9.6 v7 Small toast). */
     pictureTop: @Composable () -> Unit = {},
     cards: @Composable () -> Unit = {},
 ) {
-    val s0 = Island.state(ui, android.os.SystemClock.elapsedRealtime()) ?: return // same clock as the engine
+    val s = Island.state(ui, android.os.SystemClock.elapsedRealtime()) ?: return // same clock as the engine
+    // Water hysteresis needs the previous step; it lives as long as the island (reset when the stay ends).
+    val water = remember { intArrayOf(-1) }
+    val info = IslandInfo.of(ui, water[0].takeIf { it >= 0 }) ?: return
+    water[0] = info.waterStep
     val ctx = LocalContext.current
     // System animation scale 0 -> picture swaps without transitions (HANDOFF 8.6 stop condition 5).
     val animOff = remember {
         runCatching { Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
             .getOrDefault(false)
     }
-    val s = if (animOff) s0.copy(animating = false) else s0
-    // Latency probes (all builds, one log line per event like the cabin PROBE lines; QA measures the
-    // release APK itself): first frame after a climate change, and the island leaving composition.
+    // Latency probes (all builds, one log line per event like the cabin PROBE lines).
     LaunchedEffect(ui.lastClimateChangeMs) {
         if (ui.lastClimateChangeMs != null) {
             withFrameNanos { }
@@ -110,40 +154,39 @@ fun IslandPanel(
         stringResource(
             R.string.is_cd,
             if (hero.overCap) stringResource(R.string.h_hero_cap) else stringResource(R.string.h_hero_value, duration(hero.minutes ?: 0)),
+            bar.socPercent,
             bar.keepKm,
         )
     } else {
         ""
     }
-    // HANDOFF 8.2: Full 2560 -> 520, Large 1700 -> 380, Small 840 -> 340 dp.
-    val w = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value.toInt() }
-    val h = when {
-        w >= 2400 -> 520.dp
-        w >= 1600 -> 420.dp // HANDOFF 9.3 v4
-        else -> 340.dp
-    }
     val night = isSystemInDarkTheme()
     Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        // HANDOFF 9.3 v4: the island uses the full card width; the 2000x480 extra-wide layers are
-        // cropped from the centre (ContentScale.Crop). No side fill bands, so no seam.
-        Box(
-            Modifier.fillMaxWidth().height(h).clip(RoundedCornerShape(20.dp))
-                .semantics { contentDescription = cd; liveRegion = LiveRegionMode.Polite },
-        ) {
-            IslandPicture(s, Modifier.matchParentSize(), ui.moorAtMs, ui.lastClimateChangeMs, motionOff = animOff)
-            // Night theme: same daytime picture, black veil 0.3 only (HANDOFF 9.7, never night colours).
-            if (night) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.3f)))
-            Box(Modifier.align(Alignment.TopCenter)) { pictureTop() }
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val set = h1SetFor(with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value })
+            // Large: card width, at most 1760 dp so a full-screen window keeps the picture under 660 dp tall.
+            val picW: Dp = if (set === H1Set.Large) minOf(maxWidth, 1760.dp) else maxWidth
+            val k = picW.value / set.w // dp per canvas px
+            Box(
+                Modifier.width(picW).height(picW * (set.h / set.w)).clip(RoundedCornerShape(20.dp))
+                    .semantics { contentDescription = cd; liveRegion = LiveRegionMode.Polite },
+            ) {
+                val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize())
+                // Night theme: same daytime picture, black veil 0.3 only (HANDOFF 9.7, never night colours).
+                if (night) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.3f)))
+                // H1: the sun and its label sit top right, so the toast takes the top-left sky up to the label.
+                var sunLabelLeft by remember { mutableFloatStateOf(Float.NaN) }
+                IslandLabels(ui, set, k, shown) { sunLabelLeft = it }
+                val toastMax = if (sunLabelLeft.isNaN()) Modifier else Modifier.widthIn(max = with(LocalDensity.current) { sunLabelLeft.toDp() } - 32.dp)
+                Box(Modifier.align(Alignment.TopStart).padding(start = 16.dp).then(toastMax)) { pictureTop() }
+            }
         }
-        // HANDOFF 9.2: chips outside the picture, right under it (QA E-08).
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            LegendChip(stringResource(R.string.is_key_follow)) // what it is (U-G5)
-            LegendChip(stringResource(R.string.is_legend)) // what it is not: always (QA L-6, I-4)
-            if (s.heatDrv > 0) LegendChip(stringResource(R.string.is_key_rock_l)) // island = car floor plan
-            if (s.heatPas > 0) LegendChip(stringResource(R.string.is_key_rock_r))
-            if (s.alert) LegendChip(stringResource(R.string.is_key_keep_k2)) // the boat itself never changes (I-6)
-        }
-        cards() // HANDOFF 9.2.1 v6: air / swap cards under the chips, above the hint and the band
+        // ISLAND_REDESIGN v2.5: one cause chip, always shown (QA M-3 wording).
+        Text(
+            stringResource(R.string.is_legend), style = PleosType.bodyMedium.copy(fontSize = 24.sp), color = Pleos.colors.textPrimary,
+            modifier = Modifier.background(Pleos.colors.buttonBasicEnabled, RoundedCornerShape(12.dp)).padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        cards() // HANDOFF 9.2.1 v6: air / swap cards under the chip
         if (ui.firstStayHint) {
             // HANDOFF 9.5: basic surface, radius 16, fan icon in brand colour, bodyMedium.
             Row(
@@ -158,292 +201,174 @@ fun IslandPanel(
                 Text(stringResource(hint), style = PleosType.bodyMedium, color = Pleos.colors.textPrimary)
             }
         }
-        DayBand(s, ui)
     }
 }
 
+/** Screen text on the picture (24 sp): "설정 °C" next to the sun, and the rail under the water. */
 @Composable
-private fun LegendChip(text: String) {
-    Text(
-        text, style = PleosType.bodyMedium.copy(fontSize = 26.sp), color = Pleos.colors.textPrimary,
-        modifier = Modifier.background(Pleos.colors.buttonBasicEnabled, RoundedCornerShape(12.dp)).padding(horizontal = 14.dp, vertical = 6.dp),
-    )
+private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, pic: H1Pic, sunLabelLeft: (Float) -> Unit) {
+    val bar = ui.bar ?: return
+    val c = ui.climate
+    val sunText = if (c?.powerOn == true && c.setTempC != null) stringResource(R.string.hvac_temp, tempText(c.setTempC))
+    else stringResource(R.string.h_hvac_off)
+    // H1: ink text with a white glow on the sky; white text on the navy rail.
+    val bare = TextStyle(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold, color = Color(0xFF131417),
+        shadow = Shadow(Color.White, Offset.Zero, 8f))
+    val rail = bare.copy(color = Color.White, shadow = Shadow(Color.Black.copy(alpha = 0.35f), Offset(0f, 1f), 2f))
+    PicText(sunText, bare, (set.sunX - H1Set.SUN_R[pic.sun] - 22f) * k, set.sunY * k, 1f, sunLabelLeft)
+    PicText(stringResource(R.string.is_rail_bat, bar.socPercent), rail, set.batX * k, set.batY * k, 0f)
+    if (pic.buoys > 0) PicText(stringResource(R.string.is_rail_buoy), rail, set.buoyX * k, set.buoyY * k, set.buoyAnchor)
+    PicText(stringResource(R.string.is_rail_keep, bar.keepKm), rail, set.keepX * k, set.keepY * k, set.keepAnchor)
 }
 
+/** Text whose anchor point (0 start, 0.5 centre, 1 end; vertical centre) sits at (x, y) dp in the picture. */
 @Composable
-private fun painter(id: Int): Painter {
-    // No per-layer cache bitmap (QA B-4); see FlatVectorPainter.
-    val vector = ImageVector.vectorResource(id)
-    return remember(vector) { FlatVectorPainter(vector) }
-}
-
-private class Motion(arriving: Boolean) {
-    // Boat (HANDOFF 10.3): slide in from the right, rope, 3 dp bob. Never rotates. When arriving, the
-    // very first frame already shows the boat out at sea (no flash of the moored picture).
-    val boatX = Animatable(if (arriving) Island.MOOR_SLIDE_DP else 0f)
-    val boatY = Animatable(0f)
-    val rope = Animatable(if (arriving) 0f else 1f)
-    var swaying = false
-    var swayJob: kotlinx.coroutines.Job? = null
-    val sunScale = Animatable(1f)
-    val windDx = Animatable(0f)
-    val heatLDy = Animatable(0f)
-    val heatRDy = Animatable(0f)
-    var prev: IslandState? = null
-}
-
-@Composable
-private fun IslandPicture(
-    s: IslandState,
-    modifier: Modifier,
-    moorAtMs: Long? = null,
-    lastChangeMs: Long? = null,
-    motionOff: Boolean = false,
-) {
-    // Static groups (z order: sky | island | rocks + lighthouse + gull).
-    val sky = painter(R.drawable.is_sky)
-    val island = painter(R.drawable.is_island)
-    val rockL = painter(R.drawable.is_rock_l)
-    val rockR = painter(R.drawable.is_rock_r)
-    val lighthouse = painter(R.drawable.is_lighthouse)
-    val gull = painter(R.drawable.is_gull)
-    val pier = painter(R.drawable.is_pier)
-    // Changing layers.
-    val boat = painter(R.drawable.is_boat)
-    val rope = painter(R.drawable.is_rope)
-    val crateMark = painter(R.drawable.is_crate_mark)
-    val wake = painter(R.drawable.is_wake)
-    val suns = listOf(painter(R.drawable.is_sun_s), painter(R.drawable.is_sun_m), painter(R.drawable.is_sun_l))
-    val cool = painter(R.drawable.is_cool)
-    val cloud = painter(R.drawable.is_cloud_recirc)
-    val waves = listOf(painter(R.drawable.is_waves_0), painter(R.drawable.is_waves_1), painter(R.drawable.is_waves_2))
-    val palms = listOf(painter(R.drawable.is_palm_0), painter(R.drawable.is_palm_1), painter(R.drawable.is_palm_2))
-    val warmL = painter(R.drawable.is_rock_l_warm)
-    val warmR = painter(R.drawable.is_rock_r_warm)
-
-    val fade: AnimationSpec<Float> = if (s.animating) tween(Island.FADE_MS) else snap()
-    @Composable fun a(target: Float, label: String) = animateFloatAsState(target, fade, label = label)
-    val sunA = IslandSun.entries.map { a(if (s.sun == it) 1f else 0f, "sun$it") }
-    val coolA = a(if (s.cool) 1f else 0f, "cool")
-    val cloudA = a(if (s.cloud) 1f else 0f, "cloud")
-    val waveA = (0..2).map { a(if (s.wind == it) 1f else 0f, "wave$it") }
-    val palmA = (0..2).map { a(if (s.wind == it) 1f else 0f, "palm$it") }
-    val warmLA = a(Island.HEAT_ALPHA[s.heatDrv], "warmL")
-    val warmRA = a(Island.HEAT_ALPHA[s.heatPas], "warmR")
-    // K1/K2 crate outline: 400 ms fade in, 200 ms out, never blinks (HANDOFF 10.3 ③).
-    val markOn = s.near || s.alert
-    val markA = animateFloatAsState(if (markOn) 1f else 0f, if (motionOff) snap() else tween(if (markOn) 400 else 200), label = "mark")
-
-    // One-shot motions (HANDOFF 8.6). More than MAX_MOVING groups at once -> crossfade only.
-    val m = remember { Motion(arriving = s.mooring && !motionOff) }
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    val windowInfo = LocalWindowInfo.current
-
-    // HANDOFF 10.3 ① mooring: only inside the window that started when the car came back to P.
-    LaunchedEffect(moorAtMs) {
-        if (!s.mooring || motionOff) {
-            m.boatX.snapTo(0f); m.rope.snapTo(1f)
-            return@LaunchedEffect
+private fun PicText(text: String, style: TextStyle, xDp: Float, yDp: Float, anchor: Float, onLeft: ((Float) -> Unit)? = null) {
+    Text(text, style = style, softWrap = false, maxLines = 1, modifier = Modifier.layout { m, cons ->
+        val p = m.measure(cons.copy(minWidth = 0, minHeight = 0))
+        layout(p.width, p.height) {
+            val left = (xDp.dp.toPx() - anchor * p.width).roundToInt()
+            onLeft?.invoke(left.toFloat())
+            p.place(left, (yDp.dp.toPx() - p.height / 2f).roundToInt())
         }
-        m.swayJob?.cancel()
-        m.boatX.snapTo(Island.MOOR_SLIDE_DP); m.rope.snapTo(0f); m.boatY.snapTo(0f)
-        // Arriving in P lifts the system's driving block a few frames after the gear callback. Start the
-        // slide once our window is focused and has drawn a frame, so the whole arrival is visible.
-        withTimeoutOrNull(400) { snapshotFlow { windowInfo.isWindowFocused }.first { it } }
-        withFrameNanos { }
-        // Panel R14 / UXR E-3: let the screen change settle first, so the arrival is not lost in it.
-        kotlinx.coroutines.delay(Island.MOOR_START_DELAY_MS)
-        android.util.Log.i("PROBE", "moorFrame wall=${System.currentTimeMillis()}")
-        m.boatX.animateTo(0f, tween(Island.MOOR_SLIDE_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0.33f, 1f, 0.68f, 1f)))
-        m.rope.animateTo(1f, tween(Island.MOOR_ROPE_MS))
-        m.boatY.animateTo(0f, keyframes { durationMillis = Island.MOOR_BOB_MS; Island.BOB_DP at Island.MOOR_BOB_MS / 2 })
-    }
-
-    // HANDOFF 10.3 ② sway: one bob 300 ms after the controls stop; events while bobbing are ignored.
-    LaunchedEffect(lastChangeMs) {
-        if (!Island.SWAY_ENABLED || lastChangeMs == null || motionOff || m.swaying || s.mooring || !s.animating) return@LaunchedEffect
-        m.swayJob?.cancel()
-        m.swayJob = scope.launch {
-            kotlinx.coroutines.delay(Island.SWAY_DEBOUNCE_MS)
-            m.swaying = true
-            try {
-                m.boatY.animateTo(0f, keyframes { durationMillis = Island.SWAY_MS; Island.BOB_DP at Island.SWAY_MS / 2 })
-            } finally {
-                m.boatY.snapTo(0f)
-                m.swaying = false
-            }
-        }
-    }
-    LaunchedEffect(s.sun, s.wind, s.heatDrv, s.heatPas) {
-        val p = m.prev
-        m.prev = s
-        val sunCh = p != null && p.sun != s.sun
-        val windCh = p != null && p.wind != s.wind
-        val lCh = p != null && p.heatDrv != s.heatDrv && s.heatDrv > 0
-        val rCh = p != null && p.heatPas != s.heatPas && s.heatPas > 0
-        val moving = listOf(sunCh, windCh, lCh, rCh).count { it }
-        val play = s.animating && moving in 1..Island.MAX_MOVING
-        if (!play) {
-            m.sunScale.snapTo(1f); m.windDx.snapTo(0f); m.heatLDy.snapTo(0f); m.heatRDy.snapTo(0f)
-            return@LaunchedEffect
-        }
-        val ms = Island.MOTION_MS
-        kotlinx.coroutines.coroutineScope {
-            if (sunCh) launch { m.sunScale.snapTo(1f); m.sunScale.animateTo(1f, keyframes { durationMillis = ms; 1.07f at ms / 2 }) }
-            if (windCh) launch { m.windDx.snapTo(-14f); m.windDx.animateTo(0f, keyframes { durationMillis = ms; 8f at ms / 2 }) }
-            if (lCh) launch { m.heatLDy.snapTo(10f); m.heatLDy.animateTo(0f, tween(ms)) }
-            if (rCh) launch { m.heatRDy.snapTo(10f); m.heatRDy.animateTo(0f, tween(ms)) }
-        }
-    }
-
-    // Stable draw modifier: the bitmaps are rebuilt only when the size changes; value changes
-    // only invalidate the draw phase.
-    val cur = rememberUpdatedState(s)
-    val draw = remember {
-        Modifier.drawWithCache {
-            // Picture = 2000x480 extra-wide layers, Crop: scaled to cover the area, centred.
-            val k = maxOf(size.width / PIC_W, size.height / PIC_H)
-            val pic = Size(PIC_W * k, PIC_H * k)
-            val left = (size.width - pic.width) / 2f
-            val topOff = (size.height - pic.height) / 2f
-            val skyBmp = raster(pic, listOf(sky))
-            val islandBmp = raster(pic, listOf(island))
-            val topBmp = raster(pic, listOf(rockL, rockR, lighthouse, pier, gull))
-            onDrawBehind {
-                val st = cur.value
-                translate(left = left, top = topOff) {
-                    drawImage(skyBmp)
-                    val sunScale = m.sunScale.value
-                    val sunCenter = Offset(pic.width * SUN_X, pic.height * SUN_Y)
-                    suns.forEachIndexed { i, p ->
-                        layer(p, pic, sunA[i]) { if (i == st.sun.ordinal) scale(sunScale, sunCenter) { it() } else it() }
-                    }
-                    layer(cool, pic, coolA)
-                    layer(cloud, pic, cloudA)
-                    val dx = m.windDx.value.dp.toPx()
-                    waves.forEachIndexed { i, p -> layer(p, pic, waveA[i]) { if (i == st.wind) translate(left = dx) { it() } else it() } }
-                    drawImage(islandBmp)
-                    palms.forEachIndexed { i, p -> layer(p, pic, palmA[i]) { if (i == st.wind) translate(left = dx) { it() } else it() } }
-                    drawImage(topBmp)
-                    // The boat (= the car): only translate, never rotate (HANDOFF 10.1).
-                    // HANDOFF 10.3 ① v5: start distance = min(360 dp, visible right edge - boat right (946) - 8),
-                    // so the boat always starts inside the visible picture (about 44-85 dp on a Small window).
-                    // Island.boatOffsetDp / wakeAlpha (unit-tested for Full, Large, Small and a too-narrow area).
-                    val f = (m.boatX.value / Island.MOOR_SLIDE_DP).coerceIn(0f, 1f) // 1 at sea -> 0 moored
-                    val offsetPx = Island.boatOffsetDp(f, size.width.toDp().value, size.height.toDp().value).dp.toPx()
-                    translate(left = offsetPx, top = m.boatY.value.dp.toPx()) {
-                        // v5: wake behind the boat only while it slides in, fading 1 -> 0; gone in the end picture.
-                        val wakeA = Island.wakeAlpha(f)
-                        if (wakeA > 0.01f) with(wake) { draw(pic, alpha = wakeA) }
-                        with(boat) { draw(pic) }
-                        if (markA.value > 0.01f) with(crateMark) { draw(pic, alpha = markA.value) }
-                    }
-                    if (m.rope.value > 0.01f) with(rope) { draw(pic, alpha = m.rope.value) }
-                    layer(warmL, pic, warmLA) { translate(top = m.heatLDy.value.dp.toPx()) { it() } }
-                    layer(warmR, pic, warmRA) { translate(top = m.heatRDy.value.dp.toPx()) { it() } }
-                }
-            }
-        }
-    }
-    Spacer(modifier.then(draw))
-}
-
-/** Extra-wide layer set (04_design android_xwide, HANDOFF 9.3 v4): 2000x480, art shifted +520. */
-private const val PIC_W = Island.PIC_W
-private const val PIC_H = Island.PIC_H
-private const val ART_OFF = Island.ART_OFF
-
-private const val SUN_X = (770f + ART_OFF) / PIC_W
-private const val SUN_Y = 104f / 480f
-
-/** Rasterise always-on layers once per size (HANDOFF 8.3). The bitmap is the scaled picture. */
-private fun androidx.compose.ui.draw.CacheDrawScope.raster(pic: Size, painters: List<Painter>): ImageBitmap {
-    val bmp = ImageBitmap(pic.width.toInt().coerceAtLeast(1), pic.height.toInt().coerceAtLeast(1))
-    CanvasDrawScope().draw(this, layoutDirection, GraphicsCanvas(bmp), pic) {
-        painters.forEach { with(it) { draw(pic) } }
-    }
-    return bmp
-}
-
-private inline fun DrawScope.layer(p: Painter, pic: Size, alpha: State<Float>, wrap: DrawScope.(DrawScope.() -> Unit) -> Unit = { it() }) {
-    val a = alpha.value
-    if (a <= 0.01f) return
-    wrap { with(p) { draw(pic, alpha = a) } }
-}
-
-/** Today's day-length band (bar of record, HANDOFF 8.1): amber = today, capped at 3 h; grey = tomorrow. */
-@Composable
-private fun DayBand(s: IslandState, ui: StayUi) {
-    val c = Pleos.colors
-    val crate = painter(R.drawable.ic_keep_crate)
-    val day = s.dayLength
-    Column(verticalArrangement = Arrangement.spacedBy(PleosDimens.space8)) {
-        Text(stringResource(R.string.is_day), style = PleosType.bodyMedium, color = c.textSecondary)
-        Spacer(
-            Modifier.fillMaxWidth().height(40.dp).drawBehind {
-                val rr = CornerRadius(size.height / 2)
-                val keepW = size.width * 0.18f
-                // HANDOFF 10.6 v3: a small crate right before the grey keep cell ties the band to the boat's crates.
-                val iconPx = 24.dp.toPx()
-                val gap = 8.dp.toPx()
-                val todayW = size.width - keepW - iconPx - gap * 3
-                drawRoundRect(c.neutralState.copy(alpha = 0.35f), size = Size(todayW, size.height), cornerRadius = rr)
-                if (day > 0f) drawRoundRect(c.brand, size = Size(todayW * day, size.height), cornerRadius = rr)
-                drawRoundRect(if (s.alert) c.negative else Color(0xFF8A9099), Offset(size.width - keepW, 0f), Size(keepW, size.height), rr)
-                translate(left = todayW + gap, top = (size.height - iconPx) / 2f) {
-                    with(crate) { draw(Size(iconPx, iconPx)) }
-                }
-            },
-        )
-        ui.bar?.let { b ->
-            Text(
-                if (ui.settings.saved) stringResource(R.string.is_keep, b.keepKm, labelText(b.label))
-                else stringResource(R.string.is_keep_default, b.keepKm),
-                style = PleosType.bodyMedium,
-                color = c.textSecondary, modifier = Modifier.align(Alignment.End))
-        }
-    }
+    })
 }
 
 /**
- * Receipt header (HANDOFF 10.4): the island cropped to the pier, boat and plank, as one still picture.
- * Crop = wide-set viewBox (280, 205, 840, 158) = extra-wide (640, 205, 840, 158). Weather layers keep
- * their current state. Shown only with the receipt (door open after >= 1 min).
+ * Decoded on first use; drawable-nodpi so 1 canvas px stays 1 bitmap px. [trim] keeps only what the last
+ * frame drew, so after a transition only the current state's layers stay in memory (about 13 of 44).
+ */
+private class H1Bitmaps(private val res: android.content.res.Resources) : (Int) -> ImageBitmap {
+    private val cache = HashMap<Int, ImageBitmap>()
+    private val used = HashSet<Int>()
+    fun frame() = used.clear()
+    override fun invoke(id: Int): ImageBitmap {
+        used.add(id)
+        return cache.getOrPut(id) { BitmapFactory.decodeResource(res, id, BitmapFactory.Options().apply { inScaled = false }).asImageBitmap() }
+    }
+    fun trim() { if (used.isNotEmpty()) cache.keys.retainAll(used) }
+}
+
+@Composable
+private fun rememberBitmaps(): H1Bitmaps {
+    val res = LocalResources.current
+    return remember(res) { H1Bitmaps(res) }
+}
+
+/**
+ * Draws the layer stack and returns the picture state now on screen (the labels follow it). A new
+ * state waits [BATCH_MS] after the last input, then cross-fades; the boat, buoys and K2 frame move with
+ * the water. Mooring slides the boat in from the right (HANDOFF 10.3 ① v5 distance rule).
+ */
+@Composable
+private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring: Boolean, motionOff: Boolean, modifier: Modifier): H1Pic {
+    val target = H1Pic.of(info)
+    val bmp = rememberBitmaps()
+    var shown by remember { mutableStateOf(target) } // first value at once: never an empty island first
+    var prev by remember { mutableStateOf<H1Pic?>(null) }
+    val t = remember { Animatable(1f) }
+    LaunchedEffect(target) {
+        if (target == shown) return@LaunchedEffect
+        delay(BATCH_MS) // a newer input cancels this and starts the wait again
+        prev = shown
+        shown = target
+        if (motionOff) t.snapTo(1f)
+        else {
+            t.snapTo(0f)
+            t.animateTo(1f, tween(if (prev?.level != target.level) WATER_MS else Island.FADE_MS))
+        }
+        withFrameNanos { } // one frame of the end state, then drop the faded-out layers
+        bmp.trim()
+    }
+    // 1 = out at sea, 0 = moored.
+    val moor = remember { Animatable(if (mooring && !motionOff) 1f else 0f) }
+    val bob = remember { Animatable(0f) }
+    val windowInfo = LocalWindowInfo.current
+    LaunchedEffect(moorAtMs) {
+        if (!mooring || motionOff) { moor.snapTo(0f); return@LaunchedEffect }
+        moor.snapTo(1f); bob.snapTo(0f)
+        // Start once our window is focused and has drawn a frame, so the whole arrival is visible.
+        withTimeoutOrNull(400) { snapshotFlow { windowInfo.isWindowFocused }.first { it } }
+        withFrameNanos { }
+        delay(Island.MOOR_START_DELAY_MS) // panel R14 / UXR E-3
+        android.util.Log.i("PROBE", "moorFrame wall=${System.currentTimeMillis()}")
+        moor.animateTo(0f, tween(Island.MOOR_SLIDE_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0.33f, 1f, 0.68f, 1f)))
+        bob.animateTo(0f, keyframes { durationMillis = Island.MOOR_BOB_MS; Island.BOB_DP at Island.MOOR_BOB_MS / 2 })
+    }
+    val cur = rememberUpdatedState(shown)
+    val before = rememberUpdatedState(prev)
+    Spacer(modifier.drawBehind {
+        bmp.frame()
+        val k = size.width / set.w
+        val boat = set.layers.getValue("boat_l1")
+        val boatRight = boat.x + bmp(boat.id).width
+        // v5: the boat starts inside the visible picture: min(360 dp, right edge - boat right - 8 dp).
+        val slide = minOf(Island.MOOR_SLIDE_DP.dp.toPx(), size.width - boatRight * k - 8.dp.toPx()).coerceAtLeast(0f)
+        scale(k, k, pivot = Offset.Zero) {
+            drawH1(set, bmp, cur.value, before.value, t.value, boatDx = moor.value * slide / k, boatDy = bob.value.dp.toPx() / k)
+        }
+    })
+    return shown
+}
+
+/** The 13-layer stack (ART_H.md section 8 order), in canvas px. [t] cross-fades [prev] -> [cur]. */
+internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, prev: H1Pic?, t: Float, boatDx: Float = 0f, boatDy: Float = 0f) {
+    val p = prev ?: cur
+    val a = if (prev == null) 1f else t
+    val dyCur = -(cur.level - 1) * set.step
+    val dyPrev = -(p.level - 1) * set.step
+    val dy = dyPrev + (dyCur - dyPrev) * a
+    fun one(name: String, alpha: Float, x: Float = 0f, y: Float = 0f) {
+        if (alpha <= 0.01f) return
+        val l = set.layers[name] ?: return
+        drawImage(bmp(l.id), Offset(l.x + x, l.y + y), alpha = alpha)
+    }
+    /** Same layer name -> drawn once; else old fades out under the new one. */
+    fun slot(old: String?, new: String?, x: Float = 0f, y: Float = 0f) {
+        if (old == new) { if (new != null) one(new, 1f, x, y); return }
+        if (old != null) one(old, 1f - a, x, y)
+        if (new != null) one(new, a, x, y)
+    }
+    val sun = "SML"
+    one("base", 1f)
+    slot("trees_w${p.wind}", "trees_w${cur.wind}")
+    slot("sun_${sun[p.sun]}", "sun_${sun[cur.sun]}")
+    slot(if (p.wind > 0) "wind_w${p.wind}" else null, if (cur.wind > 0) "wind_w${cur.wind}" else null)
+    slot("wet_l${p.level}", "wet_l${cur.level}")
+    one("boat_l1", 1f, boatDx, dy + boatDy)
+    slot("buoys_n${p.buoys}_l1", "buoys_n${cur.buoys}_l1", y = dy)
+    slot("water_l${p.level}", "water_l${cur.level}")
+    slot("refl_l${p.level}", "refl_l${cur.level}")
+    slot("surf_l${p.level}", "surf_l${cur.level}")
+    slot("ticks_l${p.level}", "ticks_l${cur.level}")
+    // The crate frame rides on the boat (K1 / K2: IslandInfo.crateOutline).
+    slot(if (p.k2) "k2_l1" else null, if (cur.k2) "k2_l1" else null, boatDx, dy + boatDy)
+    one("sheen", 1f)
+}
+
+/**
+ * Receipt header (HANDOFF 10.4): the same H1 picture, cropped to the pier and the boat, as one still
+ * picture in the current state. Shown only with the receipt (door open after >= 1 min).
  */
 @Composable
 fun ReceiptHeaderPicture(ui: StayUi) {
-    val s = Island.state(ui, android.os.SystemClock.elapsedRealtime()) ?: return
-    val sky = painter(R.drawable.is_sky)
-    val waves = painter(listOf(R.drawable.is_waves_0, R.drawable.is_waves_1, R.drawable.is_waves_2)[s.wind])
-    val island = painter(R.drawable.is_island)
-    val palm = painter(listOf(R.drawable.is_palm_0, R.drawable.is_palm_1, R.drawable.is_palm_2)[s.wind])
-    val rocks = listOf(painter(R.drawable.is_rock_l), painter(R.drawable.is_rock_r))
-    val lighthouse = painter(R.drawable.is_lighthouse)
-    val pier = painter(R.drawable.is_pier)
-    val boat = painter(R.drawable.is_boat)
-    val rope = painter(R.drawable.is_rope)
-    val plank = painter(R.drawable.is_plank)
-    val mark = painter(R.drawable.is_crate_mark)
-    val markOn = s.near || s.alert
+    val info = IslandInfo.of(ui) ?: return
+    val pic = H1Pic.of(info)
+    val bmp = rememberBitmaps()
+    val set = H1Set.Large
     Spacer(
-        Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(24.dp)).drawWithCache {
-            // HANDOFF 10.4 v3: 120 dp, crop = wide-set viewBox (280, 205, 840, 158) = extra-wide x + 360.
-            val k = size.height / 158f
-            val full = Size(PIC_W * k, PIC_H * k)
-            val left = (size.width - 840f * k) / 2f - (280f + 360f) * k
-            val top = -205f * k
-            onDrawBehind {
-                drawRect(Color(0xFF3B93BF)) // sea colour behind the crop when the card is wider than 640:160
-                translate(left = left, top = top) {
-                    listOf(sky, waves, island, palm) .forEach { with(it) { draw(full) } }
-                    rocks.forEach { with(it) { draw(full) } }
-                    listOf(lighthouse, pier, boat).forEach { with(it) { draw(full) } }
-                    if (markOn) with(mark) { draw(full) }
-                    with(rope) { draw(full) }
-                    with(plank) { draw(full) }
-                }
+        Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(24.dp)).drawBehind {
+            val boat = set.layers.getValue("boat_l1")
+            val b = bmp(boat.id)
+            // Visible window: 300 canvas px tall around the boat, as wide as the card allows.
+            val k = maxOf(size.width / set.w, size.height / 300f)
+            val vw = size.width / k
+            val vh = size.height / k
+            val cx = (boat.x + b.width / 2f).coerceIn(vw / 2f, set.w - vw / 2f)
+            val cy = (boat.y - (pic.level - 1) * set.step + b.height / 2f).coerceIn(vh / 2f, set.h - vh / 2f)
+            scale(k, k, pivot = Offset.Zero) {
+                translate(left = vw / 2f - cx, top = vh / 2f - cy) { drawH1(set, bmp, pic, null, 1f) }
             }
         },
     )
 }
-

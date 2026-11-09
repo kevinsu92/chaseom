@@ -69,7 +69,7 @@ class WordingRulesTest {
 
     @Test fun computedValuesMarkedEstimate() {
         listOf("h_bar_meta", "x1", "x2", "x3", "e_energy_val", "e_keep_ok", "e_keep_low", "s_margin",
-            "h_k2_hero", "h_k2_meta", "e_energy_small", "is_key_keep_k2", "h_hvac_off_sub").forEach {
+            "h_k2_hero", "h_k2_meta", "e_energy_small", "h_hvac_off_sub").forEach {
             assertTrue("missing 추정: $it", strings.getValue(it).contains("추정"))
         }
         assertEquals("(추정)", strings["estimate"])
@@ -110,24 +110,25 @@ class WordingRulesTest {
         assertTrue(island.isNotEmpty())
         val night = Regex("모닥불|캠프|캠핑|텐트|달빛|별|밤|잠자")
         assertEquals(emptyMap<String, String>(), island.filterValues { night.containsMatchIn(it) })
-        assertTrue(strings.getValue("is_legend").contains("장식"))
-        assertTrue(strings.getValue("is_legend").contains("실내 온도"))
+        // ISLAND_REDESIGN v2.5 / QA M-3: the cause chip says what draws the island and that nothing is measured inside.
+        assertEquals("섬은 공조 설정·배터리로 그려요 · 실내 측정 아님", strings["is_legend"])
         assertTrue(strings.getValue("is_cd").contains("추정"))
+    }
+
+    // QA ROUND1B_GATE (H1 v1.5): the round-1 island draws no seat heat, so no rock or "follows the heat" wording.
+    @Test fun roundOneIslandSaysNothingAboutSeatHeat() {
+        assertEquals(emptyMap<String, String>(), strings.filterValues { it.contains("바위") || it.contains("열선을 따라") })
+        assertEquals("부표 1개 = 30분", strings["is_rail_buoy"])
+        assertEquals("짐 = 내일 몫 %1\$dkm", strings["is_rail_keep"])
+        assertEquals("배터리 %1\$d%%", strings["is_rail_bat"])
     }
 
     // 05_qa REVIEW_COPY_B section 1: bundle B wording, letter for letter.
     @Test fun bundleBConfirmedWording() {
         val confirmed = mapOf(
-            "is_key_follow" to "공조 설정·열선을 따라 바뀌어요",
-            "is_legend" to "장식 그림 · 실내 온도·공기질 아님",
-            "is_day" to "오늘 머물 시간 (3시간까지 표시)",
-            "is_key_rock_l" to "왼쪽 바위 = 운전석 열선",
-            "is_key_rock_r" to "오른쪽 바위 = 조수석 열선",
             "is_hint_first" to "공조 다이얼을 바꾸면 섬과 남은 시간이 함께 바뀌어요",
             "h_k2_hero" to "내일 몫을 쓰고 있어요 (추정)",
             "h_k2_meta" to "내일 몫 %1\$dkm 중 약 %2\$dkm 남음 (추정)",
-            "is_key_keep_k2" to "배의 짐 = 내일 몫 · 지금 짐을 쓰고 있어요 (추정)",
-            "is_keep_default" to "배의 짐 = 내일 몫 %1\$dkm · 기본값 (설정에서 바꿀 수 있어요)",
             "h_title_resumed" to "머무는 중 · 새로 시작했어요",
             "h_cap_note" to "3시간까지만 계산해 보여 줘요 · 1시간마다 경고를 다시 띄워요",
             "st_waiting_car" to "차와 연결하는 중이에요",
