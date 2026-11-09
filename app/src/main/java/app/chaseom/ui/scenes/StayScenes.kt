@@ -101,7 +101,8 @@ internal fun WarnBanner(text: String, danger: Boolean, trailing: (@Composable ()
         Spacer(Modifier.width(ChaseomUi.related))
         Icon(painterResource(R.drawable.ic_warn_line), null, tint = fg, modifier = Modifier.size(if (danger) 32.dp else ChaseomUi.bannerIcon))
         Spacer(Modifier.width(ChaseomUi.related))
-        Text(text, style = if (danger) ChaseomUi.banner.copy(fontSize = 26.sp, lineHeight = 34.sp) else ChaseomUi.banner, color = fg,
+        // Critique final 2 ③: N0 and K2 share 26 sp SemiBold (W600); wording unchanged.
+        Text(text, style = ChaseomUi.banner.copy(fontSize = 26.sp, lineHeight = 34.sp), color = fg,
             modifier = Modifier.weight(1f).padding(vertical = ChaseomUi.line))
         trailing?.invoke()
         Spacer(Modifier.width(ChaseomUi.line))
@@ -530,7 +531,8 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                                     Spacer(Modifier.width(ChaseomUi.line))
                                     Text(gain, style = ChaseomUi.title.copy(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
                                         color = k.text1, softWrap = false)
-                                    Text(line.substring(at + gain.length), style = ChaseomUi.title, color = k.text1, softWrap = false)
+                                    // Critique final 2 ④: the tail "· 비슷한 체감 (추정)" is 26 Regular #4A4E57 (the value stays 32 Bold).
+                                    Text(line.substring(at + gain.length), style = ChaseomUi.body, color = Color(0xFF4A4E57), softWrap = false)
                                 }
                             }
                         }

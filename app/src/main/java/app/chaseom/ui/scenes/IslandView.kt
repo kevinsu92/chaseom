@@ -206,12 +206,14 @@ fun IslandPanel(
             val windowH = with(density) { LocalWindowInfo.current.containerSize.height.toDp() }
             var topInWindow by remember { mutableFloatStateOf(Float.NaN) }
             // Panel §7-④: Large without cards fills the height left too (never below its natural height).
-            val fill = ui.exchange == null && ui.airMinutes == null && !ui.seatHeatLong && !ui.firstStayHint
+            val fill = ui.exchange == null && ui.airMinutes == null && !ui.seatHeatLong
+            // Critique final 2 ②: the first-stay hint is one caption line under the cause line; the picture fills around it.
+            val hintH = if (ui.firstStayHint) ChaseomUi.related + 32.dp else 0.dp
             val minH = if (set === H1Set.Small) H1Set.SMALL_MIN_DP.dp else natural
             val filled = if (!fill || topInWindow.isNaN()) natural else
-                maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp)
-            // Critique final ①: Small never grows past 1.25x its picture (no 55 % empty sky).
-            val boxH = if (set === H1Set.Small) minOf(filled, natural * 1.25f) else filled
+                maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH)
+            // Critique final ① / final 2 ①: Small grows at most 1.35x its picture (sun and wind lifted, see skyLiftFor).
+            val boxH = if (set === H1Set.Small) minOf(filled, natural * 1.35f) else filled
             Box(
                 // POLISH v1.6: the whole picture is clipped once here (no per-layer clip).
                 Modifier.width(picW).height(boxH).onGloballyPositioned { topInWindow = it.positionInWindow().y }
@@ -240,22 +242,20 @@ fun IslandPanel(
             Spacer(Modifier.width(ChaseomUi.line))
             Text(stringResource(R.string.is_legend), style = ChaseomUi.caption, color = k.text2)
         }
+        if (ui.firstStayHint) {
+            // Critique final 2 ②: no chip; one caption line like the cause line (28 dp amber fan, 24 Medium #4A4E57).
+            Spacer(Modifier.height(ChaseomUi.related))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_fan), null,
+                    tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
+                Spacer(Modifier.width(ChaseomUi.line))
+                // QA REVIEW_COPY_B 5 (UXR E-2): at the 3-hour cap the time cannot change, so only the island is promised.
+                val hint = if (ui.hero?.overCap == true) R.string.is_hint_first_cap else R.string.is_hint_first
+                Text(stringResource(hint), style = ChaseomUi.caption, color = Color(0xFF4A4E57))
+            }
+        }
         Column(Modifier.padding(top = ChaseomUi.block), verticalArrangement = Arrangement.spacedBy(ChaseomUi.related)) {
             cards() // HANDOFF 9.2.1 v6: air / swap cards under the cause line
-            if (ui.firstStayHint) {
-                // HANDOFF 9.5 / POLISH §2-14: tint surface, radius 16, padding 24 x 16, gap 16, fan icon in the sun amber.
-                Row(
-                    Modifier.background(k.tint, ChaseomUi.rInline).padding(horizontal = 24.dp, vertical = ChaseomUi.related),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_fan), null,
-                        tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
-                    Spacer(Modifier.width(ChaseomUi.related))
-                    // QA REVIEW_COPY_B 5 (UXR E-2): at the 3-hour cap the time cannot change, so only the island is promised.
-                    val hint = if (ui.hero?.overCap == true) R.string.is_hint_first_cap else R.string.is_hint_first
-                    Text(stringResource(hint), style = ChaseomUi.body, color = k.text1)
-                }
-            }
         }
     }
 }
