@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 04_design app icon v2 (POLISH_PASS v1.2): sky + navy water. Same hexes as the H1 island. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#DCEAF6" android:pathData="M0,0h108v64h-108z"/>
+    <path android:fillColor="#2A527C" android:pathData="M0,64h108v44h-108z"/>
+    <path android:fillColor="#1F3B5C" android:pathData="M0,88h108v20h-108z"/>
+    <path android:fillColor="#8DB4D9" android:pathData="M0,64h108v2h-108z"/>
+</vector>

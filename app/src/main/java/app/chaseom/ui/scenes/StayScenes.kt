@@ -48,6 +48,13 @@ import app.chaseom.ui.theme.ButtonSize
 import app.chaseom.ui.theme.Pleos
 import app.chaseom.ui.theme.PleosDimens
 import app.chaseom.ui.theme.PleosType
+import app.chaseom.ui.theme.ChaseomUi
+import app.chaseom.ui.theme.cui
+import app.chaseom.ui.theme.uiSize
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -59,18 +66,42 @@ import kotlin.math.roundToInt
  */
 @Composable
 internal fun N0Banner(ui: StayUi, actions: StayActions) {
-    val c = Pleos.colors
     ui.banner?.let { b ->
         val text = stringResource(R.string.n0_banner) +
             (if (ui.policy.idlingNotice) stringResource(R.string.n0_banner_reduced_suffix) else "")
         if (b.expanded) {
-            StatusStrip("⚠ $text", c.warning, 96.dp) {
+            WarnBanner(text, danger = false) {
                 IconButton76(R.drawable.ic_close, stringResource(R.string.cd_close)) { actions.closeBanner() }
             }
         } else {
-            StatusStrip(text, c.warning, 40.dp) // stays for the whole stay
+            WarnBanner(text, danger = false) // stays for the whole stay
         }
-        Spacer(Modifier.height(PleosDimens.space16))
+        Spacer(Modifier.height(ChaseomUi.related))
+    }
+}
+
+/**
+ * POLISH_PASS v1.2 §0.6: one banner component, two tones (N0 safety yellow, K2 danger red). 56 dp, radius 12,
+ * a 6 dp bar on the left, a 28 dp warning icon, caption SemiBold. Warning colours appear only here.
+ */
+@Composable
+internal fun WarnBanner(text: String, danger: Boolean, trailing: (@Composable () -> Unit)? = null) {
+    val k = cui()
+    val bg = if (danger) k.dangerBg else k.safeBg
+    val bar = if (danger) k.dangerBar else k.safeBar
+    val fg = if (danger) k.dangerFg else k.safeFg
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = ChaseomUi.bannerHeight).clip(ChaseomUi.rBanner).background(bg)
+            .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.width(ChaseomUi.bannerBar).fillMaxHeight().background(bar))
+        Spacer(Modifier.width(ChaseomUi.related))
+        Icon(painterResource(R.drawable.ic_warn_line), null, tint = fg, modifier = Modifier.size(ChaseomUi.bannerIcon))
+        Spacer(Modifier.width(ChaseomUi.related))
+        Text(text, style = ChaseomUi.banner, color = fg, modifier = Modifier.weight(1f).padding(vertical = ChaseomUi.line))
+        trailing?.invoke()
+        Spacer(Modifier.width(ChaseomUi.line))
     }
 }
 
@@ -87,7 +118,7 @@ private fun StayHeader(ui: StayUi, actions: StayActions, settingsPage: Page) {
             ui.restartedFromStale -> stringResource(R.string.h_title_resumed)
             else -> stringResource(R.string.h_title_new)
         }
-        Text(title, style = PleosType.titleLarge, color = c.textPrimary,
+        Text(title, style = ChaseomUi.status, color = cui().text2,
             modifier = Modifier.weight(1f))
         IconButton76(R.drawable.ic_settings, stringResource(R.string.cd_settings)) { actions.open(settingsPage) }
     }
@@ -99,7 +130,6 @@ private fun StayHeader(ui: StayUi, actions: StayActions, settingsPage: Page) {
 fun StayFullScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
     Column(modifier) {
         StayHeader(ui, actions, Page.SETTINGS)
-        Spacer(Modifier.height(PleosDimens.space24))
         val hasSide = ui.exchange != null || ui.seatHeatLong || ui.airMinutes != null
         // HANDOFF 9.2.1 v6: with the island face there is no second column; the cards go under the island's
         // chips, so the island never changes size when a card appears (panel R15).
@@ -174,10 +204,13 @@ private fun MainColumnContent(
     toastPlace: ToastPlace = ToastPlace.BOTTOM,
 ) {
     val c = Pleos.colors
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(PleosDimens.space16)) {
+    val k = cui()
+    val size = uiSize()
+    // POLISH_PASS v1.2 §0.2: status -> 8 -> hero -> 8 -> description -> 32 -> picture.
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(ChaseomUi.line)) {
         when (ui.keepBanner) {
             KeepBanner.NEAR -> InfoCard(stringResource(R.string.k1)) // HANDOFF 9.6: K1 is information, not an alarm
-            KeepBanner.BELOW -> StatusStrip(stringResource(R.string.k2), c.negative, 72.dp)
+            KeepBanner.BELOW -> WarnBanner(stringResource(R.string.k2), danger = true)
             null -> Unit
         }
         val hero = ui.hero
@@ -186,54 +219,55 @@ private fun MainColumnContent(
         } else if (hero.belowKeep) {
             // QA E4-2 / REVIEW_COPY_B: below tomorrow's share the hero states the situation only (no "약 0분",
             // no "time you can stay" label); the K2 banner above asks for the action.
-            Text(stringResource(R.string.h_k2_hero), style = PleosType.headlineMedium, color = c.textPrimary)
-            hero.coveredKm?.let { Text(stringResource(R.string.h_k2_meta, ui.settings.keepKm, it), style = PleosType.titleMedium, color = c.textSecondary) }
+            Text(stringResource(R.string.h_k2_hero), style = ChaseomUi.heroSentence(size), color = k.text1)
+            hero.coveredKm?.let { Text(stringResource(R.string.h_k2_meta, ui.settings.keepKm, it), style = ChaseomUi.body, color = k.text2) }
         } else {
             // ISLAND_REDESIGN v2.4: with the island the label line goes; "머물 수 있어요" joins the number.
             if (face == Face.BAR) Text(stringResource(R.string.h_hero_label), style = PleosType.titleMedium, color = c.textSecondary)
             if (hero.hvacOff) {
-                Text(stringResource(R.string.h_hvac_off), style = PleosType.titleMedium, color = c.textPrimary)
-                Text(stringResource(R.string.h_hvac_off_sub), style = PleosType.bodyMedium, color = c.textSecondary)
+                Text(stringResource(R.string.h_hvac_off), style = ChaseomUi.heroSentence(size), color = k.text1)
+                Text(stringResource(R.string.h_hvac_off_sub), style = ChaseomUi.body, color = k.text2)
             } else {
                 val value = if (hero.overCap) stringResource(R.string.h_hero_cap)
                 else stringResource(R.string.h_hero_value, duration(hero.minutes ?: 0))
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                    Text(value, style = TextStyle(fontSize = heroSize, lineHeight = heroSize * 1.2f, fontWeight = PleosType.headlineLarge.fontWeight),
-                        color = c.textPrimary)
-                    if (face == Face.ISLAND) {
-                        // Same ink and weight as the number, smaller (Large 44 / Small 36 sp).
-                        val stay = if (heroSize.value >= 90f) 44.sp else 36.sp
-                        Spacer(Modifier.width(PleosDimens.space16))
-                        Text(stringResource(R.string.h_hero_stay), style = TextStyle(fontSize = stay, lineHeight = stay * 1.2f, fontWeight = PleosType.headlineLarge.fontWeight),
-                            color = c.textPrimary, modifier = Modifier.padding(bottom = 6.dp))
+                // POLISH_PASS v1.2 §0.1: number, tail and "(추정)" on one baseline. The Large toast floats over the
+                // right end of this row (out of the layout flow), so the hero never moves (critique #5).
+                Box(Modifier.fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(value, style = ChaseomUi.hero(size), color = k.text1, modifier = Modifier.alignByBaseline())
+                        if (face == Face.ISLAND) {
+                            Spacer(Modifier.width(ChaseomUi.related))
+                            Text(stringResource(R.string.h_hero_stay), style = ChaseomUi.heroTail(size), color = k.text1, modifier = Modifier.alignByBaseline())
+                        }
+                        Spacer(Modifier.width(ChaseomUi.related))
+                        Text(stringResource(R.string.estimate), style = ChaseomUi.estimate(size), color = k.text3, modifier = Modifier.alignByBaseline())
                     }
-                    Spacer(Modifier.width(PleosDimens.space16))
-                    Text(stringResource(R.string.estimate), style = PleosType.titleMedium, color = c.textSecondary,
-                        modifier = Modifier.padding(bottom = 12.dp))
                     if (toastPlace == ToastPlace.HERO_ROW) {
-                        Spacer(Modifier.weight(1f))
-                        // v7: same row, bottom-aligned 4 dp, no shadow.
-                        ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, Modifier.padding(bottom = 4.dp)) }
+                        ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, Modifier.align(Alignment.CenterEnd)) }
                     }
                 }
                 // Bundle 5: say why the number stops at 3 hours.
-                if (hero.overCap) Text(stringResource(R.string.h_cap_note), style = PleosType.bodyMedium, color = c.textSecondary)
+                if (hero.overCap) Text(stringResource(R.string.h_cap_note), style = ChaseomUi.body, color = k.text2)
             }
         }
         // ISLAND_REDESIGN v2.5 line 2: one description line under the hero (the island's meta line moved here).
         if (face == Face.ISLAND && hero != null && !hero.belowKeep) ui.bar?.let { b ->
-            Text(stringResource(R.string.h_island_meta, b.socPercent, b.keepKm), style = PleosType.bodyMedium, color = c.textSecondary)
+            Text(stringResource(R.string.h_island_meta, b.socPercent, b.keepKm), style = ChaseomUi.body, color = k.text2)
         }
         when (face) {
             Face.BAR -> ui.bar?.let { KeepBar(it) }
             Face.ISLAND -> {
                 IslandPanel(
-                    ui, Modifier.fillMaxWidth(),
+                    ui, Modifier.fillMaxWidth().padding(top = ChaseomUi.block - ChaseomUi.line),
                     pictureTop = {
                         // v7 Small: inside the top-left sky of the picture (16 dp, shadow 0 4 16 25 %), up to the "설정 °C" label (H1).
                         if (toastPlace == ToastPlace.ISLAND_TOP) ui.toast?.let { t ->
+                            // POLISH §0.2: the one shadow in the app, day only (0 4 16 8 %).
+                            val night = androidx.compose.foundation.isSystemInDarkTheme()
                             DialToast(t.items, t.deltaMinutes, t.heldAboveCap,
-                                Modifier.padding(top = 16.dp).shadow(16.dp, RoundedCornerShape(PleosDimens.radiusCard), ambientColor = Color.Black.copy(alpha = 0.25f), spotColor = Color.Black.copy(alpha = 0.25f)))
+                                Modifier.padding(top = ChaseomUi.related).then(if (night) Modifier else
+                                    Modifier.shadow(16.dp, ChaseomUi.rPill, ambientColor = Color.Black.copy(alpha = 0.08f), spotColor = Color.Black.copy(alpha = 0.08f))),
+                                short = true)
                         }
                     },
                 ) { if (actions != null) IslandCards(ui, actions) }
@@ -308,14 +342,15 @@ private fun ClimateLine(s: ClimateSetting) {
 }
 
 @Composable
-private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Boolean, modifier: Modifier) {
+private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Boolean, modifier: Modifier, short: Boolean = false) {
     val none = heldAboveCap || abs(delta) < 1
     val deltaText = when {
         heldAboveCap -> stringResource(R.string.d_toast_cap) // QA M-11: never an hours-long delta
         none -> stringResource(R.string.d_toast_none)
         else -> signedDuration(delta)
     }
-    val label = items.map { changeLabel(it) }.joinToString(" · ")
+    // POLISH §0.6: on Small the toast drops the word before the temperature ("24°C · −9분").
+    val label = items.map { if (short && it is ClimateChange.Temp) "${tempText(it.celsius)}°C" else changeLabel(it) }.joinToString(" · ")
     // Latency probe (QA IP-5): first frame showing this toast content.
     androidx.compose.runtime.LaunchedEffect(items, delta, heldAboveCap) {
         androidx.compose.runtime.withFrameNanos { }
@@ -323,25 +358,37 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
     }
     // HANDOFF 9.6 v1.1: neutral pill (red is for K2 only). Direction circle (HANDOFF 8, round1b): amber down,
     // ink up with a white symbol, grey dot for no change. The symbol always goes with the colour.
-    val night = androidx.compose.foundation.isSystemInDarkTheme()
-    val pill = if (night) Color(0xFFF4F5F7) else Color(0xFF131417)
-    val ink = if (night) Color(0xFF131417) else Color.White
-    val (dirColor, dirSymbol) = when {
-        none -> Color(0xFF8A8E96) to "·"
-        delta > 0 -> UP_CIRCLE to "▲"
-        else -> DOWN_CIRCLE to "▼"
-    }
+    // POLISH §0.6: one-line pill, 64 dp, title 28 SemiBold, 32 dp direction circle with a vector triangle.
+    val k = cui()
     Row(
-        modifier.clip(RoundedCornerShape(PleosDimens.radiusCard)).background(pill)
-            .padding(start = PleosDimens.space16, end = PleosDimens.space40, top = PleosDimens.space16, bottom = PleosDimens.space16),
+        modifier.height(ChaseomUi.toastHeight).clip(ChaseomUi.rPill).background(k.toast)
+            .padding(start = ChaseomUi.related, end = 24.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(48.dp).clip(RoundedCornerShape(50)).background(dirColor), contentAlignment = Alignment.Center) {
-            Text(dirSymbol, style = PleosType.titleMedium, color = if (dirColor == UP_CIRCLE) Color.White else Color(0xFF131417))
-        }
-        Spacer(Modifier.width(PleosDimens.space16))
+        DirectionCircle(if (none) 0 else delta, on = k.toast)
+        Spacer(Modifier.width(ChaseomUi.related))
         Text(if (label.isEmpty()) deltaText else stringResource(R.string.d_toast_fmt, label, deltaText),
-            style = PleosType.headlineSmall, color = ink)
+            style = ChaseomUi.title, color = k.onToast, maxLines = 1, softWrap = false)
+    }
+}
+
+/**
+ * Direction circle (HANDOFF 8 round1b, POLISH §0.3): up = text1 circle with a background-coloured triangle
+ * (ink by day, white by night), down = amber with an ink triangle, no change = grey dot. Never colour alone.
+ */
+@Composable
+internal fun DirectionCircle(delta: Int, on: Color, size: androidx.compose.ui.unit.Dp = ChaseomUi.dirCircle) {
+    val k = cui()
+    val (fill, mark) = when {
+        delta > 0 -> k.text1 to k.bg
+        delta < 0 -> DOWN_CIRCLE to Color(0xFF131417)
+        else -> Color(0xFF8A8E96) to Color(0xFF131417)
+    }
+    Box(Modifier.size(size).clip(ChaseomUi.rPill).background(fill).then(
+        if (delta > 0 && fill == on) Modifier.border(ChaseomUi.cardOutline, k.line, ChaseomUi.rPill) else Modifier),
+        contentAlignment = Alignment.Center) {
+        if (delta == 0) Box(Modifier.size(size / 5).clip(ChaseomUi.rPill).background(mark))
+        else Icon(painterResource(if (delta > 0) R.drawable.ic_tri_up else R.drawable.ic_tri_down), null, tint = mark, modifier = Modifier.size(size * 0.44f))
     }
 }
 
@@ -400,15 +447,18 @@ fun StayReducedScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
 @Composable
 private fun InfoCard(text: String) {
     val c = Pleos.colors
+    // POLISH §2-15: the same surface as the cards (radius 28, 1 dp outline), the yellow bar kept.
+    val k = cui()
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(c.buttonBasicEnabled).height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+        Modifier.fillMaxWidth().clip(ChaseomUi.rContainer).background(k.surface).border(ChaseomUi.cardOutline, k.line, ChaseomUi.rContainer)
+            .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.width(8.dp).fillMaxHeight().background(c.warning))
-        Spacer(Modifier.width(PleosDimens.space24))
-        Icon(painterResource(R.drawable.ic_warning), null, tint = c.warning, modifier = Modifier.size(40.dp))
-        Spacer(Modifier.width(PleosDimens.space16))
-        Text(text, style = PleosType.bodyLargeStrong, color = c.textPrimary, modifier = Modifier.padding(vertical = PleosDimens.space16).weight(1f))
+        Box(Modifier.width(ChaseomUi.cardBar).fillMaxHeight().background(k.safeBar))
+        Spacer(Modifier.width(24.dp))
+        Icon(painterResource(R.drawable.ic_warn_line), null, tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
+        Spacer(Modifier.width(ChaseomUi.related))
+        Text(text, style = ChaseomUi.title, color = k.text1, modifier = Modifier.padding(vertical = ChaseomUi.related).weight(1f))
     }
 }
 
@@ -421,15 +471,16 @@ private fun InfoCard(text: String) {
 @Composable
 fun IslandCards(ui: StayUi, actions: StayActions) {
     val c = Pleos.colors
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    val k = cui()
+    Column(verticalArrangement = Arrangement.spacedBy(ChaseomUi.related)) {
         ui.airMinutes?.let { m ->
             IslandCard(onClose = { actions.dismissAir() }) {
-                Text(stringResource(R.string.air_card, m), style = PleosType.titleMedium, color = c.textPrimary)
+                Text(stringResource(R.string.air_card, m), style = ChaseomUi.title, color = k.text1)
             }
         }
         if (ui.seatHeatLong) {
             IslandCard(onClose = null) {
-                Text(stringResource(R.string.x_burn_30), style = PleosType.titleMedium, color = c.textPrimary)
+                Text(stringResource(R.string.x_burn_30), style = ChaseomUi.title, color = k.text1)
             }
         } else {
             ui.exchange?.let { x ->
@@ -445,40 +496,29 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                         androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp() < 1200.dp
                     }
                     val twoLines = small && x.rule == ExchangeRule.X1_SEAT_HEAT
-                    if (twoLines) Text(stringResource(R.string.x1_l1), style = PleosType.titleMedium, color = c.textPrimary)
+                    if (twoLines) Text(stringResource(R.string.x1_l1), style = ChaseomUi.title, color = k.text1)
                     val line = if (twoLines) stringResource(R.string.x1_l2, gain) else full
                     val at = line.indexOf(gain).takeIf { it >= 0 } ?: line.length
                     // Small window (~840 dp, found 11-10 with a task resize): the circle + minutes move to the next
                     // line as one unit instead of being squeezed into a one-letter column.
                     androidx.compose.foundation.layout.FlowRow(itemVerticalAlignment = Alignment.CenterVertically) {
-                        Text(line.substring(0, at), style = PleosType.titleMedium, color = c.textPrimary)
+                        Text(line.substring(0, at), style = ChaseomUi.title, color = k.text1)
                         if (at < line.length) {
-                            val up = x.gainMinutes > 0
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    Modifier.size(40.dp).clip(RoundedCornerShape(50))
-                                        .background(if (up) UP_CIRCLE else DOWN_CIRCLE),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(if (up) "\u25B2" else "\u25BC", style = PleosType.bodyMedium, color = if (up) Color.White else Color(0xFF131417))
-                                }
-                                Spacer(Modifier.width(8.dp))
-                                Text(line.substring(at), style = PleosType.titleMedium, color = c.textPrimary, softWrap = false)
+                                DirectionCircle(x.gainMinutes, on = k.surface)
+                                Spacer(Modifier.width(ChaseomUi.line))
+                                Text(line.substring(at), style = ChaseomUi.title, color = k.text1, softWrap = false)
                             }
                         }
                     }
-                    val second = buildList {
-                        if (x.rule == ExchangeRule.X1_SEAT_HEAT) add(stringResource(R.string.x_burn)) // always with X1
-                        if (x.rule == ExchangeRule.X3_AC) add(stringResource(R.string.x3_sub))
-                        add(stringResource(R.string.x_footer))
+                    // POLISH §0.6: the burn line with an amber caution icon, then the source line in text3.
+                    if (x.rule == ExchangeRule.X1_SEAT_HEAT) Row(verticalAlignment = Alignment.CenterVertically) { // always with X1
+                        Icon(painterResource(R.drawable.ic_warn_line), null, tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
+                        Spacer(Modifier.width(ChaseomUi.line))
+                        Text(stringResource(R.string.x_burn), style = ChaseomUi.caption, color = k.text1)
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (x.rule == ExchangeRule.X1_SEAT_HEAT) {
-                            Icon(painterResource(R.drawable.ic_warning), null, tint = c.warning, modifier = Modifier.size(28.dp))
-                            Spacer(Modifier.width(8.dp))
-                        }
-                        Text(second.joinToString(" \u00B7 "), style = PleosType.labelMedium.copy(fontSize = 26.sp), color = c.textSecondary)
-                    }
+                    if (x.rule == ExchangeRule.X3_AC) Text(stringResource(R.string.x3_sub), style = ChaseomUi.caption, color = k.text2)
+                    Text(stringResource(R.string.x_footer), style = ChaseomUi.caption, color = k.text3)
                 }
             }
         }
@@ -487,16 +527,26 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
 
 @Composable
 private fun IslandCard(onClose: (() -> Unit)?, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    val c = Pleos.colors
+    // POLISH_PASS v1.2 §0.6 (panel K): white surface, 1 dp outline, an 8 dp amber bar on the left (the sun's colour),
+    // padding 32 x 24; close is an underlined text button with a 76 dp touch area.
+    val k = cui()
     Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(c.buttonBasicEnabled)
-            .padding(horizontal = 28.dp, vertical = 20.dp),
+        Modifier.fillMaxWidth().clip(ChaseomUi.rContainer).background(k.surface).border(ChaseomUi.cardOutline, k.line, ChaseomUi.rContainer)
+            .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp), content = content)
+        Box(Modifier.width(ChaseomUi.cardBar).fillMaxHeight().background(ChaseomUi.amber))
+        Column(Modifier.weight(1f).padding(horizontal = ChaseomUi.cardPadH, vertical = ChaseomUi.cardPadV),
+            verticalArrangement = Arrangement.spacedBy(ChaseomUi.line), content = content)
         if (onClose != null) {
-            Spacer(Modifier.width(16.dp))
-            BigButton(stringResource(R.string.close), onClose, size = ButtonSize.Medium, kind = ButtonKind.Basic)
+            Box(
+                Modifier.heightIn(min = ChaseomUi.touchMin).widthIn(min = ChaseomUi.touchMin).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClose)
+                    .padding(horizontal = ChaseomUi.related),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(stringResource(R.string.close), style = ChaseomUi.title.copy(textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline), color = k.text1)
+            }
+            Spacer(Modifier.width(ChaseomUi.related))
         }
     }
 }

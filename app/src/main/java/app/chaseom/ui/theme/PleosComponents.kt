@@ -71,8 +71,9 @@ fun BigButton(
     val pressed by interaction.collectIsPressedAsState()
     val (bg, fg) = when {
         !enabled -> c.buttonFilledDisabled to c.textQuaternary
-        kind == ButtonKind.Primary -> c.positive to (if (c.isNight) c.onStatus else PleosStatic.Light100)
-        kind == ButtonKind.Filled -> (if (pressed) c.buttonFilledPressed else c.buttonFilledEnabled) to c.onButtonFilled
+        // POLISH_PASS v1.2 §0.3: primary = island navy (no blue), selected pill = ink.
+        kind == ButtonKind.Primary -> cui().let { it.primary to it.onPrimary }
+        kind == ButtonKind.Filled -> cui().let { it.selected to it.onSelected }
         else -> (if (pressed) c.buttonBasicPressed else c.buttonBasicEnabled) to c.textPrimary
     }
     Row(

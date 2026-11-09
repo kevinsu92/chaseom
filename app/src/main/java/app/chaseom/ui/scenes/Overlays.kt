@@ -40,6 +40,10 @@ import app.chaseom.ui.theme.ButtonSize
 import app.chaseom.ui.theme.Pleos
 import app.chaseom.ui.theme.PleosDimens
 import app.chaseom.ui.theme.PleosType
+import app.chaseom.ui.theme.ChaseomUi
+import app.chaseom.ui.theme.cui
+import app.chaseom.ui.theme.uiSize
+import androidx.compose.foundation.layout.heightIn
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -71,10 +75,11 @@ fun NoticeOverlay(kind: NoticeKind, policy: ModePolicy, actions: StayActions) {
                 NoticeKind.NIGHT -> R.string.n2_title
                 NoticeKind.BACKREST -> R.string.n3_title
             }
-            Text(stringResource(title), style = PleosType.titleLarge, color = c.textPrimary)
+            // POLISH §2-18: one overlay title size (28), the quote as a caption.
+            Text(stringResource(title), style = ChaseomUi.title, color = c.textPrimary)
             Body(stringResource(R.string.n_body))
             Text(stringResource(R.string.manual_quote) + " — " + stringResource(R.string.manual_source),
-                style = PleosType.bodyMedium, color = c.textSecondary)
+                style = ChaseomUi.caption, color = c.textSecondary)
             if (policy.idlingNotice) Body(stringResource(R.string.n_body_reduced), strong = true)
             BigButton(stringResource(R.string.n_ok), { actions.acknowledgeNotice() }, size = ButtonSize.Large,
                 kind = ButtonKind.Filled, modifier = Modifier.fillMaxWidth())
@@ -87,44 +92,42 @@ fun NoticeOverlay(kind: NoticeKind, policy: ModePolicy, actions: StayActions) {
 @Composable
 fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app.chaseom.stay.StayUi? = null) {
     val c = Pleos.colors
+    val k = cui()
+    val size = uiSize()
     Scrim {
+        // POLISH_PASS v1.2 §0.6 / §2-17: 800 dp sheet (Small: window width minus margins), radius 28, padding 32.
         Column(
-            Modifier.width(760.dp).padding(vertical = PleosDimens.space24).clip(RoundedCornerShape(PleosDimens.radiusCard))
-                .background(c.backgroundPopup).padding(PleosDimens.space40).verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(PleosDimens.space16),
+            Modifier.widthIn(max = ChaseomUi.receiptWidthLarge).padding(vertical = 24.dp, horizontal = ChaseomUi.margin(size))
+                .clip(ChaseomUi.rContainer).background(k.surface).padding(ChaseomUi.block).verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(ChaseomUi.line),
         ) {
             // HANDOFF 10.4: pier + boat + plank still picture on top of the receipt only. The island itself
             // never reacts to the door; no people, no check marks.
             ui?.let { ReceiptHeaderPicture(it) }
+            Spacer(Modifier.height(ChaseomUi.line))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.e_title), style = PleosType.titleLarge, color = c.textPrimary, modifier = Modifier.weight(1f))
-                Text(SimpleDateFormat("HH:mm", Locale.KOREA).format(Date(remember(r) { System.currentTimeMillis() })) /* wall time for display only; engine times are monotonic */, style = PleosType.bodyLarge, color = c.textSecondary)
+                Text(stringResource(R.string.e_title), style = ChaseomUi.title, color = k.text1, modifier = Modifier.weight(1f))
+                Text(SimpleDateFormat("HH:mm", Locale.KOREA).format(Date(remember(r) { System.currentTimeMillis() })) /* wall time for display only; engine times are monotonic */, style = ChaseomUi.body, color = k.text3)
             }
-            Divider()
-            r.rows.forEach { row ->
-                if (row is ReceiptRow.Windows) Divider()
-                ReceiptLine(row)
+            Column {
+                r.rows.forEach { row -> ReceiptLine(row, size) }
             }
-            Box(Modifier.fillMaxWidth().height(4.dp).background(c.divider))
             if (r.rearCheckAlways) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(painterResource(R.drawable.ic_eye), null, tint = c.textPrimary, modifier = Modifier.size(48.dp))
-                    Spacer(Modifier.width(PleosDimens.space16))
-                    Text(stringResource(R.string.e_rear_always), style = PleosType.titleMedium, color = c.textPrimary)
+                Row(Modifier.heightIn(min = ChaseomUi.receiptRow), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(painterResource(R.drawable.ic_eye), null, tint = k.text1, modifier = Modifier.size(ChaseomUi.iconInline))
+                    Spacer(Modifier.width(ChaseomUi.line))
+                    Text(stringResource(R.string.e_rear_always), style = ChaseomUi.title, color = k.text1)
                 }
             }
-            Spacer(Modifier.height(PleosDimens.space8))
+            Spacer(Modifier.height(ChaseomUi.line))
             BigButton(stringResource(R.string.close), { actions.closeReceipt() }, size = ButtonSize.Large,
-                kind = ButtonKind.Filled, modifier = Modifier.fillMaxWidth())
+                kind = ButtonKind.Basic, modifier = Modifier.fillMaxWidth())
         }
     }
 }
 
 @Composable
-private fun Divider() = Box(Modifier.fillMaxWidth().height(2.dp).background(Pleos.colors.divider))
-
-@Composable
-private fun ReceiptLine(row: ReceiptRow) {
+private fun ReceiptLine(row: ReceiptRow, size: ChaseomUi.Size) {
     val c = Pleos.colors
     val sep = stringResource(R.string.list_sep)
     val (label, value) = when (row) {
@@ -150,10 +153,16 @@ private fun ReceiptLine(row: ReceiptRow) {
             stringResource(if (row.detected) R.string.e_rear_detected else R.string.e_rear_not_detected)
     }
     val grey = row is ReceiptRow.Rear // condition 4: neutral grey either way, never green
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(16.dp).clip(RoundedCornerShape(50)).background(if (row.dot) c.warning else Color.Transparent))
-        Spacer(Modifier.width(PleosDimens.space16))
-        Text(label, style = PleosType.bodyLarge, color = if (grey) c.textTertiary else c.textSecondary, modifier = Modifier.width(200.dp))
-        Text(value, style = PleosType.bodyLargeStrong, color = if (grey) c.textTertiary else c.textPrimary)
+    // POLISH §0.6: rows 56 dp with a 1 dp line, label Regular / value Medium 26, label column 224 (Small 168).
+    // The attention dot stays (an open window etc.) in the sun amber: warning colours belong to banners only.
+    val k = cui()
+    Column {
+        Row(Modifier.heightIn(min = ChaseomUi.receiptRow), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(12.dp).clip(ChaseomUi.rPill).background(if (row.dot) ChaseomUi.amber else Color.Transparent))
+            Spacer(Modifier.width(ChaseomUi.line))
+            Text(label, style = ChaseomUi.body, color = if (grey) k.text3 else k.text2, modifier = Modifier.width(ChaseomUi.receiptLabelCol(size)))
+            Text(value, style = ChaseomUi.bodyValue, color = if (grey) k.text3 else k.text1)
+        }
+        Box(Modifier.fillMaxWidth().height(ChaseomUi.divider).background(k.line))
     }
 }

@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.aspectRatio
+import app.chaseom.ui.theme.ChaseomUi
+import app.chaseom.ui.theme.cui
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -96,7 +99,7 @@ internal class H1Set(
         val Small = H1Set(H1Layers.S, 960f, 24f, 836f, 118f,
             batX = 28f, batY = 530f, buoyX = 28f, buoyY = 576f, buoyAnchor = 0f, keepX = 932f, keepY = 576f, keepAnchor = 1f)
         /** Sun disc radius per size (S / M / L), for the "설정 °C" label next to it. */
-        val SUN_R = floatArrayOf(30f, 42f, 56f)
+        val SUN_R = floatArrayOf(28f, 44f, 64f) // H1 v1.7 (POLISH_PASS §0.6)
     }
 }
 
@@ -161,14 +164,15 @@ fun IslandPanel(
         ""
     }
     val night = isSystemInDarkTheme()
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    // POLISH_PASS v1.2 §0.2: picture -> 16 -> cause line -> 32 -> cards.
+    Column(modifier) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val set = h1SetFor(with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value })
             // Large: card width, at most 1760 dp so a full-screen window keeps the picture under 660 dp tall.
             val picW: Dp = if (set === H1Set.Large) minOf(maxWidth, 1760.dp) else maxWidth
             val k = picW.value / set.w // dp per canvas px
             Box(
-                Modifier.width(picW).height(picW * (set.h / set.w)).clip(RoundedCornerShape(20.dp))
+                Modifier.width(picW).height(picW * (set.h / set.w)).clip(ChaseomUi.rContainer)
                     .semantics { contentDescription = cd; liveRegion = LiveRegionMode.Polite },
             ) {
                 val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize())
@@ -181,24 +185,30 @@ fun IslandPanel(
                 Box(Modifier.align(Alignment.TopStart).padding(start = 16.dp).then(toastMax)) { pictureTop() }
             }
         }
-        // ISLAND_REDESIGN v2.5: one cause chip, always shown (QA M-3 wording).
-        Text(
-            stringResource(R.string.is_legend), style = PleosType.bodyMedium.copy(fontSize = 24.sp), color = Pleos.colors.textPrimary,
-            modifier = Modifier.background(Pleos.colors.buttonBasicEnabled, RoundedCornerShape(12.dp)).padding(horizontal = 16.dp, vertical = 8.dp),
-        )
-        cards() // HANDOFF 9.2.1 v6: air / swap cards under the chip
-        if (ui.firstStayHint) {
-            // HANDOFF 9.5: basic surface, radius 16, fan icon in brand colour, bodyMedium.
-            Row(
-                Modifier.background(Pleos.colors.buttonBasicEnabled, RoundedCornerShape(16.dp)).padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_fan), null,
-                    tint = Pleos.colors.brand, modifier = Modifier.size(32.dp))
-                Spacer(Modifier.width(12.dp))
-                // QA REVIEW_COPY_B 5 (UXR E-2): at the 3-hour cap the time cannot change, so only the island is promised.
-                val hint = if (ui.hero?.overCap == true) R.string.is_hint_first_cap else R.string.is_hint_first
-                Text(stringResource(hint), style = PleosType.bodyMedium, color = Pleos.colors.textPrimary)
+        // ISLAND_REDESIGN v2.5 cause line (QA M-3 wording), always shown. POLISH v1.2: no chip, an info icon + caption.
+        Spacer(Modifier.height(ChaseomUi.related))
+        val k = cui()
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_info), null,
+                tint = k.text2, modifier = Modifier.size(ChaseomUi.iconInline))
+            Spacer(Modifier.width(ChaseomUi.line))
+            Text(stringResource(R.string.is_legend), style = ChaseomUi.caption, color = k.text2)
+        }
+        Column(Modifier.padding(top = ChaseomUi.block), verticalArrangement = Arrangement.spacedBy(ChaseomUi.related)) {
+            cards() // HANDOFF 9.2.1 v6: air / swap cards under the cause line
+            if (ui.firstStayHint) {
+                // HANDOFF 9.5 / POLISH §2-14: tint surface, radius 16, padding 24 x 16, gap 16, fan icon in the sun amber.
+                Row(
+                    Modifier.background(k.tint, ChaseomUi.rInline).padding(horizontal = 24.dp, vertical = ChaseomUi.related),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_fan), null,
+                        tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
+                    Spacer(Modifier.width(ChaseomUi.related))
+                    // QA REVIEW_COPY_B 5 (UXR E-2): at the 3-hour cap the time cannot change, so only the island is promised.
+                    val hint = if (ui.hero?.overCap == true) R.string.is_hint_first_cap else R.string.is_hint_first
+                    Text(stringResource(hint), style = ChaseomUi.body, color = k.text1)
+                }
             }
         }
     }
@@ -211,27 +221,33 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, pic: H1Pic, sunLabelL
     val c = ui.climate
     val sunText = if (c?.powerOn == true && c.setTempC != null) stringResource(R.string.hvac_temp, tempText(c.setTempC))
     else stringResource(R.string.h_hvac_off)
-    // H1: ink text with a white glow on the sky; white text on the navy rail.
-    val bare = TextStyle(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold, color = Color(0xFF131417),
-        shadow = Shadow(Color.White, Offset.Zero, 8f))
+    // H1: ink text with a white glow on the sky; white text on the navy rail (POLISH: picture label role).
+    val bare = ChaseomUi.pictureLabel.copy(color = Color(0xFF131417), shadow = Shadow(Color.White, Offset.Zero, 8f))
     val rail = bare.copy(color = Color.White, shadow = Shadow(Color.Black.copy(alpha = 0.35f), Offset(0f, 1f), 2f))
     PicText(sunText, bare, (set.sunX - H1Set.SUN_R[pic.sun] - 22f) * k, set.sunY * k, 1f, sunLabelLeft)
-    PicText(stringResource(R.string.is_rail_bat, bar.socPercent), rail, set.batX * k, set.batY * k, 0f)
-    if (pic.buoys > 0) PicText(stringResource(R.string.is_rail_buoy), rail, set.buoyX * k, set.buoyY * k, set.buoyAnchor)
-    PicText(stringResource(R.string.is_rail_keep, bar.keepKm), rail, set.keepX * k, set.keepY * k, set.keepAnchor)
+    // POLISH_PASS v1.2 §0.4: a 24 dp line icon in front of each rail label makes "A = B" read as a legend.
+    PicText(stringResource(R.string.is_rail_bat, bar.socPercent), rail, set.batX * k, set.batY * k, 0f, icon = R.drawable.ic_rail_wave)
+    if (pic.buoys > 0) PicText(stringResource(R.string.is_rail_buoy), rail, set.buoyX * k, set.buoyY * k, set.buoyAnchor, icon = R.drawable.ic_rail_buoy)
+    PicText(stringResource(R.string.is_rail_keep, bar.keepKm), rail, set.keepX * k, set.keepY * k, set.keepAnchor, icon = R.drawable.ic_crate)
 }
 
 /** Text whose anchor point (0 start, 0.5 centre, 1 end; vertical centre) sits at (x, y) dp in the picture. */
 @Composable
-private fun PicText(text: String, style: TextStyle, xDp: Float, yDp: Float, anchor: Float, onLeft: ((Float) -> Unit)? = null) {
-    Text(text, style = style, softWrap = false, maxLines = 1, modifier = Modifier.layout { m, cons ->
+private fun PicText(text: String, style: TextStyle, xDp: Float, yDp: Float, anchor: Float, onLeft: ((Float) -> Unit)? = null, icon: Int? = null) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.layout { m, cons ->
         val p = m.measure(cons.copy(minWidth = 0, minHeight = 0))
         layout(p.width, p.height) {
             val left = (xDp.dp.toPx() - anchor * p.width).roundToInt()
             onLeft?.invoke(left.toFloat())
             p.place(left, (yDp.dp.toPx() - p.height / 2f).roundToInt())
         }
-    })
+    }) {
+        if (icon != null) {
+            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(icon), null, tint = style.color, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(ChaseomUi.line))
+        }
+        Text(text, style = style, softWrap = false, maxLines = 1)
+    }
 }
 
 /**
@@ -347,28 +363,32 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
 }
 
 /**
- * Receipt header (HANDOFF 10.4): the same H1 picture, cropped to the pier and the boat, as one still
- * picture in the current state. Shown only with the receipt (door open after >= 1 min).
+ * Receipt header (HANDOFF 10.4, POLISH_PASS v1.2 §0.6): the whole H1 island in its current state, scaled
+ * down (never cropped). Shown only with the receipt (door open after >= 1 min).
  */
 @Composable
 fun ReceiptHeaderPicture(ui: StayUi) {
     val info = IslandInfo.of(ui) ?: return
-    val pic = H1Pic.of(info)
+    StillIsland(H1Set.Large, H1Pic.of(info), Modifier.fillMaxWidth().clip(ChaseomUi.rInline))
+}
+
+/** First-use screen (POLISH_PASS v1.2 §0.5): the whole Small-set island, no labels, a calm mid state. */
+@Composable
+fun OnboardingIsland(modifier: Modifier) {
+    StillIsland(H1Set.Small, H1Pic(sun = 1, wind = 1, level = 3, buoys = 5, k2 = false), modifier.clip(ChaseomUi.rContainer))
+}
+
+/** One still picture of the layer stack at the set's own aspect ratio; night = the same 0.3 veil. */
+@Composable
+private fun StillIsland(set: H1Set, pic: H1Pic, modifier: Modifier) {
     val bmp = rememberBitmaps()
-    val set = H1Set.Large
+    val night = isSystemInDarkTheme()
     Spacer(
-        Modifier.fillMaxWidth().height(120.dp).clip(RoundedCornerShape(24.dp)).drawBehind {
-            val boat = set.layers.getValue("boat_l1")
-            val b = bmp(boat.id)
-            // Visible window: 300 canvas px tall around the boat, as wide as the card allows.
-            val k = maxOf(size.width / set.w, size.height / 300f)
-            val vw = size.width / k
-            val vh = size.height / k
-            val cx = (boat.x + b.width / 2f).coerceIn(vw / 2f, set.w - vw / 2f)
-            val cy = (boat.y - (pic.level - 1) * set.step + b.height / 2f).coerceIn(vh / 2f, set.h - vh / 2f)
-            scale(k, k, pivot = Offset.Zero) {
-                translate(left = vw / 2f - cx, top = vh / 2f - cy) { drawH1(set, bmp, pic, null, 1f) }
-            }
+        modifier.aspectRatio(set.w / set.h).drawBehind {
+            bmp.frame()
+            val k = size.width / set.w
+            scale(k, k, pivot = Offset.Zero) { drawH1(set, bmp, pic, null, 1f) }
+            if (night) drawRect(Color.Black.copy(alpha = 0.3f))
         },
     )
 }

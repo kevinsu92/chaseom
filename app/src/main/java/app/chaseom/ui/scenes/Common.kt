@@ -90,7 +90,8 @@ fun Card(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
 fun IconButton76(icon: Int, contentDescription: String, onClick: () -> Unit) {
     val c = Pleos.colors
     Box(
-        Modifier.size(PleosDimens.touchMin).clip(RoundedCornerShape(50)).background(c.buttonBasicEnabled)
+        // POLISH §0.6 (panel K-2): a bare icon, no grey circle; the 76 dp touch area stays (T-1).
+        Modifier.size(PleosDimens.touchMin).clip(RoundedCornerShape(50))
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

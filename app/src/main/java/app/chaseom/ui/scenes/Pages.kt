@@ -42,6 +42,12 @@ import app.chaseom.ui.theme.ButtonSize
 import app.chaseom.ui.theme.Pleos
 import app.chaseom.ui.theme.PleosDimens
 import app.chaseom.ui.theme.PleosType
+import app.chaseom.ui.theme.ChaseomUi
+import app.chaseom.ui.theme.cui
+import app.chaseom.ui.theme.uiSize
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.ui.draw.clip
 
 // ---- G: driving glance. One static view: no numbers, no buttons, no click handlers, no motion. -
 
@@ -49,11 +55,12 @@ import app.chaseom.ui.theme.PleosType
 fun GlanceScene(firstRun: Boolean) {
     val c = Pleos.colors
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(painterResource(R.drawable.ic_pause), null, tint = c.textPrimary, modifier = Modifier.size(96.dp))
+        // POLISH_PASS v1.2 §0.5: the only thing on this screen is the app icon, so it carries the brand (DR sizes kept).
+        AppIcon(ChaseomUi.glanceIcon)
         Spacer(Modifier.height(PleosDimens.space24))
-        Text(stringResource(R.string.drv_title), style = PleosType.titleMedium, color = c.textPrimary, textAlign = TextAlign.Center)
+        Text(stringResource(R.string.drv_title), style = ChaseomUi.glanceTitle, color = c.textPrimary, textAlign = TextAlign.Center)
         Text(stringResource(if (firstRun) R.string.drv_sub_first_run else R.string.drv_sub),
-            style = PleosType.bodyLarge, color = c.textSecondary, textAlign = TextAlign.Center)
+            style = ChaseomUi.glanceSub, color = c.textSecondary, textAlign = TextAlign.Center)
     }
 }
 
@@ -70,42 +77,66 @@ fun ConnectingScene() {
 
 @Composable
 fun OnboardingScene(mode: AppMode, actions: StayActions, modifier: Modifier) {
-    val c = Pleos.colors
+    val k = cui()
+    val size = uiSize()
     val ev = mode == AppMode.FULL
-    Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(PleosDimens.space32)) {
-        Text(stringResource(if (ev) R.string.onb_title else R.string.onb_reduced_title), style = PleosType.headlineSmall, color = c.textPrimary)
-        val points = if (ev) {
-            listOf(
-                Triple(R.drawable.ic_lock, R.string.onb_p1_title, R.string.onb_p1_body),
-                Triple(R.drawable.ic_settings, R.string.onb_p2_title, R.string.onb_p2_body),
-                Triple(R.drawable.ic_eye, R.string.onb_p3_title, R.string.onb_p3_body),
-            )
-        } else {
-            listOf(
-                Triple(R.drawable.ic_warning, R.string.r_card_title, R.string.onb_reduced_p1_body),
-                Triple(R.drawable.ic_eye, R.string.onb_p3_title, R.string.onb_p3_body),
-            )
-        }
-        points.forEach { (icon, title, body) ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(painterResource(icon), null, tint = c.textPrimary, modifier = Modifier.size(64.dp))
-                Spacer(Modifier.width(PleosDimens.space24))
-                Column {
-                    Text(stringResource(title), style = PleosType.titleMedium, color = c.textPrimary)
-                    Body(stringResource(body), color = c.textSecondary)
-                }
+    // POLISH_PASS v1.2 §0.5: the island scene first (left on Large, top on Small), no labels; point icons are
+    // crate / sun-dial / receipt in tinted circles (no lock); the manual quote stays with an amber caution icon.
+    val points = if (ev) {
+        listOf(
+            Triple(R.drawable.ic_crate, R.string.onb_p1_title, R.string.onb_p1_body),
+            Triple(R.drawable.ic_sundial, R.string.onb_p2_title, R.string.onb_p2_body),
+            Triple(R.drawable.ic_receipt, R.string.onb_p3_title, R.string.onb_p3_body),
+        )
+    } else {
+        listOf(
+            Triple(R.drawable.ic_warn_line, R.string.r_card_title, R.string.onb_reduced_p1_body),
+            Triple(R.drawable.ic_receipt, R.string.onb_p3_title, R.string.onb_p3_body),
+        )
+    }
+    val picture = @Composable { m: Modifier ->
+        Column(m, verticalArrangement = Arrangement.spacedBy(ChaseomUi.related)) {
+            OnboardingIsland(Modifier.fillMaxWidth())
+            Row(verticalAlignment = Alignment.Top) {
+                Icon(painterResource(R.drawable.ic_warn_line), null, tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
+                Spacer(Modifier.width(ChaseomUi.line))
+                Text(stringResource(R.string.manual_quote) + " — " + stringResource(R.string.manual_source),
+                    style = ChaseomUi.caption, color = k.text2)
             }
         }
-        Card {
-            StatusIcon(R.drawable.ic_warning, c.warning, 56.dp)
-            Body(stringResource(R.string.manual_quote))
-            Small(stringResource(R.string.manual_source))
+    }
+    val text = @Composable { m: Modifier ->
+        Column(m, verticalArrangement = Arrangement.spacedBy(ChaseomUi.block)) {
+            Text(stringResource(if (ev) R.string.onb_title else R.string.onb_reduced_title), style = ChaseomUi.onboardingTitle(size), color = k.text1)
+            points.forEach { (icon, title, body) ->
+                Row(verticalAlignment = Alignment.Top) {
+                    Box(Modifier.size(ChaseomUi.iconPointCircle).clip(ChaseomUi.rPill).background(k.tint), contentAlignment = Alignment.Center) {
+                        Icon(painterResource(icon), null, tint = k.text1, modifier = Modifier.size(ChaseomUi.iconPoint))
+                    }
+                    Spacer(Modifier.width(ChaseomUi.related + ChaseomUi.line))
+                    Column(verticalArrangement = Arrangement.spacedBy(ChaseomUi.line)) {
+                        Text(stringResource(title), style = ChaseomUi.title, color = k.text1)
+                        Text(stringResource(body), style = ChaseomUi.body, color = k.text2)
+                    }
+                }
+            }
+            BigButton(
+                stringResource(if (ev) R.string.onb_start_ev else R.string.onb_start_reduced),
+                { actions.finishOnboarding(toSettings = ev) }, kind = ButtonKind.Primary, modifier = Modifier.fillMaxWidth(),
+            )
         }
-        BigButton(
-            stringResource(if (ev) R.string.onb_start_ev else R.string.onb_start_reduced),
-            { actions.finishOnboarding(toSettings = ev) }, kind = ButtonKind.Primary,
-        )
-
+    }
+    if (size == ChaseomUi.Size.Large) {
+        Row(modifier.verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(ChaseomUi.block * 2),
+            verticalAlignment = Alignment.CenterVertically) {
+            picture(Modifier.weight(1f))
+            text(Modifier.weight(1f).widthIn(max = ChaseomUi.readableMax))
+        }
+    } else {
+        Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(ChaseomUi.block)) {
+            picture(Modifier.fillMaxWidth())
+            text(Modifier.fillMaxWidth())
+        }
     }
 }
 
@@ -117,16 +148,17 @@ fun SettingsScene(current: StaySettings, actions: StayActions, modifier: Modifie
     val c = Pleos.colors
     var km by remember { mutableIntStateOf(current.keepKm) }
     var label by remember { mutableStateOf(current.label) }
-    Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(PleosDimens.space32)) {
+    // POLISH_PASS v1.2 §0.6: the same 960 dp reading width as the first-use screen.
+    Column(modifier.widthIn(max = ChaseomUi.readableMax).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(PleosDimens.space32)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton76(R.drawable.ic_back, stringResource(R.string.cd_back)) { actions.open(Page.NONE) }
             Spacer(Modifier.width(PleosDimens.space24))
-            Text(stringResource(R.string.s_title), style = PleosType.titleLarge, color = c.textPrimary)
+            Text(stringResource(R.string.s_title), style = ChaseomUi.title, color = c.textPrimary)
         }
         Text(stringResource(R.string.s_question), style = PleosType.titleMedium, color = c.textPrimary)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(PleosDimens.space32)) {
             BigButton("−", { km = (km - StaySettings.STEP_KM).coerceAtLeast(StaySettings.MIN_KM) }, kind = ButtonKind.Basic)
-            Text(stringResource(R.string.s_km, km), style = PleosType.headlineLarge, color = c.textPrimary,
+            Text(stringResource(R.string.s_km, km), style = ChaseomUi.hero(uiSize()), color = c.textPrimary,
                 modifier = Modifier.width(300.dp), textAlign = TextAlign.Center)
             BigButton("+", { km = (km + StaySettings.STEP_KM).coerceAtMost(StaySettings.MAX_KM) }, kind = ButtonKind.Basic)
         }
@@ -177,7 +209,7 @@ fun AboutScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
                 actions.open(if (ui.policy.mode == AppMode.FULL) Page.SETTINGS else Page.NONE)
             }
             Spacer(Modifier.width(PleosDimens.space24))
-            Text(stringResource(R.string.s_about), style = PleosType.titleLarge, color = c.textPrimary)
+            Text(stringResource(R.string.s_about), style = ChaseomUi.title, color = c.textPrimary)
         }
         Text(stringResource(R.string.about_name, app.chaseom.BuildConfig.VERSION_NAME), style = PleosType.titleMedium, color = c.textPrimary)
         Card {
@@ -190,5 +222,15 @@ fun AboutScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
         Body(stringResource(R.string.about_v2l))
         if (!ui.backrestSupported) Small(stringResource(R.string.about_backrest_none))
         Box(Modifier.height(PleosDimens.space24))
+    }
+}
+
+/** The adaptive app icon (04_design POLISH_PASS v1.2) drawn from its two layers, clipped like a launcher tile. */
+@Composable
+fun AppIcon(size: androidx.compose.ui.unit.Dp) {
+    Box(Modifier.size(size).clip(androidx.compose.foundation.shape.RoundedCornerShape(size / 4)), contentAlignment = Alignment.Center) {
+        // Adaptive layers are 108 dp with the visible tile in the middle 72: draw them 1.5x and let the clip trim.
+        androidx.compose.foundation.Image(painterResource(R.drawable.ic_launcher_background), null, Modifier.requiredSize(size * 1.5f))
+        androidx.compose.foundation.Image(painterResource(R.drawable.ic_launcher_foreground), null, Modifier.requiredSize(size * 1.5f))
     }
 }
