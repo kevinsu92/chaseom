@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Lint exceptions, each with its reason. Everything else is reported. -->
+<lint>
+    <!-- Island layers (04_design, 960x480 viewport) are rasterised once per size into a cached bitmap
+         (ui/scenes/IslandView.kt), so the large-vector cost lint warns about is paid once, not per frame. -->
+    <issue id="VectorRaster">
+        <ignore path="src/main/res/drawable/is_*.xml" />
+    </issue>
+    <!-- Pleos Connect is Android Automotive API 34; targetSdk follows the platform, not the latest phone SDK. -->
+    <issue id="OldTargetApi" severity="ignore" />
+</lint>

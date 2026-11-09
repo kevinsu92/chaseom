@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 차섬 launcher foreground (108dp viewport, art inside 66dp safe zone). 04_design. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFF" android:pathData="M51,18h6a2,2 0,0 1,2,2v4h-10v-4a2,2 0,0 1,2,-2z"/>
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="4" android:fillColor="#00000000"
+        android:pathData="M49,24h10a9,9 0,0 1,9,9v42a9,9 0,0 1,-9,9h-10a9,9 0,0 1,-9,-9v-42a9,9 0,0 1,9,-9z"/>
+    <path android:fillColor="#FFB020" android:pathData="M49,28.5h10a4.5,4.5 0,0 1,4.5,4.5v20a4.5,4.5 0,0 1,-4.5,4.5h-10a4.5,4.5 0,0 1,-4.5,-4.5v-20a4.5,4.5 0,0 1,4.5,-4.5z"/>
+    <path android:fillColor="#686A72" android:pathData="M49,62h10a4.5,4.5 0,0 1,4.5,4.5v8.5a4.5,4.5 0,0 1,-4.5,4.5h-10a4.5,4.5 0,0 1,-4.5,-4.5v-8.5a4.5,4.5 0,0 1,4.5,-4.5z"/>
+    <path android:fillColor="#131417" android:pathData="M54,65.9a2.6,2.6 0,1 1,0,5.2a2.6,2.6 0,1 1,0,-5.2zM52.9,68.5h2.2v6h-2.2z"/>
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3" android:strokeLineCap="round" android:pathData="M68,59.8h7"/>
+    <path android:fillColor="#FFB020" android:pathData="M79,55.8a4,4 0,1 1,0,8a4,4 0,1 1,0,-8z"/>
+</vector>

@@ -1,0 +1,70 @@
+{
+ "build_type": "release",
+ "island_on_screen": true,
+ "apk": "Chaseom_Chaseom_release.apk",
+ "apk_sha256": "c9370d40331b35d179f3beb5ab283830e4118c7993024c4c232ffce8771724e1",
+ "apk_bytes": 3529435,
+ "apk_built": "2026-11-09T13:37:08",
+ "measured": "2026-11-09T13:46:27",
+ "toast_frame_ms": [
+  117.1,
+  59.9,
+  108.5,
+  43.4,
+  45.4,
+  81.4,
+  68.9,
+  40.4,
+  49.3,
+  43.5
+ ],
+ "toast": {
+  "median": 54.6,
+  "max": 117.1,
+  "n": 10
+ },
+ "island_frame_ms": [
+  76.0,
+  26.9,
+  61.8,
+  41.5,
+  49.9,
+  55.7,
+  49.1,
+  28.9,
+  41.5,
+  28.0
+ ],
+ "island_frame": {
+  "median": 45.3,
+  "max": 76.0,
+  "n": 10
+ },
+ "fold_ms": [
+  1.6,
+  11.1,
+  2.3,
+  0.6,
+  12.1,
+  55.0,
+  11.5,
+  3.2,
+  17.7,
+  36.7
+ ],
+ "fold": {
+  "median": 11.3,
+  "max": 55.0,
+  "n": 10
+ },
+ "start_total_ms": [
+  1532,
+  1898,
+  1676
+ ],
+ "cpu_idle_30s_avg": 0.37,
+ "cpu_dial10s_60s_avg": 8.2,
+ "cpu_dial10s_60s_max": 48.2,
+ "pss_mb": 42.4,
+ "note": "CPU = % of one core (emulator x86_64, 4 cores). Times from the app's PROBE lines (first frame after composition); host/emulator clock offset corrected (+-20 ms)."
+}

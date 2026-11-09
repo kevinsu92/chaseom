@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Android Automotive OS only (Pleos Connect). -->
+    <uses-feature
+        android:name="android.hardware.type.automotive"
+        android:required="true" />
+    <!-- AAOS head units have no portrait mode / touch-free variants; do not require them. -->
+    <uses-feature android:name="android.hardware.wifi" android:required="false" />
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false" />
+    <uses-feature android:name="android.hardware.screen.landscape" android:required="false" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.hardware.faketouch" android:required="false" />
+
+    <!--
+        Only what the shipped features read (QA G-7, FINDINGS M-02). All are normal-level:
+        no runtime permission dialog. Pleos: gear (CAR_DRIVE), SOC (CAR_ENERGY), climate,
+        seats (heat, backrest, occupancy), windows, doors, cabin light.
+    -->
+    <uses-permission android:name="pleos.car.permission.CAR_DRIVE" />
+    <uses-permission android:name="pleos.car.permission.CAR_ENERGY" />
+    <uses-permission android:name="pleos.car.permission.CAR_CLIMATE" />
+    <uses-permission android:name="pleos.car.permission.CAR_SEATS" />
+    <uses-permission android:name="pleos.car.permission.CAR_WINDOWS" />
+    <uses-permission android:name="pleos.car.permission.CAR_DOORS" />
+    <uses-permission android:name="pleos.car.permission.CAR_LIGHTS" />
+    <!-- AAOS standard properties: fuel type + battery capacity (CAR_INFO), charge port. Normal. -->
+    <uses-permission android:name="android.car.permission.CAR_INFO" />
+    <uses-permission android:name="android.car.permission.CAR_ENERGY_PORTS" />
+    <uses-permission android:name="android.car.permission.CAR_POWERTRAIN" />
+    <!-- Stay service (FINDINGS M-01): keeps signals alive while another app is in front. Normal. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <application
+        android:name=".PleosApp"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:appCategory="productivity"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.PleosApp">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|density|uiMode|keyboardHidden|navigation"
+            android:theme="@style/Theme.PleosApp">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!--
+                No "distractionOptimized" meta-data (FINDINGS M-03): every screen is park-only, so
+                the system hides the app while driving. DrivingStateGate is a second layer.
+            -->
+        </activity>
+        <service
+            android:name=".stay.StayService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keeps parked-car signal listeners alive during a stay so the exit checklist and safety notices still appear after the driver switches apps." />
+        </service>
+    </application>
+</manifest>

@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 차섬 (Chaseom) UI strings (04_design, 2026-11-09). Merge into res/values/strings.xml.
+     Wording rules W1-W12 in 04_design/FLOWS.md section 5 (QA conditions 1-14). Do not change wording without design + QA review.
+     app_name: CEO decision 2026-11-09 = 차섬 (Latin: Chaseom). -->
+<resources>
+
+    <!-- G: driving glance (DR: <= 20 chars, 1 line) -->
+    <string name="drv_title">주행 중에는 화면을 쉬어요</string>
+    <string name="drv_sub">P에 놓으면 다시 보여요</string>
+    <string name="drv_sub_first_run">주차 후 시작해요</string>
+
+    <!-- O1: onboarding -->
+    <string name="onb_title">머무는 동안,\n내일 갈 전력은 남겨 두세요</string>
+    <string name="onb_p1_title">내일 몫을 먼저 남겨 둬요</string>
+    <string name="onb_p1_body">내일 갈 거리만큼은 오늘 쓰지 않게 표시해요</string>
+    <string name="onb_p2_title">다이얼을 돌리면 섬과 시간이 바뀌어요</string>
+    <string name="onb_p2_body">공조·열선을 바꾸면 섬의 날씨와 머물 수 있는 시간이 바로 바뀌어요 (섬은 장식 그림)</string>
+    <string name="onb_p3_title">내리기 전 영수증 한 장</string>
+    <string name="onb_p3_body">창문·실내등·뒷좌석을 한 번 더 확인해요</string>
+    <string name="onb_start_ev">내일 몫 정하기</string>
+    <string name="onb_start_reduced">시작하기</string>
+    <string name="onb_reduced_title">차 안에서 머무를 때,\n잊기 쉬운 것을 알려 드려요</string>
+    <string name="onb_reduced_p1_body">시동을 켠 채 오래 머무르지 않도록 알려요</string>
+
+    <!-- Manual quote (always with source) -->
+    <string name="manual_quote">"히터나 에어컨을 켠 채 차량 안에서 수면을 취하지 마십시오. 질식으로 인해 사망할 수 있습니다."</string>
+    <string name="manual_source">현대자동차 취급설명서</string>
+
+    <!-- N0 banner / N1-N3 notice cards -->
+    <string name="n0_banner">공조를 켠 채 차 안에서 잠들지 마세요 (현대차 취급설명서)</string>
+    <string name="n0_banner_reduced_suffix"> · 시동 켠 채 오래 머무르지 마세요</string>
+    <string name="n1_title">머문 지 1시간이 지났어요</string>
+    <string name="n2_title">밤 시간이에요</string>
+    <string name="n3_title">등받이를 젖혔어요</string>
+    <string name="n_body">히터나 에어컨을 켠 채 잠들지 마세요.</string>
+    <string name="n_body_reduced">시동을 켠 채 오래 머무르지 마세요 (배기가스·공회전 제한)</string>
+    <string name="n_ok">알겠어요</string>
+
+    <!-- H: staying (EV) -->
+    <string name="h_title">머무는 중 · %1$d분째</string>
+    <string name="h_hero_label">지금 공조 설정으로 머물 수 있는 시간</string>
+    <string name="h_hero_value">약 %1$s</string>
+    <string name="h_hero_cap">3시간 이상</string>
+    <string name="estimate">(추정)</string>
+    <string name="h_hvac_off">공조 꺼짐</string>
+    <string name="h_hvac_off_sub">지금은 공조로 쓰는 전력이 없어요 (추정)</string>
+    <string name="h_bar_today">오늘 쓸 수 있는 몫</string>
+    <string name="h_bar_keep">내일 지킬 몫 %1$dkm</string>
+    <string name="h_bar_meta">배터리 %1$d%% · 내일 몫 약 %2$d%% (여유분 20%% 포함, 추정)</string>
+    <string name="dur_hm">%1$d시간 %2$d분</string>
+    <string name="dur_m">%1$d분</string>
+    <string name="d_toast_fmt">%1$s · %2$s</string>
+    <string name="d_toast_none">변화 거의 없음</string>
+    <string name="hvac_on">공조 켜짐</string>
+    <string name="hvac_off">공조 꺼짐</string>
+    <string name="hvac_temp">설정 %1$s°C</string>
+    <string name="hvac_fan">풍량 %1$d</string>
+    <string name="hvac_ac_on">A/C 켜짐</string>
+    <string name="hvac_ac_off">A/C 꺼짐</string>
+    <string name="hvac_recirc">내기순환</string>
+    <string name="hvac_fresh">외기유입</string>
+    <string name="seat_heat_driver">운전석 열선 %1$d</string>
+
+    <!-- H·X exchange-rate cards -->
+    <string name="x1">설정 21°C + 운전석 열선 2단 = 비슷한 체감, %1$s (추정)</string>
+    <string name="x2">풍량 3단으로 낮추면 %1$s (추정)</string>
+    <string name="x3">A/C를 끄면 %1$s (추정)</string>
+    <string name="x3_sub">유리에 김이 서리면 A/C를 켜 두세요</string>
+    <string name="x_burn">열선은 저온 화상에 주의하세요</string>
+    <string name="x_burn_30">열선 2단 30분째예요 · 1단으로 낮춰 주세요</string>
+    <string name="x_footer">개인차 있음 · 계산 근거는 설정 &gt; 앱 정보</string>
+    <string name="close">닫기</string>
+
+    <!-- H·A air card (never show safe/good/done) -->
+    <string name="air_card">창문이 닫힌 채 내기순환 %1$d분째예요. 바깥 공기를 한 번 들여 주세요.</string>
+
+    <!-- H·K keep-share banners -->
+    <string name="k1">곧 내일 몫에 닿아요 · 공조를 꺼야 지켜집니다 (앱은 공조를 끄지 않아요)</string>
+    <string name="k2">내일 몫 아래로 내려갔어요 · 지금 공조를 꺼 주세요</string>
+
+    <!-- R: reduced mode -->
+    <string name="r_card_title">시동을 켠 채 오래 머무르지 마세요</string>
+    <string name="r_card_body">배기가스 위험이 있고, 지역마다 공회전 제한이 있어요</string>
+    <string name="r_mode_note">이 차는 전기차로 확인되지 않아 경고와 하차 확인만 제공해요</string>
+
+    <!-- E: receipt (no total / no "all clear") -->
+    <string name="e_title">떠나기 전</string>
+    <string name="e_stay">머문 시간</string>
+    <string name="e_energy">쓴 전력</string>
+    <string name="e_energy_val">약 %1$skWh (추정)</string>
+    <string name="e_keep">내일 몫</string>
+    <string name="e_keep_ok">%1$dkm 남음 (추정)</string>
+    <string name="e_keep_low">%1$dkm 중 약 %2$dkm (추정)</string>
+    <string name="e_window">창문</string>
+    <string name="e_window_open">%1$s 열림</string>
+    <string name="e_window_closed">닫힘</string>
+    <string name="e_light">실내등</string>
+    <string name="e_on">켜짐</string>
+    <string name="e_off">꺼짐</string>
+    <string name="e_unknown">확인 안 됨</string>
+    <string name="e_port">충전 포트</string>
+    <string name="e_port_open">열림</string>
+    <string name="e_port_closed">닫힘</string>
+    <string name="e_rear">뒷좌석</string>
+    <string name="e_rear_detected">탑승 감지됨</string>
+    <string name="e_rear_not_detected">감지 안 됨 — 직접 확인하세요</string>
+    <string name="e_rear_always">뒷좌석 직접 확인</string>
+
+    <!-- S: settings -->
+    <string name="s_title">내일 몫</string>
+    <string name="s_question">내일 처음 갈 거리는?</string>
+    <string name="s_km">%1$dkm</string>
+    <string name="s_label_q">핀에 쓸 이름</string>
+    <string name="s_label_work">회사</string>
+    <string name="s_label_school">학교</string>
+    <string name="s_label_home">집</string>
+    <string name="s_label_pickup">마중</string>
+    <string name="s_label_etc">기타</string>
+    <string name="s_margin">겨울엔 더 많이 들어요. 여유분 20%를 더해 남겨 둬요 (추정)</string>
+    <string name="s_save">저장</string>
+    <string name="s_about">앱 정보</string>
+    <string name="about_v2l">현대차 V2L 방전 제한처럼 하한을 두고, 공조 체류에 내일 이동 거리 기준으로 넓혔어요</string>
+    <string name="about_model">계산: 배터리 용량 × (현재 %% − 내일 몫 %%) ÷ 지금 설정의 소비 전력. 소비 전력은 출처 계수표로 추정해요(영하 10°C 정상상태 기준, 아래 표)</string>
+    <string name="about_fuel_ev">차종: 전기차로 확인됨</string>
+    <string name="about_fuel_reduced">차종: 전기차로 확인되지 않음 (경고·하차 확인만)</string>
+
+
+    <!-- Face: small weather island (HANDOFF section 8, flag FACE_ISLAND). Picture has no text; chips only. -->
+    <string name="is_legend">장식 그림 · 실내 온도·공기질 아님</string>
+    <string name="is_key_rock_l">왼쪽 바위 = 운전석 열선</string>
+    <string name="is_key_rock_r">오른쪽 바위 = 조수석 열선</string>
+    <string name="is_cd">섬 그림: 장식이에요. 지금 설정으로 %1$s 머물 수 있어요 (추정), 내일 몫 %2$dkm</string>
+    <!-- Toast when both before/after are over the 3-hour cap (QA M-11, moved from 03_engineering strings.xml) -->
+    <string name="d_toast_cap">3시간 이상 유지 (추정)</string>
+
+    <!-- ===== GAP_FIX 묶음 B (CEO 승인 2026-11-09). 05_qa 판정본 `05_qa/REVIEW_COPY_B.md` §1 확정 문구 반영(2026-11-09). 엔지니어링 사본: 쓰지 않는 st_loading·st_disconnected·h_soc_unknown·is_unsupported·hg_*·is_key_rock은 뺐다. =====
+         is_day / is_keep 은 지금 엔지니어링 res/values/strings.xml에 있다: 그쪽 두 줄을 지우고 이 파일 값을 쓴다(중복 리소스 방지). -->
+    <string name="is_day">오늘 머물 시간 (3시간까지 표시)</string>
+    <string name="is_keep">배의 짐 = 내일 몫 %1$dkm · %2$s</string>
+    <string name="is_keep_default">배의 짐 = 내일 몫 %1$dkm · 기본값 (설정에서 바꿀 수 있어요)</string>
+    <string name="is_key_follow">공조 설정·열선을 따라 바뀌어요</string>
+    <string name="is_key_keep_k2">배의 짐 = 내일 몫 · 지금 짐을 쓰고 있어요 (추정)</string>
+    <string name="is_hint_first">공조 다이얼을 바꾸면 섬과 남은 시간이 함께 바뀌어요</string>
+    <string name="is_hint_first_cap">공조 다이얼을 바꾸면 섬이 바뀌어요</string>
+    <string name="h_cap_note">3시간까지만 계산해 보여 줘요 · 1시간마다 경고를 다시 띄워요</string>
+    <string name="h_k2_hero">내일 몫을 쓰고 있어요 (추정)</string>
+    <string name="h_k2_meta">내일 몫 %1$dkm 중 약 %2$dkm 남음 (추정)</string>
+    <string name="h_title_new">머무는 중 · 방금 시작했어요</string>
+    <string name="h_title_resumed">머무는 중 · 새로 시작했어요</string>
+    <string name="st_waiting_car">차와 연결하는 중이에요</string>
+    <string name="e_energy_charging">충전 중이라 계산하지 않았어요</string>
+    <string name="e_energy_small">1kWh 미만 (추정)</string>
+    <string name="e_energy_implausible">배터리 값이 크게 바뀌어 계산하지 않았어요</string>
+    <string name="s_use_default_link">기본값(30km · 회사)으로 시작하기</string>
+    <string name="about_name">차섬 (Chaseom) · 버전 %1$s</string>
+
+    <!-- Accessibility -->
+    <string name="cd_settings">설정</string>
+    <string name="cd_close">닫기</string>
+    <string name="cd_back">뒤로</string>
+</resources>
