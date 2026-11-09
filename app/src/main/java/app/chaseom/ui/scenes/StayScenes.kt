@@ -134,6 +134,13 @@ private fun MainColumn(
 
 private enum class Face { BAR, ISLAND }
 
+/** The climate status line is not on the island screen (HQ 2026-11-11, "글 3줄"). */
+internal fun climateLineShown(islandFace: Boolean): Boolean = !islandFace
+
+/** HANDOFF 8 (round1b): up = ink circle with a white symbol, down = amber circle with an ink symbol. No green. */
+internal val UP_CIRCLE = Color(0xFF131417)
+internal val DOWN_CIRCLE = Color(0xFFFFB020)
+
 /** HANDOFF 9.6 v7 toast positions. */
 internal enum class ToastPlace { HERO_ROW, ISLAND_TOP, BOTTOM }
 
@@ -219,7 +226,9 @@ private fun MainColumnContent(
                 ) { if (actions != null) IslandCards(ui, actions) }
             }
         }
-        ui.climate?.let { ClimateLine(it) }
+        // HANDOFF 8 (round1b, panel §12-①): the island screen keeps three text lines; Pleos' own climate bar
+        // already shows these values, so the status line stays only with the bar face.
+        if (climateLineShown(islandFace = face == Face.ISLAND)) ui.climate?.let { ClimateLine(it) }
     }
 }
 
@@ -299,15 +308,15 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
         androidx.compose.runtime.withFrameNanos { }
         android.util.Log.i("PROBE", "toastFrame wall=${System.currentTimeMillis()}")
     }
-    // HANDOFF 9.6 v1.1: neutral pill (red is for K2 only). Direction circle: amber down, green up (green only
-    // inside this circle, QA), grey dot for no change. The symbol always goes with the colour.
+    // HANDOFF 9.6 v1.1: neutral pill (red is for K2 only). Direction circle (HANDOFF 8, round1b): amber down,
+    // ink up with a white symbol, grey dot for no change. The symbol always goes with the colour.
     val night = androidx.compose.foundation.isSystemInDarkTheme()
     val pill = if (night) Color(0xFFF4F5F7) else Color(0xFF131417)
     val ink = if (night) Color(0xFF131417) else Color.White
     val (dirColor, dirSymbol) = when {
         none -> Color(0xFF8A8E96) to "·"
-        delta > 0 -> Color(0xFF00E074) to "▲"
-        else -> Color(0xFFFFB020) to "▼"
+        delta > 0 -> UP_CIRCLE to "▲"
+        else -> DOWN_CIRCLE to "▼"
     }
     Row(
         modifier.clip(RoundedCornerShape(PleosDimens.radiusCard)).background(pill)
@@ -315,7 +324,7 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(48.dp).clip(RoundedCornerShape(50)).background(dirColor), contentAlignment = Alignment.Center) {
-            Text(dirSymbol, style = PleosType.titleMedium, color = Color(0xFF131417))
+            Text(dirSymbol, style = PleosType.titleMedium, color = if (dirColor == UP_CIRCLE) Color.White else Color(0xFF131417))
         }
         Spacer(Modifier.width(PleosDimens.space16))
         Text(if (label.isEmpty()) deltaText else stringResource(R.string.d_toast_fmt, label, deltaText),
@@ -418,13 +427,13 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                         ExchangeRule.X2_FAN -> stringResource(R.string.x2, gain)
                         ExchangeRule.X3_AC -> stringResource(R.string.x3, gain)
                     }
-                    // Panel ART_GAP_TO_8 §12-②: on the Small window X1 is two fixed lines, broken before "=" (same words).
+                    // HANDOFF 8 (round1b) / panel §12-②: on the Small window X1 is two fixed lines, x1_l1 / x1_l2.
                     val small = with(androidx.compose.ui.platform.LocalDensity.current) {
                         androidx.compose.ui.platform.LocalWindowInfo.current.containerSize.width.toDp() < 1200.dp
                     }
-                    val eq = full.indexOf(" = ")
-                    if (small && eq > 0) Text(full.substring(0, eq), style = PleosType.titleMedium, color = c.textPrimary)
-                    val line = if (small && eq > 0) full.substring(eq + 1) else full
+                    val twoLines = small && x.rule == ExchangeRule.X1_SEAT_HEAT
+                    if (twoLines) Text(stringResource(R.string.x1_l1), style = PleosType.titleMedium, color = c.textPrimary)
+                    val line = if (twoLines) stringResource(R.string.x1_l2, gain) else full
                     val at = line.indexOf(gain).takeIf { it >= 0 } ?: line.length
                     // Small window (~840 dp, found 11-10 with a task resize): the circle + minutes move to the next
                     // line as one unit instead of being squeezed into a one-letter column.
@@ -435,10 +444,10 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     Modifier.size(40.dp).clip(RoundedCornerShape(50))
-                                        .background(if (up) Color(0xFF00E074) else Color(0xFFFFB020)),
+                                        .background(if (up) UP_CIRCLE else DOWN_CIRCLE),
                                     contentAlignment = Alignment.Center,
                                 ) {
-                                    Text(if (up) "\u25B2" else "\u25BC", style = PleosType.bodyMedium, color = Color(0xFF131417))
+                                    Text(if (up) "\u25B2" else "\u25BC", style = PleosType.bodyMedium, color = if (up) Color.White else Color(0xFF131417))
                                 }
                                 Spacer(Modifier.width(8.dp))
                                 Text(line.substring(at), style = PleosType.titleMedium, color = c.textPrimary, softWrap = false)

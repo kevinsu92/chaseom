@@ -69,7 +69,7 @@ class WordingRulesTest {
 
     @Test fun computedValuesMarkedEstimate() {
         listOf("h_bar_meta", "x1", "x2", "x3", "e_energy_val", "e_keep_ok", "e_keep_low", "s_margin",
-            "h_k2_hero", "h_k2_meta", "e_energy_small", "h_hvac_off_sub").forEach {
+            "h_k2_hero", "h_k2_meta", "e_energy_small", "h_hvac_off_sub", "x1_l2").forEach {
             assertTrue("missing 추정: $it", strings.getValue(it).contains("추정"))
         }
         assertEquals("(추정)", strings["estimate"])
@@ -87,6 +87,9 @@ class WordingRulesTest {
 
     @Test fun exchangeOnlyDriverSeatAndBurnLine() {
         assertTrue(strings.getValue("x1").contains("운전석 열선"))
+        // Small window two-line X1 (HANDOFF 8 round1b): same pair, the burn line still goes with it.
+        assertEquals("설정 21°C + 운전석 열선 2단", strings["x1_l1"])
+        assertTrue(strings.getValue("x1_l2").startsWith("비슷한 체감"))
         listOf("x1", "x2", "x3").forEach { assertFalse(Regex("뒷좌석|2열|조수석").containsMatchIn(strings.getValue(it))) }
         assertTrue(strings.getValue("x_burn").contains("저온 화상"))
         assertTrue(strings.getValue("x_footer").contains("개인차"))
@@ -117,7 +120,7 @@ class WordingRulesTest {
 
     // QA ROUND1B_GATE (H1 v1.5): the round-1 island draws no seat heat, so no rock or "follows the heat" wording.
     @Test fun roundOneIslandSaysNothingAboutSeatHeat() {
-        assertEquals(emptyMap<String, String>(), strings.filterValues { it.contains("바위") || it.contains("열선을 따라") })
+        assertEquals(emptyMap<String, String>(), strings.filterValues { it.contains("바위") || it.contains("열선을 따라") || it.contains("장식") })
         assertEquals("부표 1개 = 30분", strings["is_rail_buoy"])
         assertEquals("짐 = 내일 몫 %1\$dkm", strings["is_rail_keep"])
         assertEquals("배터리 %1\$d%%", strings["is_rail_bat"])

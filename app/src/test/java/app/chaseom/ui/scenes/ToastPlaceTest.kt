@@ -23,4 +23,15 @@ class ToastPlaceTest {
         // Small without the island face (bar face): bottom as before.
         assertEquals(ToastPlace.BOTTOM, toastPlace(ui(Hero(146, false, false)), wide = false, islandFace = false))
     }
+
+    @Test fun islandScreenHasNoClimateStatusLine() {
+        // HQ 2026-11-11 / HANDOFF 8 round1b: three text lines on the island screen; the bar face keeps it.
+        assertEquals(false, climateLineShown(islandFace = true))
+        assertEquals(true, climateLineShown(islandFace = false))
+    }
+
+    @Test fun upIsInkDownIsAmberNoGreen() {
+        assertEquals(androidx.compose.ui.graphics.Color(0xFF131417), UP_CIRCLE)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFFFB020), DOWN_CIRCLE)
+    }
 }
