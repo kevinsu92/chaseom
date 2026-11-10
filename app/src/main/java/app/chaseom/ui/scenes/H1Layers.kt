@@ -103,7 +103,7 @@ internal object H1Layers {
         "sun_night_S" to H1Layer(R.drawable.isl_s_sun_night_s, 783f, 39f),
         "sun_night_M" to H1Layer(R.drawable.isl_s_sun_night_m, 753f, 9f),
         "sun_night_L" to H1Layer(R.drawable.isl_s_sun_night_l, 716f, 0f),
-        "rain" to H1Layer(R.drawable.isl_s_rain, 450f, 250f),
-        "rain_night" to H1Layer(R.drawable.isl_s_rain, 450f, 250f),
+        "rain" to H1Layer(R.drawable.isl_s_rain, 0f, 240f),
+        "rain_night" to H1Layer(R.drawable.isl_s_rain_night, 0f, 240f),
     )
 }
