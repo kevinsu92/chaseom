@@ -112,7 +112,8 @@ fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app
                 Text(SimpleDateFormat("HH:mm", Locale.KOREA).format(Date(remember(r) { System.currentTimeMillis() })) /* wall time for display only; engine times are monotonic */, style = ChaseomUi.body, color = k.text3)
             }
             Column {
-                r.rows.forEach { row -> ReceiptLine(row, size) }
+                // Panel APP_GAP_TO_85 §11-1: no line under the last row; the one line above the check line closes the table.
+                r.rows.forEachIndexed { i, row -> ReceiptLine(row, size, last = i == r.rows.lastIndex && r.rearCheckAlways) }
             }
             if (r.rearCheckAlways) {
                 // Panel §7-② / APP_GAP_TO_85 §10-1: the always-last check line stands apart from the table:
@@ -141,7 +142,7 @@ fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app
 }
 
 @Composable
-private fun ReceiptLine(row: ReceiptRow, size: ChaseomUi.Size) {
+private fun ReceiptLine(row: ReceiptRow, size: ChaseomUi.Size, last: Boolean = false) {
     val c = Pleos.colors
     val sep = stringResource(R.string.list_sep)
     val (label, value) = when (row) {
@@ -177,6 +178,6 @@ private fun ReceiptLine(row: ReceiptRow, size: ChaseomUi.Size) {
             Text(label, style = ChaseomUi.body, color = if (grey) k.text3 else k.text2, modifier = Modifier.width(ChaseomUi.receiptLabelCol(size)))
             Text(value, style = ChaseomUi.bodyValue, color = if (grey) k.text3 else k.text1)
         }
-        Box(Modifier.fillMaxWidth().height(ChaseomUi.divider).background(k.line))
+        if (!last) Box(Modifier.fillMaxWidth().height(ChaseomUi.divider).background(k.line))
     }
 }
