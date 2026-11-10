@@ -130,9 +130,9 @@ internal const val GLOW_GAP_MS = 1_200L
 internal const val GLOW_EXTRA = 0.6f // QA ROUND1B_GATE: glow 1 -> 1.6 PASS (glow only, colour unchanged)
 
 /** What the picture shows; changes are batched and cross-faded (platform ISLAND_V2_SIGNALS, MOTION v3). */
-internal data class H1Pic(val sun: Int, val wind: Int, val level: Int, val buoys: Int, val k2: Boolean) {
+internal data class H1Pic(val sun: Int, val wind: Int, val level: Int, val buoys: Int, val k2: Boolean, val air: Boolean = false) {
     companion object {
-        fun of(i: IslandInfo) = H1Pic(i.sunLevel, i.wind, i.waterStep + 1, i.buoys, i.crateOutline)
+        fun of(i: IslandInfo) = H1Pic(i.sunLevel, i.wind, i.waterStep + 1, i.buoys, i.crateOutline, i.cloud)
     }
 }
 
@@ -229,7 +229,7 @@ fun IslandPanel(
                 if (night) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.1f)))
                 // H1: the sun and its label sit top right, so the toast takes the top-left sky up to the label.
                 var sunLabelLeft by remember { mutableFloatStateOf(Float.NaN) }
-                IslandLabels(ui, set, k, picW.value, boxH.value, shown, sunLiftDp = skyLift.sun * k) { sunLabelLeft = it }
+                IslandLabels(ui, set, k, picW.value, boxH.value, shown, sunLiftDp = skyLift.sun * k, animOff = animOff) { sunLabelLeft = it }
                 val toastMax = if (sunLabelLeft.isNaN()) Modifier else Modifier.widthIn(max = with(LocalDensity.current) { sunLabelLeft.toDp() } - 32.dp)
                 Box(Modifier.align(Alignment.TopStart).padding(start = 16.dp).then(toastMax)) { pictureTop() }
             }
@@ -253,7 +253,9 @@ fun IslandPanel(
                 LegendItem(Swatch.SUN, stringResource(R.string.is_lg_sun))
                 LegendItem(Swatch.WATER, stringResource(R.string.is_lg_water))
                 LegendItem(Swatch.BUOY, stringResource(R.string.is_lg_buoy))
-                if (ui.airMinutes != null) LegendItem(Swatch.CLOUD, stringResource(R.string.is_lg_air))
+                LegendItem(Swatch.CRATE, stringResource(R.string.is_lg_keep))
+                // The cloud item exists only while the cloud is drawn (QA verdict 2).
+                ui.recircMinutes?.let { LegendItem(Swatch.CLOUD, stringResource(R.string.is_lg_air, it)) }
             }
         }
         if (small) {
@@ -289,7 +291,7 @@ fun IslandPanel(
 /** Screen text on the picture (24 sp): "설정 °C" next to the sun, and the rail under the water. */
 @Composable
 private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: Float, shown: H1Shown, sunLiftDp: Float = 0f,
-                         sunLabelLeft: (Float) -> Unit) {
+                         animOff: Boolean = false, sunLabelLeft: (Float) -> Unit) {
     val pic = shown.pic
     // Canvas px -> dp in the box: scaled by zoom about the bottom-right corner (water line and buoys stay).
     val z = k * set.zoom
@@ -304,7 +306,9 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: 
     // bar keeps the number at all times).
     val change = sunChange(temp) ?: run { sunLabelLeft(Float.NaN); return }
     val bare = ChaseomUi.pictureLabel.copy(color = Color(0xFF131417), shadow = Shadow(Color.White, Offset.Zero, 8f))
-    val text = stringResource(R.string.is_sun_change, tempText(change.first), tempText(change.second))
+    // QA verdict 2: with system animations off, no arrow: "설정 26°C" for the same 2.5 s.
+    val text = if (animOff) stringResource(R.string.hvac_temp, tempText(change.second))
+    else stringResource(R.string.is_sun_change, tempText(change.first), tempText(change.second))
     // The label keeps 22 px from the disc while the sun radius animates (POLISH v1.4 §0.10).
     PicText(AnnotatedString(text), bare, x(set.sunX - shown.sunR - 22f), y(set.sunY) + sunLiftDp, 1f, sunLabelLeft)
 }
@@ -497,6 +501,8 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
     }
     }
     slot(if (p.wind > 0) "wind_w${p.wind}" else null, if (cur.wind > 0) "wind_w${cur.wind}" else null, y = lift.wind)
+    // Pleos fit v3 P8: one fixed cloud layer after the wind, same lift as the sun (only in layer sets that have it).
+    if (set.layers.containsKey("air")) slot(if (p.air) "air" else null, if (cur.air) "air" else null, y = lift.sun)
     slot("wet_l${p.level}", "wet_l${cur.level}")
     one("boat_l1", 1f, boatDx, dy + boatDy)
     slot("buoys_n${p.buoys}_l1", "buoys_n${cur.buoys}_l1", y = dy)
@@ -554,7 +560,7 @@ internal fun skyLiftFor(set: H1Set, k: Float, boxHdp: Float): SkyLift {
 }
 
 /** Legend swatches: the picture's own shapes at 24 dp (Pleos fit v3 §4: can buoy, water #4B627C). */
-internal enum class Swatch { SUN, WATER, BUOY, CLOUD }
+internal enum class Swatch { SUN, WATER, BUOY, CRATE, CLOUD }
 
 @Composable
 private fun LegendItem(sw: Swatch, label: String) {
@@ -576,6 +582,13 @@ private fun LegendItem(sw: Swatch, label: String) {
                     drawRoundRect(ink, Offset(8f * u, 9f * u), androidx.compose.ui.geometry.Size(8f * u, 12f * u),
                         androidx.compose.ui.geometry.CornerRadius(4f * u, 3f * u), style = androidx.compose.ui.graphics.drawscope.Stroke(1.2f * u))
                     drawRect(ink, Offset(8f * u, 14f * u), androidx.compose.ui.geometry.Size(8f * u, 2.5f * u))
+                }
+                Swatch.CRATE -> {
+                    val wood = Color(0xFFD9C3A0); val edge = Color(0xFF8C7656)
+                    drawRect(wood, Offset(5f * u, 7f * u), androidx.compose.ui.geometry.Size(14f * u, 12f * u))
+                    drawRect(edge, Offset(5f * u, 7f * u), androidx.compose.ui.geometry.Size(14f * u, 12f * u),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(1.3f * u))
+                    drawLine(edge, Offset(5f * u, 13f * u), Offset(19f * u, 13f * u), strokeWidth = 1.2f * u)
                 }
                 Swatch.CLOUD -> {
                     val c = Color(0xFFDCE1E8); val ink = Color(0xFF8A939E)

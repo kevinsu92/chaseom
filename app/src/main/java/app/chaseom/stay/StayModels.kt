@@ -180,6 +180,8 @@ data class StayUi(
     val connecting: Boolean = false,
     /** First stay only, until the first climate change: "다이얼을 돌려 보세요" hint under the island. */
     val firstStayHint: Boolean = false,
+    /** Minutes recirculation has held with the windows closed, once past 20 min (the circling cloud); else null. */
+    val recircMinutes: Int? = null,
     /** The saved stay was too old or the battery changed: a new stay started (title "새로 시작했어요"). */
     val restartedFromStale: Boolean = false,
     /** Monotonic time the car arrived in P after driving (HANDOFF 10.3 ① mooring); null = draw the end picture. */

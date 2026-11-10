@@ -73,7 +73,8 @@ data class IslandInfo(
                 crateOutline = ui.keepBanner != null,
                 wind = Island.wind(power, c?.fanSpeed),
                 cool = power && c?.acOn == true,
-                cloud = power && c?.recircOn == true,
+                // Pleos fit v3 P8: the circling cloud only after 20 min of recirculation with the windows closed.
+                cloud = ui.recircMinutes != null,
                 heatDrv = (c?.driverSeatHeat ?: 0).coerceIn(0, 3),
                 heatPas = (ui.passengerSeatHeat ?: 0).coerceIn(0, 3),
             )

@@ -313,6 +313,34 @@ class StayEngineTest {
         assertNull(e.at(41 * min, recirc.copy(windows = ev.windows + ("driver" to 2))).airMinutes)
     }
 
+    // Pleos fit v3 P8 / QA AIR_SAFETY verdict 2: the circling cloud's minutes.
+    @Test fun recircCloudAfter20MinIgnoresSnoozeAndLeavesQuietly() {
+        val e = StayEngine()
+        val recirc = ev.copy(recirculationOn = true)
+        e.at(0, recirc)
+        assertNull(e.at(19 * min, recirc).recircMinutes)
+        assertEquals(20, e.at(20 * min, recirc).recircMinutes)
+        e.dismissAir(20 * min)                                   // closing the card does not hide a fact
+        assertEquals(30, e.at(30 * min, recirc).recircMinutes)
+        val open = e.at(31 * min, recirc.copy(windows = ev.windows + ("driver" to 2)))
+        assertNull(open.recircMinutes)                           // window opened: gone, no other change
+        assertNull(open.airMinutes)
+        e.at(32 * min, recirc)
+        assertNull(e.at(33 * min, recirc.copy(recirculationOn = false)).recircMinutes) // outside air: gone
+        assertNull(e.at(34 * min, recirc).recircMinutes)         // starts over from zero
+        assertEquals(20, e.at(54 * min, recirc).recircMinutes)
+    }
+
+    @Test fun recircCloudNeedsClimateOnAndKnownClosedWindows() {
+        val e = StayEngine()
+        e.at(0, ev.copy(recirculationOn = true, hvacPowerOn = false))
+        assertNull(e.at(25 * min, ev.copy(recirculationOn = true, hvacPowerOn = false)).recircMinutes)
+        val unknown = StayEngine()
+        val noWindows = ev.copy(recirculationOn = true, windows = mapOf("driver" to WINDOW_UNKNOWN))
+        unknown.at(0, noWindows)
+        assertNull(unknown.at(25 * min, noWindows).recircMinutes)
+    }
+
     @Test fun sessionRestoreKeepsHourSchedule() {
         val e = StayEngine(); e.at(0)
         val restored = StayEngine(restored = e.session)

@@ -140,6 +140,7 @@ class StayEngine(
 
         val seatLong = seatHeatLong(cabin, nowMs)
         val air = if (policy.airCard) airCard(cabin, nowMs) else null
+        val recirc = recircMinutes(cabin, nowMs)
 
         updateReceipt(cabin, settings, policy, nowMs)
 
@@ -164,6 +165,7 @@ class StayEngine(
             exchange = if (seatLong) null else exchange,
             seatHeatLong = seatLong && policy.exchangeCard,
             airMinutes = air,
+            recircMinutes = recirc,
             receipt = receipt,
             settings = settings,
             backrestSupported = backrestSupported,
@@ -329,6 +331,20 @@ class StayEngine(
         }
         seatHighSinceMs = null
         return false
+    }
+
+    /**
+     * Pleos fit v3 P8 'circling cloud' (QA AIR_SAFETY section 1, verdict 2): minutes the same condition as the air
+     * card has held (HVAC on, recirculation on, every window known closed), once it has held [StayTiming.airAfterMs].
+     * Unlike the card it is not snoozed by closing the card: it is a fact on the picture, not a prompt. It never
+     * grows or darkens with time (one fixed layer) and leaves without any reward when the condition ends. Manual
+     * recirculation only: the app subscribes to the HVAC recirculation state; auto recirculation is not read.
+     */
+    private fun recircMinutes(c: CabinState, nowMs: Long): Int? {
+        val since = airSinceMs ?: return null
+        if (!(c.hvacPowerOn == true && c.recirculationOn == true && c.anyWindowOpen == false)) return null
+        val elapsed = nowMs - since
+        return if (elapsed >= timing.airAfterMs) (elapsed / 60_000L).toInt() else null
     }
 
     private fun airCard(c: CabinState, nowMs: Long): Int? {

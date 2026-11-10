@@ -128,11 +128,18 @@ class WordingRulesTest {
         assertEquals(emptyMap<String, String>(), strings.filterValues { it.contains("바위") || it.contains("열선을 따라") || it.contains("장식") })
         // Pleos fit v3 P7: no labels on the picture; the legend names what each shape stands for, with no numbers.
         assertEquals(emptyList<String>(), strings.keys.filter { it.startsWith("is_rail_") })
-        listOf("is_lg_sun", "is_lg_water", "is_lg_buoy", "is_lg_air").forEach { key ->
-            val v = strings.getValue(key)
-            assertTrue("$key names a shape and a value: $v", v.contains(" = "))
-        }
-        assertFalse(Regex("공기 (좋|나쁨|안전|괜찮)|맑아").containsMatchIn(strings.getValue("is_lg_air")))
+        // QA AIR_SAFETY verdict 2: the confirmed strings, letter for letter.
+        assertEquals("해 = 설정 온도", strings["is_lg_sun"])
+        assertEquals("물 = 배터리", strings["is_lg_water"])
+        assertEquals("부표 1개 = 30분", strings["is_lg_buoy"])
+        assertEquals("짐 = 내일 몫", strings["is_lg_keep"])
+        assertEquals("구름 = 내기순환 %1\$d분째 (공기 측정 아님)", strings["is_lg_air"])
+        // The transient sun number always says "설정" (never a bare temperature that reads as the cabin's).
+        assertEquals("설정 %1\$s → %2\$s°C", strings["is_sun_change"])
+        assertTrue(strings.getValue("hvac_temp").startsWith("설정 "))
+        // Air wording: no "inside", no air-quality word, no reassurance, no sleep link (A1-1, A1-5, condition 2).
+        val air = strings.getValue("is_lg_air")
+        assertFalse(Regex("실내|공기질|좋|나쁨|안전|괜찮|맑|자는|밤새").containsMatchIn(air.replace("공기 측정 아님", "")))
     }
 
     // 05_qa REVIEW_COPY_B section 1: bundle B wording, letter for letter.

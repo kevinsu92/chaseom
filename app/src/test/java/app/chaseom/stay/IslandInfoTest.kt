@@ -1,6 +1,7 @@
 package app.chaseom.stay
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -94,9 +95,15 @@ class IslandInfoTest {
     }
 
     @Test fun weatherFollowsClimateAndOffIsTheSmallSun() {
-        val i = IslandInfo.of(ui(100, c = climate.copy(fanSpeed = 7, acOn = true, recircOn = true, driverSeatHeat = 2)))!!
+        val u = ui(100, c = climate.copy(fanSpeed = 7, acOn = true, recircOn = true, driverSeatHeat = 2))
+        val i = IslandInfo.of(u)!!
         assertEquals(2, i.wind)
-        assertTrue(i.cool && i.cloud)
+        assertTrue(i.cool)
+        // Pleos fit v3 P8: recirculation alone draws no cloud; only the 20-minute fact does, and it is one flag
+        // (no count, no strength), so it cannot read as an air-quality gauge (QA A1-2).
+        assertFalse(i.cloud)
+        assertTrue(IslandInfo.of(u.copy(recircMinutes = 20))!!.cloud)
+        assertEquals(IslandInfo.of(u.copy(recircMinutes = 20)), IslandInfo.of(u.copy(recircMinutes = 95)))
         assertEquals(2, i.heatDrv)
         val off = IslandInfo.of(ui(null, off = true, c = climate.copy(powerOn = false)))!!
         assertEquals(0, off.sunLevel)
