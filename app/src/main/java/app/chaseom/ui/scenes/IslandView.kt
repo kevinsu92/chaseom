@@ -234,14 +234,38 @@ fun IslandPanel(
                 Box(Modifier.align(Alignment.TopStart).padding(start = 16.dp).then(toastMax)) { pictureTop() }
             }
         }
-        // ISLAND_REDESIGN v2.5 cause line (QA M-3 wording), always shown. POLISH v1.2: no chip, an info icon + caption.
+        // Pleos fit v3 P7 (UXR option A): no text on the picture. One caption row under it = legend swatches
+        // (picture shapes, no numbers) + the cause chip (QA M-3 wording, always shown) at the right end.
+        // Small: the chip goes to a second line.
         Spacer(Modifier.height(ChaseomUi.related))
         val k = cui()
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_info), null,
-                tint = k.text2, modifier = Modifier.size(ChaseomUi.iconInline))
-            Spacer(Modifier.width(ChaseomUi.line))
-            Text(stringResource(R.string.is_legend), style = ChaseomUi.caption, color = k.text2)
+        val small = h1SetFor(with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value }) === H1Set.Small
+        val chip: @Composable () -> Unit = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_info), null,
+                    tint = k.text2, modifier = Modifier.size(24.dp))
+                Spacer(Modifier.width(ChaseomUi.line))
+                Text(stringResource(R.string.is_legend), style = ChaseomUi.caption, color = k.text2, softWrap = false)
+            }
+        }
+        val legend: @Composable () -> Unit = {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                LegendItem(Swatch.SUN, stringResource(R.string.is_lg_sun))
+                LegendItem(Swatch.WATER, stringResource(R.string.is_lg_water))
+                LegendItem(Swatch.BUOY, stringResource(R.string.is_lg_buoy))
+                if (ui.airMinutes != null) LegendItem(Swatch.CLOUD, stringResource(R.string.is_lg_air))
+            }
+        }
+        if (small) {
+            legend()
+            Spacer(Modifier.height(ChaseomUi.line))
+            chip()
+        } else {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                legend()
+                Spacer(Modifier.weight(1f).widthIn(min = 28.dp))
+                chip()
+            }
         }
         if (ui.firstStayHint) {
             // Critique final 2 ②: no chip; one caption line like the cause line (28 dp fan, 24 Medium #4A4E57).
@@ -272,33 +296,37 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: 
     val boxH = boxHdp
     fun x(cx: Float) = picW - (set.w - cx) * z
     fun y(cy: Float) = boxH - (set.h - cy) * z
-    val bar = ui.bar ?: return
+    if (ui.bar == null) return
     val c = ui.climate
-    val sunText = if (c?.powerOn == true && c.setTempC != null) stringResource(R.string.hvac_temp, tempText(c.setTempC))
-    else stringResource(R.string.h_hvac_off)
-    // H1: ink text with a white glow on the sky; white text on the navy rail (POLISH: picture label role).
+    val temp = c?.takeIf { it.powerOn == true }?.setTempC
+    // Pleos fit v2.2 P7: the sun has no label at rest (the legend says "sun = set temperature"). Only when the set
+    // temperature changes does "22 -> 24°C" show next to it, for 2.5 s after the last change (the bottom climate
+    // bar keeps the number at all times).
+    val change = sunChange(temp) ?: run { sunLabelLeft(Float.NaN); return }
     val bare = ChaseomUi.pictureLabel.copy(color = Color(0xFF131417), shadow = Shadow(Color.White, Offset.Zero, 8f))
-    val rail = bare.copy(color = Color.White, shadow = Shadow(Color.Black.copy(alpha = 0.35f), Offset(0f, 1f), 2f))
+    val text = stringResource(R.string.is_sun_change, tempText(change.first), tempText(change.second))
     // The label keeps 22 px from the disc while the sun radius animates (POLISH v1.4 §0.10).
-    PicText(AnnotatedString(sunText), bare, x(set.sunX - shown.sunR - 22f), y(set.sunY) + sunLiftDp, 1f, sunLabelLeft)
-    // POLISH v1.4 §0.9-④: 28 dp line icon, "name **value**" (name Medium white 80 %, value Bold white).
-    val bat = railText(stringResource(R.string.is_rail_bat, bar.socPercent))
-    val keep = railText(stringResource(R.string.is_rail_keep, bar.keepKm))
-    val buoy = railText(stringResource(R.string.is_rail_buoy))
-    // Screen text, not part of the picture: the battery label keeps the left margin when the picture is zoomed.
-    PicText(bat, rail, maxOf(x(set.batX), set.batX * k), y(set.batY), 0f, icon = R.drawable.ic_rail_wave)
-    if (pic.buoys > 0) PicText(buoy, rail, x(set.buoyX), y(set.buoyY), set.buoyAnchor, icon = R.drawable.ic_rail_buoy)
-    PicText(keep, rail, x(set.keepX), y(set.keepY), set.keepAnchor, icon = R.drawable.ic_rail_crate)
+    PicText(AnnotatedString(text), bare, x(set.sunX - shown.sunR - 22f), y(set.sunY) + sunLiftDp, 1f, sunLabelLeft)
 }
 
-/** "name value": the last word is the value (Bold, white), the rest the name (Medium, white 80 %). */
-internal fun railText(s: String): AnnotatedString {
-    val cut = s.lastIndexOf(' ').let { if (it < 0) 0 else it + 1 }
-    return buildAnnotatedString {
-        withStyle(SpanStyle(fontWeight = FontWeight.Medium, color = Color.White.copy(alpha = 0.8f))) { append(s.substring(0, cut)) }
-        withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = Color.White)) { append(s.substring(cut)) }
+/** Shown for [SUN_LABEL_MS] after the last change of the set temperature: (before the first change, now). */
+@Composable
+private fun sunChange(temp: Float?): Pair<Float, Float>? {
+    val last = remember { floatArrayOf(Float.NaN) }   // the value at rest before the current burst of changes
+    var shown by remember { mutableStateOf<Pair<Float, Float>?>(null) }
+    LaunchedEffect(temp) {
+        if (temp == null) { shown = null; last[0] = Float.NaN; return@LaunchedEffect }
+        val from = shown?.first ?: last[0]
+        last[0] = temp
+        if (from.isNaN() || from == temp) { shown = null; return@LaunchedEffect } // back where it started: nothing to say
+        shown = from to temp
+        kotlinx.coroutines.delay(SUN_LABEL_MS)
+        shown = null
     }
+    return shown
 }
+
+internal const val SUN_LABEL_MS = 2_500L
 
 /** Text whose anchor point (0 start, 0.5 centre, 1 end; vertical centre) sits at (x, y) dp in the picture. */
 @Composable
@@ -523,4 +551,46 @@ internal fun skyLiftFor(set: H1Set, k: Float, boxHdp: Float): SkyLift {
     fun lift(canvasY: Float, frac: Float) = minOf(0f, top + frac * boxPx - canvasY)
     val windY = set.layers["wind_w1"]?.let { it.y + 20f } ?: 131f
     return SkyLift(sun = lift(set.sunY, 0.24f), wind = lift(windY, 0.36f))
+}
+
+/** Legend swatches: the picture's own shapes at 24 dp (Pleos fit v3 §4: can buoy, water #4B627C). */
+internal enum class Swatch { SUN, WATER, BUOY, CLOUD }
+
+@Composable
+private fun LegendItem(sw: Swatch, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        androidx.compose.foundation.Canvas(Modifier.size(24.dp)) {
+            val u = size.width / 24f
+            when (sw) {
+                Swatch.SUN -> drawCircle(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFFFFDA85), Color(0xFFF7A01C))),
+                    radius = 7f * u, center = Offset(12f * u, 12f * u))
+                Swatch.WATER -> drawRoundRect(Color(0xFF4B627C), Offset(3f * u, 8f * u),
+                    androidx.compose.ui.geometry.Size(18f * u, 9f * u), androidx.compose.ui.geometry.CornerRadius(2f * u))
+                Swatch.BUOY -> {
+                    val ink = Color(0xFF4F5A68)
+                    drawLine(ink, Offset(12f * u, 3f * u), Offset(12f * u, 9f * u), strokeWidth = 1.6f * u)
+                    drawCircle(ink, 1.6f * u, Offset(12f * u, 3f * u))
+                    drawRoundRect(Color(0xFFF2F4F7), Offset(8f * u, 9f * u), androidx.compose.ui.geometry.Size(8f * u, 12f * u),
+                        androidx.compose.ui.geometry.CornerRadius(4f * u, 3f * u))
+                    drawRoundRect(ink, Offset(8f * u, 9f * u), androidx.compose.ui.geometry.Size(8f * u, 12f * u),
+                        androidx.compose.ui.geometry.CornerRadius(4f * u, 3f * u), style = androidx.compose.ui.graphics.drawscope.Stroke(1.2f * u))
+                    drawRect(ink, Offset(8f * u, 14f * u), androidx.compose.ui.geometry.Size(8f * u, 2.5f * u))
+                }
+                Swatch.CLOUD -> {
+                    val c = Color(0xFFDCE1E8); val ink = Color(0xFF8A939E)
+                    drawCircle(c, 4.5f * u, Offset(9f * u, 14f * u)); drawCircle(c, 5.5f * u, Offset(14f * u, 12f * u))
+                    drawRoundRect(c, Offset(4.5f * u, 13f * u), androidx.compose.ui.geometry.Size(15f * u, 5.5f * u),
+                        androidx.compose.ui.geometry.CornerRadius(2.75f * u))
+                    // the curled tail: one stroke from the right end back over the cloud, no arrowhead
+                    val path = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(19.5f * u, 15.5f * u); cubicTo(23f * u, 13f * u, 22f * u, 6f * u, 16.5f * u, 6.2f * u)
+                    }
+                    drawPath(path, ink, style = androidx.compose.ui.graphics.drawscope.Stroke(1.5f * u, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+                }
+            }
+        }
+        Spacer(Modifier.width(ChaseomUi.line))
+        Text(label, style = ChaseomUi.caption, color = cui().text2, softWrap = false)
+    }
 }

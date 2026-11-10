@@ -126,9 +126,13 @@ class WordingRulesTest {
     // QA ROUND1B_GATE (H1 v1.5): the round-1 island draws no seat heat, so no rock or "follows the heat" wording.
     @Test fun roundOneIslandSaysNothingAboutSeatHeat() {
         assertEquals(emptyMap<String, String>(), strings.filterValues { it.contains("바위") || it.contains("열선을 따라") || it.contains("장식") })
-        assertEquals("부표 1개 · 30분", strings["is_rail_buoy"])
-        assertEquals("짐 · 내일 몫 %1\$dkm", strings["is_rail_keep"])
-        assertEquals("배터리 %1\$d%%", strings["is_rail_bat"])
+        // Pleos fit v3 P7: no labels on the picture; the legend names what each shape stands for, with no numbers.
+        assertEquals(emptyList<String>(), strings.keys.filter { it.startsWith("is_rail_") })
+        listOf("is_lg_sun", "is_lg_water", "is_lg_buoy", "is_lg_air").forEach { key ->
+            val v = strings.getValue(key)
+            assertTrue("$key names a shape and a value: $v", v.contains(" = "))
+        }
+        assertFalse(Regex("공기 (좋|나쁨|안전|괜찮)|맑아").containsMatchIn(strings.getValue("is_lg_air")))
     }
 
     // 05_qa REVIEW_COPY_B section 1: bundle B wording, letter for letter.

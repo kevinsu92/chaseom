@@ -131,9 +131,13 @@
 
     <!-- Face: small weather island (HANDOFF section 8, flag FACE_ISLAND). Picture has no text; chips only. -->
     <string name="is_legend">섬은 공조 설정·배터리로 그려요 · 실내 측정 아님</string>
-    <string name="is_rail_bat">배터리 %1$d%%</string>
-    <string name="is_rail_buoy">부표 1개 · 30분</string>
-    <string name="is_rail_keep">짐 · 내일 몫 %1$dkm</string>
+    <!-- Pleos fit v3 P7 legend (PENDING QA wording verdict, mock text): picture shapes = values, no numbers. -->
+    <string name="is_lg_sun">해 = 설정 온도</string>
+    <string name="is_lg_water">물 = 배터리</string>
+    <string name="is_lg_buoy">부표 1개 = 30분</string>
+    <string name="is_lg_air">도는 구름 = 내기순환</string>
+    <!-- Shown next to the sun for 2.5 s only while the set temperature changes (PENDING QA). -->
+    <string name="is_sun_change">%1$s → %2$s°C</string>
     <string name="is_cd">섬 그림: 공조 설정·배터리로 그려요. 지금 설정으로 %1$s 머물 수 있어요 (추정), 배터리 %2$d%%, 내일 몫 %3$dkm</string>
     <!-- Toast when both before/after are over the 3-hour cap (QA M-11, moved from 03_engineering strings.xml) -->
     <string name="d_toast_cap">3시간 이상 유지 (추정)</string>

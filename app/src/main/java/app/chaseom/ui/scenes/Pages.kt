@@ -99,21 +99,14 @@ fun OnboardingScene(mode: AppMode, actions: StayActions, modifier: Modifier) {
     val picture = @Composable { m: Modifier ->
         Column(m, verticalArrangement = Arrangement.spacedBy(ChaseomUi.related)) {
             OnboardingIsland(Modifier.fillMaxWidth())
-            // POLISH v1.3 #4 / panel §7-③: caption 24 Medium on a pale yellow panel with a 6 dp yellow bar.
-            Row(
-                Modifier.fillMaxWidth().clip(ChaseomUi.rBanner).background(androidx.compose.ui.graphics.Color(0xFFFFF3CC))
-                    .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(Modifier.width(ChaseomUi.bannerBar).fillMaxHeight().background(androidx.compose.ui.graphics.Color(0xFFFFC224)))
-                Spacer(Modifier.width(ChaseomUi.related))
-                Icon(painterResource(R.drawable.ic_warn_line), null, tint = androidx.compose.ui.graphics.Color(0xFF4A3700), modifier = Modifier.size(ChaseomUi.iconInline))
-                Spacer(Modifier.width(ChaseomUi.line))
-                Text(stringResource(R.string.manual_quote) + " — " + stringResource(R.string.manual_source),
-                    style = ChaseomUi.caption, color = androidx.compose.ui.graphics.Color(0xFF4A3700),
-                    modifier = Modifier.weight(1f).padding(vertical = ChaseomUi.related))
-                Spacer(Modifier.width(ChaseomUi.related))
+            // Pleos fit v2.1: the safety quote is the white warning part (quote W600 ink, source W500 #4A4E57).
+            val quote = androidx.compose.ui.text.buildAnnotatedString {
+                append(stringResource(R.string.manual_quote))
+                pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                    color = androidx.compose.ui.graphics.Color(0xFF4A4E57)))
+                append(" — " + stringResource(R.string.manual_source)); pop()
             }
+            WhiteWarn(quote, Modifier.fillMaxWidth(), style = ChaseomUi.caption.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold))
         }
     }
     val text = @Composable { m: Modifier ->

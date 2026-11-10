@@ -105,7 +105,7 @@ object ChaseomUi {
         safeBg = Color(0xFFFFC224), safeBar = Color(0xFFFFC224),   // v1.3: N0 back to the filled warning yellow (safety strength, QA)
            // = warning token, same as the crate K2 outline (REFERENCES H1)
          safeFg = Color(0xFF131417),
-        dangerBg = Color(0xFFC5221F), dangerBar = Color(0xFFC5221F), dangerFg = Color.White,   // QA P2: #C5221F + white 5.80:1
+        dangerBg = Color(0xFFA8231C), dangerBar = Color(0xFFA8231C), dangerFg = Color.White,   // Pleos fit v3: #A8231C + white 7.19:1
         toast = Color(0xF01C2129), onToast = Color.White, scrim = Color(0x730B0F14),
         pictureSkyTop = Color(0xFFC9E0F3),
     )
@@ -115,7 +115,7 @@ object ChaseomUi {
          text3 = Color(0xFF9AA0A8),
         primary = Color(0xFF8DB4D9), onPrimary = Color(0xFF0F1D2E), selected = Color(0xFFF2F3F5), onSelected = Color(0xFF131417),
         safeBg = Color(0xFFFFC224), safeBar = Color(0xFFFFC224), safeFg = Color(0xFF131417),
-        dangerBg = Color(0xFFC5221F), dangerBar = Color(0xFFC5221F), dangerFg = Color.White,   // banners sit above the night veil, same fills
+        dangerBg = Color(0xFFA8231C), dangerBar = Color(0xFFA8231C), dangerFg = Color.White,   // banners keep their day fills and text at night
         toast = Color(0xF5F2F3F5), onToast = Color(0xFF131417), scrim = Color(0x99000000),
         pictureSkyTop = Color(0xFF8D9DAA),   // #C9E0F3 under the 0.3 night veil
     )

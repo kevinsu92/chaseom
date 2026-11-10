@@ -99,13 +99,76 @@ internal fun WarnBanner(text: String, danger: Boolean, trailing: (@Composable ()
     ) {
         Box(Modifier.width(ChaseomUi.bannerBar).fillMaxHeight().background(bar))
         Spacer(Modifier.width(ChaseomUi.related))
-        Icon(painterResource(R.drawable.ic_warn_line), null, tint = fg, modifier = Modifier.size(if (danger) 32.dp else ChaseomUi.bannerIcon))
+        // Pleos fit v2 section 4: K2 (the one warning that asks for an action) = white octagon, red '!', on the red fill.
+        if (danger) StopOctagon(Modifier.size(32.dp)) else
+            Icon(painterResource(R.drawable.ic_warn_line), null, tint = fg, modifier = Modifier.size(ChaseomUi.bannerIcon))
         Spacer(Modifier.width(ChaseomUi.related))
         // Critique final 2 ③: N0 and K2 share 26 sp SemiBold (W600); wording unchanged.
         Text(text, style = ChaseomUi.banner.copy(fontSize = 26.sp, lineHeight = 34.sp), color = fg,
             modifier = Modifier.weight(1f).padding(vertical = ChaseomUi.line))
         trailing?.invoke()
         Spacer(Modifier.width(ChaseomUi.line))
+    }
+}
+
+/** White octagon with a red '!' (K2 icon on the red banner). */
+@Composable
+internal fun StopOctagon(modifier: Modifier) {
+    val red = cui().dangerBg
+    androidx.compose.foundation.Canvas(modifier) {
+        val r = size.minDimension / 2f; val cx = size.width / 2f; val cy = size.height / 2f
+        val p = androidx.compose.ui.graphics.Path()
+        for (i in 0 until 8) {
+            val a = Math.toRadians(22.5 + 45.0 * i)
+            val x = cx + r * kotlin.math.cos(a).toFloat(); val y = cy + r * kotlin.math.sin(a).toFloat()
+            if (i == 0) p.moveTo(x, y) else p.lineTo(x, y)
+        }
+        p.close()
+        drawPath(p, Color.White)
+        val u = size.width / 32f
+        drawRoundRect(red, androidx.compose.ui.geometry.Offset(cx - 1.75f * u, cy - 9f * u), androidx.compose.ui.geometry.Size(3.5f * u, 11.5f * u),
+            androidx.compose.ui.geometry.CornerRadius(1.75f * u))
+        drawCircle(red, 2f * u, androidx.compose.ui.geometry.Offset(cx, cy + 6.5f * u))
+    }
+}
+
+/**
+ * Pleos fit v2.1 white warning part (QA: onboarding safety panel, seat-heat line, receipt check line only):
+ * white surface, 1 dp #898E96 outline (3.10:1), 4 dp #FFC224 bar, 32 dp triangle (yellow fill, ink outline,
+ * ink '!'), ink text. [inline] = inside a card (48 dp).
+ */
+@Composable
+internal fun WhiteWarn(text: androidx.compose.ui.text.AnnotatedString, modifier: Modifier = Modifier, inline: Boolean = false,
+                       style: androidx.compose.ui.text.TextStyle = ChaseomUi.banner.copy(fontSize = 26.sp, lineHeight = 34.sp),
+                       icon: (@Composable () -> Unit)? = null) {
+    val shape = RoundedCornerShape(12.dp)
+    Row(
+        modifier.heightIn(min = if (inline) 48.dp else 56.dp).clip(shape).background(Color.White)
+            .border(1.dp, Color(0xFF898E96), shape).height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.width(4.dp).fillMaxHeight().background(Color(0xFFFFC224)))
+        Spacer(Modifier.width(if (inline) 14.dp else 18.dp))
+        if (icon != null) icon() else WarnTriangle(Modifier.size(32.dp))
+        Spacer(Modifier.width(14.dp))
+        Text(text, style = style, color = Color(0xFF131417),
+            modifier = Modifier.weight(1f, fill = false).padding(vertical = if (inline) 6.dp else 10.dp))
+        Spacer(Modifier.width(if (inline) 16.dp else 24.dp))
+    }
+}
+
+/** Yellow-filled triangle with a 1.5 dp ink outline and an ink '!'. */
+@Composable
+internal fun WarnTriangle(modifier: Modifier) {
+    val ink = Color(0xFF131417)
+    androidx.compose.foundation.Canvas(modifier) {
+        val u = size.width / 32f
+        val p = androidx.compose.ui.graphics.Path().apply { moveTo(16f * u, 3f * u); lineTo(30f * u, 28f * u); lineTo(2f * u, 28f * u); close() }
+        drawPath(p, Color(0xFFFFC224))
+        drawPath(p, ink, style = androidx.compose.ui.graphics.drawscope.Stroke(1.5f * u, join = androidx.compose.ui.graphics.StrokeJoin.Round))
+        drawRoundRect(ink, androidx.compose.ui.geometry.Offset(14.8f * u, 11f * u), androidx.compose.ui.geometry.Size(2.4f * u, 9f * u),
+            androidx.compose.ui.geometry.CornerRadius(1.2f * u))
+        drawCircle(ink, 1.5f * u, androidx.compose.ui.geometry.Offset(16f * u, 23.5f * u))
     }
 }
 
@@ -539,11 +602,9 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                     }
                     val notes = @Composable {
                         // POLISH §0.6: the burn line with an amber caution icon, then the source line in text3.
-                        if (x.rule == ExchangeRule.X1_SEAT_HEAT) Row(verticalAlignment = Alignment.CenterVertically) { // always with X1
-                            Icon(painterResource(R.drawable.ic_warn_line), null, tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
-                            Spacer(Modifier.width(ChaseomUi.line))
-                            Text(stringResource(R.string.x_burn), style = ChaseomUi.caption, color = k.text1)
-                        }
+                        // Pleos fit v2 P2: the burn line is the inline white warning part (same grammar as every warning).
+                        if (x.rule == ExchangeRule.X1_SEAT_HEAT) // always with X1
+                            WhiteWarn(androidx.compose.ui.text.AnnotatedString(stringResource(R.string.x_burn)), inline = true)
                         if (x.rule == ExchangeRule.X3_AC) Text(stringResource(R.string.x3_sub), style = ChaseomUi.caption, color = k.text2)
                         Text(stringResource(R.string.x_footer), style = ChaseomUi.caption, color = k.text3)
                     }
