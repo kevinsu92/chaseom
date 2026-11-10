@@ -166,6 +166,7 @@ class StayEngine(
             seatHeatLong = seatLong && policy.exchangeCard,
             airMinutes = air,
             recircMinutes = recirc,
+            rain = cabin.wiperAuto == true && cabin.wiperOn == true,
             trunkOpen = cabin.doorsOpen["trunk"] == true,
             chargePortOpen = cabin.chargePortOpen == true,
             receipt = receipt,

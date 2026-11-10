@@ -8,6 +8,8 @@ import ai.pleos.playground.vehicle.constant.area.DoorValue
 import ai.pleos.playground.vehicle.constant.area.SeatValue
 import ai.pleos.playground.vehicle.constant.area.WindowValue
 import ai.pleos.playground.vehicle.constant.control.LightSwitch
+import ai.pleos.playground.vehicle.constant.control.WiperState
+import ai.pleos.playground.vehicle.constant.control.WiperSwitch
 import ai.pleos.playground.vehicle.listener.DoorPositionListener
 import ai.pleos.playground.vehicle.listener.EvBatteryStateOfChargeListener
 import ai.pleos.playground.vehicle.listener.HvacAcStateListener
@@ -64,6 +66,7 @@ class PleosCabinRepository(
     private var recircArea: SeatArea? = null
 
     private val driver = SeatArea(SeatValue.ROW_1_LEFT)
+    private val frontWindshield = WindowArea(WindowValue.FRONT_WINDSHIELD)
     private val passenger = SeatArea(SeatValue.ROW_1_RIGHT)
     private val rearLeft = SeatArea(SeatValue.ROW_2_LEFT)
     private val rearRight = SeatArea(SeatValue.ROW_2_RIGHT)
@@ -361,6 +364,20 @@ class PleosCabinRepository(
                         driver,
                         { s -> setIfChanged("readingLight", s == LightSwitch.ON) { st, on -> (st.readingLightOn != on) to st.copy(readingLightOn = on) } },
                         { fail("readingLight", it) },
+                    )
+                }
+                // X-09 wiper (02_platform 11.2): lever by polling, wiping state read in the same tick. A read
+                // failure leaves the value null, and null never counts as rain.
+                guard("wiper") {
+                    v.getWiper().getCurrentWiperSwitch(
+                        frontWindshield,
+                        { sw -> setIfChanged("wiperAuto", sw == WiperSwitch.AUTO) { st, x -> (st.wiperAuto != x) to st.copy(wiperAuto = x) } },
+                        { fail("wiperSwitch", it) },
+                    )
+                    v.getWiper().getCurrentWiperState(
+                        frontWindshield,
+                        { ws -> setIfChanged("wiperOn", ws == WiperState.ON) { st, x -> (st.wiperOn != x) to st.copy(wiperOn = x) } },
+                        { fail("wiperState", it) },
                     )
                 }
                 // Backrest: the emulator's position write does not always raise ON_CHANGE events,

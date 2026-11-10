@@ -9,6 +9,7 @@ class H1LayersTest {
     private val expected = buildSet {
         addAll(listOf("base", "boat_l1", "k2_l1", "air")) // v1.9: no sheen; Pleos fit v3: + air (the circling cloud)
         listOf("S", "M", "L").forEach { add("sun_night_$it") } // night sun drawn above the night light (QA verdict 11)
+        addAll(listOf("rain", "rain_night"))                    // X-09 far rain v2.1 (day / over the night light)
         (0..2).forEach { add("trees_w$it") }
         listOf("S", "M", "L").forEach { add("sun_$it") }
         (1..2).forEach { add("wind_w$it") }
@@ -17,7 +18,7 @@ class H1LayersTest {
     }
 
     @Test fun bothSetsHaveEveryLayer() {
-        assertEquals(47, expected.size)
+        assertEquals(49, expected.size)
         assertEquals(expected, H1Layers.L.keys)
         assertEquals(expected, H1Layers.S.keys)
     }

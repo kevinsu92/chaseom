@@ -134,6 +134,7 @@ class WordingRulesTest {
         assertEquals("부표 1개 = 30분", strings["is_lg_buoy"])
         assertEquals("짐 = 내일 몫", strings["is_lg_keep"])
         assertEquals("구름 = 내기순환 %1\$d분째 (공기 측정 아님)", strings["is_lg_air"])
+        assertEquals("먼 비 = 와이퍼 AUTO 작동", strings["is_lg_rain"]) // QA verdict 12 / 15
         // The transient sun number always says "설정" (never a bare temperature that reads as the cabin's).
         assertEquals("설정 %1\$s → %2\$s°C", strings["is_sun_change"])
         assertTrue(strings.getValue("hvac_temp").startsWith("설정 "))

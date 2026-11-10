@@ -138,6 +138,8 @@
     <string name="is_lg_keep">짐 = 내일 몫</string>
     <!-- Only while the cloud shows; N = minutes recirculation has been on (QA verdict 2, A1-2/A1-3/A1-6). -->
     <string name="is_lg_air">구름 = 내기순환 %1$d분째 (공기 측정 아님)</string>
+    <!-- X-09 far rain legend (QA verdict 12 / 15, panel agreed): only while the AUTO wiper is wiping. -->
+    <string name="is_lg_rain">먼 비 = 와이퍼 AUTO 작동</string>
     <!-- Next to the sun for 2.5 s after the set temperature changes; "설정" always (QA verdict 2, condition 2). -->
     <string name="is_sun_change">설정 %1$s → %2$s°C</string>
     <string name="is_cd">섬 그림: 공조 설정·배터리로 그려요. 지금 설정으로 %1$s 머물 수 있어요 (추정), 배터리 %2$d%%, 내일 몫 %3$dkm</string>

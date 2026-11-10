@@ -133,11 +133,13 @@ internal const val GLOW_GAP_MS = 1_200L
 internal const val GLOW_EXTRA = 0.6f // QA ROUND1B_GATE: glow 1 -> 1.6 PASS (glow only, colour unchanged)
 
 /** What the picture shows; changes are batched and cross-faded (platform ISLAND_V2_SIGNALS, MOTION v3). */
-internal data class H1Pic(val sun: Int, val wind: Int, val level: Int, val buoys: Int, val k2: Boolean, val air: Boolean = false) {
+internal data class H1Pic(val sun: Int, val wind: Int, val level: Int, val buoys: Int, val k2: Boolean, val air: Boolean = false,
+                          val rain: Boolean = false) {
     companion object {
         // Director #5 (boat = car) is off for round 1 (panel PLEOS_FIT_REVIEW section 7, V-05): the cable read as
         // "charging" for a port that is only open, and the hatch is ~25 px and repeats the Pleos 3D car.
-        fun of(i: IslandInfo) = H1Pic(i.sunLevel, i.wind, i.waterStep + 1, i.buoys, i.crateOutline, i.cloud)
+        fun of(i: IslandInfo) = H1Pic(i.sunLevel, i.wind, i.waterStep + 1, i.buoys, i.crateOutline, i.cloud,
+            rain = app.chaseom.BuildConfig.KICK_RAIN && i.rain)
     }
 }
 
@@ -219,7 +221,8 @@ fun IslandPanel(
             val hintH = if (ui.firstStayHint) ChaseomUi.related + 32.dp else 0.dp
             // Pleos fit v3 P7: on Small the caption row is two lines (legend, then the cause chip).
             val chipLineH = (if (set === H1Set.Small) ChaseomUi.line + 32.dp else 0.dp) +
-                (if (ui.recircMinutes != null) ChaseomUi.line + 32.dp else 0.dp)
+                (if (ui.recircMinutes != null) ChaseomUi.line + 32.dp else 0.dp) +
+                (if (app.chaseom.BuildConfig.KICK_RAIN && ui.rain) ChaseomUi.line + 32.dp else 0.dp)
             val minH = if (set === H1Set.Small) H1Set.SMALL_MIN_DP.dp else natural
             val filled = if (!fill || topInWindow.isNaN()) natural else
                 maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH - chipLineH)
@@ -278,10 +281,16 @@ fun IslandPanel(
             }
         }
         // The cloud item exists only while the cloud is drawn (QA verdict 2); its own line under the legend.
+        // X-09: the far-rain item likewise, on its own line (QA verdict 12/15: "먼 비 = 와이퍼 AUTO 작동").
+        val showRain = app.chaseom.BuildConfig.KICK_RAIN && ui.rain
         val cloudLine: @Composable () -> Unit = {
             ui.recircMinutes?.let {
                 Spacer(Modifier.height(ChaseomUi.line))
                 LegendItem(Swatch.CLOUD, stringResource(R.string.is_lg_air, it))
+            }
+            if (showRain) {
+                Spacer(Modifier.height(ChaseomUi.line))
+                LegendItem(Swatch.RAIN, stringResource(R.string.is_lg_rain))
             }
         }
         if (small) {
@@ -511,6 +520,11 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
             drawRect(NIGHT_LIGHT.copy(alpha = 0.76f), Offset(0f, y), androidx.compose.ui.geometry.Size(size.width, size.height - y))
             translate(left = ox, top = oy) {
                 scale(k, k, pivot = Offset.Zero) {
+                    val c = cur.value; val b = before.value ?: c; val a = if (before.value == null) 1f else t.value
+                    set.layers["rain_night"]?.let { l ->
+                        val alpha = when { c.rain && b.rain -> 1f; c.rain -> a; b.rain -> 1f - a; else -> 0f }
+                        if (alpha > 0.01f) drawImage(bmp(l.id), Offset(l.x, l.y), alpha = alpha)
+                    }
                     drawSun(set, bmp, cur.value, sunR.value / H1Set.SUN_R[cur.value.sun], glow.value * GLOW_EXTRA, lift, night = true)
                 }
             }
@@ -543,6 +557,8 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
         if (new != null) one(new, a, x, y)
     }
     one("base", 1f)
+    // X-09 far rain (04_design v3/rain v2.1): a still layer behind the island's right shoulder, faded once on change.
+    if (withSun) slot(if (p.rain) "rain" else null, if (cur.rain) "rain" else null)
     slot("trees_w${p.wind}", "trees_w${cur.wind}")
     if (withSun) drawSun(set, bmp, cur, sunScale, glow, lift)
     slot(if (p.wind > 0) "wind_w${p.wind}" else null, if (cur.wind > 0) "wind_w${cur.wind}" else null, y = lift.wind)
@@ -647,7 +663,7 @@ internal fun skyLiftFor(set: H1Set, k: Float, boxHdp: Float): SkyLift {
 }
 
 /** Legend swatches: the picture's own shapes at 24 dp (Pleos fit v3 §4: can buoy, water #4B627C). */
-internal enum class Swatch { SUN, WATER, BUOY, CRATE, CLOUD }
+internal enum class Swatch { SUN, WATER, BUOY, CRATE, CLOUD, RAIN }
 
 @Composable
 private fun LegendItem(sw: Swatch, label: String) {
@@ -676,6 +692,17 @@ private fun LegendItem(sw: Swatch, label: String) {
                     drawRect(edge, Offset(5f * u, 7f * u), androidx.compose.ui.geometry.Size(14f * u, 12f * u),
                         style = androidx.compose.ui.graphics.drawscope.Stroke(1.3f * u))
                     drawLine(edge, Offset(5f * u, 13f * u), Offset(19f * u, 13f * u), strokeWidth = 1.2f * u)
+                }
+                Swatch.RAIN -> {
+                    // a flat far cloud with a soft veil under it (the layer's own shapes, small)
+                    drawRoundRect(Color(0xFFA7B1BE), Offset(3f * u, 6f * u), androidx.compose.ui.geometry.Size(18f * u, 5f * u),
+                        androidx.compose.ui.geometry.CornerRadius(2.5f * u))
+                    drawRect(Color(0xFF7A8798), Offset(4f * u, 10f * u), androidx.compose.ui.geometry.Size(16f * u, 1.2f * u))
+                    val veil = androidx.compose.ui.graphics.Path().apply {
+                        moveTo(6f * u, 11f * u); lineTo(18f * u, 11f * u); lineTo(15f * u, 21f * u); lineTo(3f * u, 21f * u); close()
+                    }
+                    drawPath(veil, androidx.compose.ui.graphics.Brush.verticalGradient(
+                        listOf(Color(0xFF8E9BAA).copy(alpha = 0.6f), Color(0xFF8E9BAA).copy(alpha = 0.1f)), 11f * u, 21f * u))
                 }
                 Swatch.CLOUD -> {
                     val c = Color(0xFFDCE1E8); val ink = Color(0xFF8A939E)

@@ -45,6 +45,10 @@ data class CabinState(
     val windows: Map<String, Int> = emptyMap(),
     val cabinLightOn: Boolean? = null,
     val readingLightOn: Boolean? = null,
+    /** Front wiper lever on AUTO (Pleos getCurrentWiperSwitch); null = not readable (X-09: then no rain input). */
+    val wiperAuto: Boolean? = null,
+    /** Front wiper actually wiping (Pleos WiperState.ON). */
+    val wiperOn: Boolean? = null,
     val lastError: String? = null,
 ) {
     /** Window positions 0..10; [WINDOW_UNKNOWN] = the car did not report this window. */

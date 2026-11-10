@@ -60,6 +60,7 @@ android {
             buildConfigField("boolean", "FAKE_DATA_ALLOWED", "true")
             // Weather island face: on in debug for evaluation; release stays off until QA 11-12 PASS.
             buildConfigField("boolean", "KICK_ISLAND", "true")
+            buildConfigField("boolean", "KICK_RAIN", "true")
         }
         release {
             isMinifyEnabled = true
@@ -70,6 +71,8 @@ android {
             // QA 11-12 conditional PASS: island on in release. -Prelease.island=false builds the OFF
             // comparison APK (QA release checks) or the fallback if a release check fails.
             buildConfigField("boolean", "KICK_ISLAND", (findProperty("release.island") ?: "true").toString())
+            // X-09 far rain (candidate C, CEO 2026-11-11): on unless -Prelease.rain=false.
+            buildConfigField("boolean", "KICK_RAIN", (findProperty("release.rain") ?: "true").toString())
             if (hasReleaseKeystore) signingConfig = signingConfigs.getByName("release")
         }
     }

@@ -52,6 +52,8 @@ internal object H1Layers {
         "sun_night_S" to H1Layer(R.drawable.isl_l_sun_night_s, 1397f, 29f),
         "sun_night_M" to H1Layer(R.drawable.isl_l_sun_night_m, 1367f, 0f),
         "sun_night_L" to H1Layer(R.drawable.isl_l_sun_night_l, 1330f, 0f),
+        "rain" to H1Layer(R.drawable.isl_l_rain, 795f, 203f),
+        "rain_night" to H1Layer(R.drawable.isl_l_rain_night, 795f, 203f),
     )
     val S = mapOf(
         "base" to H1Layer(R.drawable.isl_s_base, 0f, 0f),
@@ -101,5 +103,7 @@ internal object H1Layers {
         "sun_night_S" to H1Layer(R.drawable.isl_s_sun_night_s, 783f, 39f),
         "sun_night_M" to H1Layer(R.drawable.isl_s_sun_night_m, 753f, 9f),
         "sun_night_L" to H1Layer(R.drawable.isl_s_sun_night_l, 716f, 0f),
+        "rain" to H1Layer(R.drawable.isl_s_rain, 450f, 250f),
+        "rain_night" to H1Layer(R.drawable.isl_s_rain_night, 450f, 250f),
     )
 }

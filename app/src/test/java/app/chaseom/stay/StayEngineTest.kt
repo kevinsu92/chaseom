@@ -331,6 +331,16 @@ class StayEngineTest {
         assertEquals(20, e.at(54 * min, recirc).recircMinutes)
     }
 
+    // X-09 (QA I-2): far rain only while the lever is on AUTO and the wiper actually wipes; manual wiping,
+    // AUTO without wiping and an unreadable wiper never count.
+    @Test fun rainOnlyForAutoWiperActuallyWiping() {
+        assertTrue(StayEngine().at(0, ev.copy(wiperAuto = true, wiperOn = true)).rain)
+        assertFalse(StayEngine().at(0, ev.copy(wiperAuto = false, wiperOn = true)).rain)   // manual Low / High / once
+        assertFalse(StayEngine().at(0, ev.copy(wiperAuto = true, wiperOn = false)).rain)   // AUTO, dry
+        assertFalse(StayEngine().at(0, ev.copy(wiperAuto = null, wiperOn = true)).rain)    // lever unreadable
+        assertFalse(StayEngine().at(0, ev.copy(wiperAuto = true, wiperOn = null)).rain)    // state unreadable
+    }
+
     // Director #5: the boat shows the car's trunk and charge port; unknown is drawn closed.
     @Test fun trunkAndChargePortReachTheIsland() {
         val e = StayEngine()

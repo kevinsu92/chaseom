@@ -107,7 +107,7 @@ def disconnect():
 
 def set_car(**kw):
     """Convenience writes. Keys: gear, soc, power, temp, fan, ac, recirc, seat, seat_passenger,
-    door_driver, window_driver, cabin_light, rear_left, rear_right, charge_port, trunk."""
+    door_driver, window_driver, cabin_light, rear_left, rear_right, charge_port, trunk, wiper."""
     m = {
         "gear": lambda v: f"/vehicle/gear?gear={v}",
         "soc": lambda v: f"/vehicle/ev-battery?field=soc&value={v}",
@@ -125,6 +125,7 @@ def set_car(**kw):
         "rear_right": lambda v: f"/vehicle/seat?area=rear_right&kind=occupied&value={str(v).lower()}",
         "charge_port": lambda v: f"/vehicle/ev-battery?field=charge_port_open&value={str(v).lower()}",
         "trunk": lambda v: f"/vehicle/body?trunk={str(v).lower()}",
+        "wiper": lambda v: f"/vehicle/body?front_wiper={v}",  # Off / Auto / Low / High
     }
     for k, v in kw.items():
         post(m[k](v))
@@ -134,7 +135,7 @@ def base_state(soc=15):
     """The demo starting point: parked, climate on 22 C / fan 3, SOC 15 %, everything closed."""
     set_car(gear="Park", power=True, temp=22, fan=3, ac=False, recirc=False, seat=0, seat_passenger=0,
             soc=soc, door_driver=False, window_driver=0, cabin_light=False, rear_left=False, rear_right=False,
-            charge_port=False, trunk=False)
+            charge_port=False, trunk=False, wiper="Off")
 
 
 # ---- screen --------------------------------------------------------------------------------------

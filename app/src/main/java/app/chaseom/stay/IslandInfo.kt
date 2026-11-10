@@ -32,6 +32,8 @@ data class IslandInfo(
     /** Director #5: the hatch on the boat's after deck (trunk open) and the charge cable (charge port open). */
     val trunkOpen: Boolean = false,
     val chargePortOpen: Boolean = false,
+    /** X-09 far rain: AUTO wiper wiping (only drawn in builds with BuildConfig.KICK_RAIN). */
+    val rain: Boolean = false,
 ) {
     companion object {
         const val MAX_BUOYS = 6
@@ -81,6 +83,7 @@ data class IslandInfo(
                 heatDrv = (c?.driverSeatHeat ?: 0).coerceIn(0, 3),
                 heatPas = (ui.passengerSeatHeat ?: 0).coerceIn(0, 3),
                 trunkOpen = ui.trunkOpen,
+                rain = ui.rain,
                 chargePortOpen = ui.chargePortOpen,
             )
         }

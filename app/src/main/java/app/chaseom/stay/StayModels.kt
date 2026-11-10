@@ -183,6 +183,8 @@ data class StayUi(
     /** Minutes recirculation has held with the windows closed, once past 20 min (the circling cloud); else null. */
     val recircMinutes: Int? = null,
     /** Director #5 (boat = car): trunk / charge port known open (unknown = closed on the picture, never guessed open). */
+    /** X-09: wiper lever on AUTO and actually wiping (QA I-2); manual Low/High/once never count. Picture only. */
+    val rain: Boolean = false,
     val trunkOpen: Boolean = false,
     val chargePortOpen: Boolean = false,
     /** The saved stay was too old or the battery changed: a new stay started (title "새로 시작했어요"). */
