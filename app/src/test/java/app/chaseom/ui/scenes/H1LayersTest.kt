@@ -55,4 +55,16 @@ class H1LayersTest {
         assertTrue(lift.sun <= 0f && lift.wind <= 0f)
         assertEquals(SkyLift.NONE, skyLiftFor(set, k, set.h * k).let { if (it.sun == 0f && it.wind == 0f) SkyLift.NONE else it })
     }
+
+    // QA gate 4 D-1: a box shorter than the picture (cards on screen) keeps the largest sun inside its top.
+    @Test fun shortLargeBoxKeepsTheSunInside() {
+        val set = H1Set.Large
+        val kz = 1f
+        val boxDp = set.h * kz * 0.8f
+        val lift = skyLiftFor(set, kz, boxDp)
+        val top = set.h - boxDp / kz
+        assertTrue(lift.sun >= 0f)
+        assertTrue(set.sunY + lift.sun - H1Set.SUN_R.last() >= top + 15f)
+        assertEquals(0f, skyLiftFor(set, kz, set.h * kz).sun, 0f)
+    }
 }

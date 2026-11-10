@@ -196,6 +196,9 @@ fun IslandPanel(
     }
     val night = isSystemInDarkTheme()
     // POLISH_PASS v1.2 §0.2: picture -> 16 -> cause line -> 32 -> cards.
+    // QA gate 4 D-1: with cards the whole block must fit the window, so the picture takes only the height
+    // left after what is under it (measured), never below 75 % of its natural height; the sky side gives.
+    var belowH by remember { mutableFloatStateOf(0f) }
     Column(modifier) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val set = h1SetFor(with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value })
@@ -222,7 +225,10 @@ fun IslandPanel(
                 maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH - chipLineH)
             // Panel APP_GAP_TO_85 §10-4: Small without cards fills the height left (sky side only; the picture
             // stays at 1.0x across, so the buoy x 955/960 limit is untouched). Sun and wind lift, see skyLiftFor.
-            val boxH = filled
+            val boxH = if (fill || topInWindow.isNaN() || belowH <= 0f) filled else {
+                val left = windowH - with(density) { topInWindow.toDp() } - with(density) { belowH.toDp() } - 24.dp
+                minOf(natural, maxOf(natural * 0.75f, left))
+            }
             // Director #1 (HQ revision): arriving in P, the whole picture block (sky, island, water, buoys together,
             // so the water never seems to drop) rises 24 dp -> 0 and fades in, 300 ms, cubic-bezier(0, 0, 0.2, 1),
             // once per arrival, the first time it is not covered (a night notice opening the stay is read first),
@@ -237,17 +243,18 @@ fun IslandPanel(
             ) {
                 // Critique final ①: in a taller Small box the sun (and its label) sit at 24 % and the wind at 36 % of
                 // the box height. The sun's position carries no meaning; only its size does.
-                val skyLift = if (set === H1Set.Small && boxH > natural) skyLiftFor(set, k, boxH.value) else SkyLift.NONE
+                val skyLift = if (boxH != natural) skyLiftFor(set, k * set.zoom, boxH.value) else SkyLift.NONE
                 val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize(), sunMotion = !animOff && s.animating,
                     outsideAir = ui.climate?.recircOn == false, night = night,
                     setTemp = ui.climate?.takeIf { it.powerOn == true }?.setTempC, lift = skyLift)
                 // H1: the sun and its label sit top right, so the toast takes the top-left sky up to the label.
                 var sunLabelLeft by remember { mutableFloatStateOf(Float.NaN) }
-                IslandLabels(ui, set, k, picW.value, boxH.value, shown, sunLiftDp = skyLift.sun * k, animOff = animOff) { sunLabelLeft = it }
+                IslandLabels(ui, set, k, picW.value, boxH.value, shown, sunLiftDp = skyLift.sun * k * set.zoom, animOff = animOff) { sunLabelLeft = it }
                 val toastMax = if (sunLabelLeft.isNaN()) Modifier else Modifier.widthIn(max = with(LocalDensity.current) { sunLabelLeft.toDp() } - 32.dp)
                 Box(Modifier.align(Alignment.TopStart).padding(start = 16.dp).then(toastMax)) { pictureTop() }
             }
         }
+        Column(Modifier.fillMaxWidth().onGloballyPositioned { belowH = it.size.height.toFloat() }) {
         // Pleos fit v3 P7 (UXR option A): no text on the picture. One caption row under it = legend swatches
         // (picture shapes, no numbers) + the cause chip (QA M-3 wording, always shown) at the right end.
         // Small: the chip goes to a second line.
@@ -305,6 +312,7 @@ fun IslandPanel(
         }
         Column(Modifier.padding(top = ChaseomUi.block), verticalArrangement = Arrangement.spacedBy(ChaseomUi.related)) {
             cards() // HANDOFF 9.2.1 v6: air / swap cards under the cause line
+        }
         }
     }
 }
@@ -628,11 +636,14 @@ internal data class SkyLift(val sun: Float, val wind: Float) {
 
 /** Sun centre at 24 % and wind lines at 36 % of the box height (critique final ①), never lower than drawn. */
 internal fun skyLiftFor(set: H1Set, k: Float, boxHdp: Float): SkyLift {
-    val boxPx = boxHdp / k                       // box height in canvas px (Small zoom is 1)
-    val top = set.h - boxPx                      // canvas y of the box top (negative: the picture is bottom-aligned)
-    fun lift(canvasY: Float, frac: Float) = minOf(0f, top + frac * boxPx - canvasY)
+    val boxPx = boxHdp / k                       // box height in canvas px ([k] includes the set's zoom)
+    val top = set.h - boxPx                      // canvas y of the box top (negative: taller box, positive: shorter)
+    // Taller box: lift up to 24 % / 36 % of the box, never lower than drawn. Shorter box (cards, QA D-1): move
+    // down only as far as needed to keep the largest sun (and the wind lines) 16 px inside the box top.
+    fun lift(canvasY: Float, frac: Float, reach: Float) =
+        if (top < 0f) minOf(0f, top + frac * boxPx - canvasY) else maxOf(0f, top + 16f + reach - canvasY)
     val windY = set.layers["wind_w1"]?.let { it.y + 20f } ?: 131f
-    return SkyLift(sun = lift(set.sunY, 0.24f), wind = lift(windY, 0.36f))
+    return SkyLift(sun = lift(set.sunY, 0.24f, H1Set.SUN_R.last()), wind = lift(windY, 0.36f, 20f))
 }
 
 /** Legend swatches: the picture's own shapes at 24 dp (Pleos fit v3 §4: can buoy, water #4B627C). */
