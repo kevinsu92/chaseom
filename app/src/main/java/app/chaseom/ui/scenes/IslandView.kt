@@ -503,7 +503,7 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
             drawRect(NIGHT_LIGHT.copy(alpha = 0.76f), Offset(0f, y), androidx.compose.ui.geometry.Size(size.width, size.height - y))
             translate(left = ox, top = oy) {
                 scale(k, k, pivot = Offset.Zero) {
-                    drawSun(set, bmp, cur.value, sunR.value / H1Set.SUN_R[cur.value.sun], glow.value * GLOW_EXTRA, lift, NIGHT_SUN)
+                    drawSun(set, bmp, cur.value, sunR.value / H1Set.SUN_R[cur.value.sun], glow.value * GLOW_EXTRA, lift, night = true)
                 }
             }
         }
@@ -560,9 +560,12 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
  * At night it is drawn above the night light with only its brightness lowered (HQ 2026-11-10, centre ~#C98A2E).
  */
 internal fun DrawScope.drawSun(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, sunScale: Float, glow: Float, lift: SkyLift,
-                               filter: androidx.compose.ui.graphics.ColorFilter? = null) {
-    val name = "sun_${"SML"[cur.sun]}"
-    val l = set.layers[name] ?: return
+                               night: Boolean = false) {
+    // Night: the design's own night sun layer (04_design v3/extra/night_sun, QA verdict 11, centre #C8892D),
+    // same position and S/M/L rule; the colour filter is only a fallback for a layer set without it.
+    val nightLayer = if (night) set.layers["sun_night_${"SML"[cur.sun]}"] else null
+    val l = nightLayer ?: set.layers["sun_${"SML"[cur.sun]}"] ?: return
+    val filter = if (night && nightLayer == null) NIGHT_SUN else null
     fun draw(alpha: Float) = drawImage(bmp(l.id), Offset(l.x, l.y), alpha = alpha, colorFilter = filter)
     translate(top = lift.sun) {
         if (sunScale == 1f) draw(1f) else scale(sunScale, sunScale, pivot = Offset(set.sunX, set.sunY)) { draw(1f) }
