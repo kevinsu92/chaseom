@@ -209,9 +209,11 @@ fun IslandPanel(
             val fill = ui.exchange == null && ui.airMinutes == null && !ui.seatHeatLong
             // Critique final 2 ②: the first-stay hint is one caption line under the cause line; the picture fills around it.
             val hintH = if (ui.firstStayHint) ChaseomUi.related + 32.dp else 0.dp
+            // Pleos fit v3 P7: on Small the caption row is two lines (legend, then the cause chip).
+            val chipLineH = if (set === H1Set.Small) ChaseomUi.line + 32.dp else 0.dp
             val minH = if (set === H1Set.Small) H1Set.SMALL_MIN_DP.dp else natural
             val filled = if (!fill || topInWindow.isNaN()) natural else
-                maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH)
+                maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH - chipLineH)
             // Panel APP_GAP_TO_85 §10-4: Small without cards fills the height left (sky side only; the picture
             // stays at 1.0x across, so the buoy x 955/960 limit is untouched). Sun and wind lift, see skyLiftFor.
             val boxH = filled
