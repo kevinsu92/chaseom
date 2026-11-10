@@ -2,7 +2,7 @@
 
 전기차를 세워 두고 공조를 켠 채 차 안에 머물 때, **지금 설정으로 얼마나 더 머물 수 있는지(추정)**를 내일 탈 거리만큼 배터리를 남긴 기준으로 보여 줍니다. 다이얼을 돌리면 시간 변화가 바로 보이고, 화면 속 작은 섬의 날씨가 바뀝니다. 떠날 때는 창문·실내등·충전구·뒷좌석 확인 영수증을 보여 줍니다.
 
-Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**로 공조·좌석·문·창문·조명 신호를 읽습니다.
+Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**로 공조·좌석·문·창문·조명·와이퍼 신호를 읽습니다.
 
 ![tests](https://img.shields.io/badge/unit%20tests-131%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-4.0%20MB-informational) ![domain coverage](https://img.shields.io/badge/domain%20line%20coverage-98%25-2ea44f)
 
@@ -43,7 +43,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 
 ## 30초 체험
 1. 먼저 배터리 19%: Pleos Connect Emulator를 켜고 Virtual Console에서 배터리를 **19%**로 둡니다(약 20% 이상이면 남은 시간이 "3시간 이상"으로 묶여 변화가 보이지 않습니다). 그다음 APK를 설치합니다: `adb install -r apk/Chaseom_Chaseom_release.apk`
-2. 손으로 해 보기: Virtual Console에서 **배터리를 19%**로, 기어를 **P**로 둡니다. 그다음 운전석 설정온도를 22°C에서 26°C로, 풍량을 3에서 6으로 올려 보세요(토스트 약 −21분). 비슷한 체감 카드가 뜨면 설정 21°C + 운전석 열선 2단으로 바꿔 보세요(약 +16분). 배터리가 약 20% 이상이면 남은 시간이 "3시간 이상"으로 표시돼 숫자 변화가 보이지 않습니다.
+2. 손으로 해 보기: Virtual Console에서 **배터리를 19%**로, 기어를 **P**로 둡니다. 그다음 운전석 설정온도를 22°C에서 26°C로, 풍량을 3에서 6으로 올려 보세요(토스트 "설정 26°C · 풍량 6 · −21분 (추정)"). 비슷한 체감 카드가 뜨면 설정 21°C + 운전석 열선 2단으로 바꿔 보세요(약 +16분 (추정)). 앞 와이퍼를 AUTO로 두면 섬 뒤에 먼 비가 보입니다. 배터리가 약 20% 이상이면 남은 시간이 "3시간 이상"으로 표시돼 숫자 변화가 보이지 않습니다.
 3. 또는 자동으로: `python tools/demo.py`
    - Virtual Console 조작을 자동으로 재생합니다. 앱은 그 값을 실제 차량 신호 경로(Vehicle SDK·AAOS)로 받습니다. 앱 안에 데모 모드나 가짜 값은 없습니다.
    - 단계마다 화면 문구와 반영 시간(ms)을 출력하고, 끝에 `6/6 장면 확인`을 냅니다. 영수증 단계에서 1분쯤 기다립니다.
@@ -57,16 +57,17 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 |---|---|
 | 뒷좌석을 "비었음"이나 초록으로 표시하지 않고, 영수증에는 늘 "뒷좌석 직접 확인" 줄이 있다 | `WordingRulesTest.rearSeatWording`, `StayEngineTest.rearRowNeverHasADotForAnyOccupancy`, `StayEngineTest.receiptRowsOrderAndRearAlwaysCheck` |
 | 남은 시간은 3시간 위로 늘지 않고, 토스트·환율 카드도 3시간으로 자른 값끼리 비교한다 | `StayEngineTest.toastDeltaUsesThreeHourCappedValues`, `StayEngineTest.toastDeltaCrossingTheCapIsBounded`, `StayEngineTest.noExchangeCardWhenAboveCap` |
-| 계산된 숫자에는 늘 "(추정)"이 붙는다 | `WordingRulesTest.computedValuesMarkedEstimate` |
+| 계산된 숫자에는 늘 "(추정)"이 붙는다 (토스트의 ±분 포함) | `WordingRulesTest.computedValuesMarkedEstimate`, `WordingRulesTest.roundOneIslandSaysNothingAboutSeatHeat` |
+| 토스트와 해 옆 숫자의 온도 앞에는 늘 "설정"이 붙는다 (Large·Small 모두, 실내 온도로 읽히지 않게) | `WordingRulesTest.roundOneIslandSaysNothingAboutSeatHeat` |
 | 수면·차박·보장·"최초" 같은 금칙어가 없다 (취급설명서 경고 인용만 예외) | `WordingRulesTest.noBannedWordsOutsideTheWarnings`, `WordingRulesTest.designRuleWordsAbsent`, `WordingRulesTest.manualQuoteVerbatimWithSource` |
 | 주행 중 화면은 숫자 없이 짧은 안내뿐이다 | `WordingRulesTest.drivingGlanceShortAndNumberFree` |
 | 앱은 공조를 끄지 않는다고 말하고, 내일 몫은 "잠금"이 아니다 | `WordingRulesTest.keepShareNeverLockedAndAppDoesNotControlClimate` |
 | 머무는 동안 60분마다, 야간에는 시작과 매시 고지가 다시 뜬다 | `StayEngineTest.hourNoticeEvery60Minutes`, `StayEngineTest.nightNoticeAtStartAndHourly`, `StayEngineTest.nightBeginningDuringStayShowsNightCard` |
 | 고지가 떠 있으면 섬은 멈추고 고지가 맨 위다 | `IslandTest.frozenUnderNoticeOrReceipt` |
-| 섬은 2열 탑승·창문·문에 반응하지 않는다 (그림이 "아무도 없다"를 말하지 않게) | `IslandTest.rearSeatWindowsAndDoorsAreNotInputs` |
-| 섬은 늘 낮이고 장식이라고 말한다 (모닥불·밤·별 금지) | `WordingRulesTest.islandWordingDaytimeAndDecoration` |
-| 범례·해 옆 숫자·구름 문구는 확정 문구 그대로이고 "설정"을 빼지 않는다. 공기 상태를 판정하는 말이 없다 | `WordingRulesTest.roundOneIslandSaysNothingAboutSeatHeat` |
-| 구름은 내기순환 20분(창문 닫힘) 뒤에만, 하나로 고정, 외기·창문 열림에 조용히 사라짐 | `StayEngineTest.recircCloudAfter20MinIgnoresSnoozeAndLeavesQuietly`, `StayEngineTest.recircCloudNeedsClimateOnAndKnownClosedWindows`, `IslandInfoTest.weatherFollowsClimateAndOffIsTheSmallSun` |
+| 섬은 2열 탑승·문에 반응하지 않습니다. 창문은 구름(내기순환 시간)을 띄울지 정할 때만 씁니다 (그림이 "아무도 없다"를 말하지 않게) | `IslandTest.rearSeatWindowsAndDoorsAreNotInputs`, `StayEngineTest.recircCloudNeedsClimateOnAndKnownClosedWindows` |
+| 섬은 '공조 설정·배터리로 그려요 · 실내 측정 아님'이라고 말하고, 밤에도 달·별·모닥불을 그리지 않습니다 | `WordingRulesTest.islandWordingDaytimeAndDecoration` |
+| 범례·해 옆 숫자·구름·먼 비 문구는 확정 문구 그대로이고 "설정"을 빼지 않는다. 공기 상태를 판정하는 말이 없다 | `WordingRulesTest.roundOneIslandSaysNothingAboutSeatHeat` |
+| 구름은 내기순환 20분(창문 닫힘) 뒤에만, 하나로 고정(늘거나 진해지지 않음), 창문을 열면 조용히 사라지고 외기로 바꾸면 한 번 흘러 나가며 사라짐(보상 표시·문구 없음) | `StayEngineTest.recircCloudAfter20MinIgnoresSnoozeAndLeavesQuietly`, `StayEngineTest.recircCloudNeedsClimateOnAndKnownClosedWindows`, `IslandInfoTest.weatherFollowsClimateAndOffIsTheSmallSun` |
 | 내일 배(= 내일 몫)는 배터리가 줄어도 기울거나 가라앉지 않는다. 바뀌는 것은 짐 상자 윤곽선과 문구뿐 | `IslandTest.belowKeepEmptiesTheDayBandButNeverChangesTheBoatOrSun`, `IslandTest.crateOutlineOnlyNearOrBelowKeep` |
 | 배의 정박(1.6초)은 차가 다녀왔을 때만 한 번, 출발할 때는 아무것도 움직이지 않고 접힌다 | `IslandTest.mooringOnlyWhenTheCarCameBack`, `IslandTest.mooringWindowAndCoverRules` |
 | 정차 중 공조를 놀이처럼 조작하게 하는 명령형 문구가 없다 | `WordingRulesTest.noImperativeDialPrompt` |
@@ -101,14 +102,15 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 - **앱 이름**: 차섬 (Chaseom)
 - **한 줄 소개**: 정차 중 차를 만지면 화면 속 작은 섬의 날씨가 바뀌고, 그 위 숫자가 내일 갈 몫을 남긴 채 오늘 머물 시간을 보여 주는 Pleos 차량 앱
 - **핵심 기능**
-  - **작은 날씨 섬**: 해 크기 = 공조 설정온도, 바람 = 풍량, 물 높이 = 배터리, 부표 1개 = 머물 수 있는 30분(최대 6개), 배의 짐 = 내일 몫. 그림 위에는 글자가 없고, 그림 아래 범례 한 줄("해 = 설정 온도 · 물 = 배터리 · 부표 1개 = 30분 · 짐 = 내일 몫")과 캡션 "섬은 공조 설정·배터리로 그려요 · 실내 측정 아님"이 늘 보입니다. 다이얼로 설정온도를 바꾸면 해 옆에 "설정 22 → 26°C"가 2.5초 뜹니다. 기어 P에서만 표시.
-  - **맴도는 구름**: 공조를 켠 채 창문을 모두 닫고 내기순환을 20분 넘게 쓰면 섬 위에 구름 하나가 뜨고 범례에 "구름 = 내기순환 N분째 (공기 측정 아님)"가 붙습니다. 시간이 지나도 구름은 늘거나 진해지지 않고, 외기로 바꾸거나 창문을 열면 조용히 사라집니다. 공기질을 재지 않으며, **수동 내기순환 상태만** 읽습니다(자동 내기순환은 읽지 않음). 외기로 바꾸는 순간 구름은 한 번 흘러 나가고 사라집니다(문구 없음).
+  - **작은 날씨 섬**: 해 크기 = 공조 설정온도, 바람 = 풍량, 물 높이 = 배터리, 부표 1개 = 머물 수 있는 30분(최대 6개), 배의 짐 = 내일 몫. 평소 그림 위에는 글자가 없고, 그림 아래 범례 한 줄("해 = 설정 온도 · 물 = 배터리 · 부표 1개 = 30분 · 짐 = 내일 몫")과 캡션 "섬은 공조 설정·배터리로 그려요 · 실내 측정 아님"이 늘 보입니다. 다이얼로 설정온도를 바꾸면 해 옆에 "설정 22 → 26°C"가 2.5초 뜹니다. 기어 P에서만 표시.
+  - **맴도는 구름**: 공조를 켠 채 창문을 모두 닫고 내기순환을 20분 넘게 쓰면 섬 위에 구름 하나가 뜨고 범례에 "구름 = 내기순환 N분째 (공기 측정 아님)"가 붙습니다. 시간이 지나도 구름은 늘거나 진해지지 않습니다. 창문을 열면 조용히 사라지고, 외기로 바꾸면 한 번 흘러 나가며 사라집니다(문구 없음). 공기질을 재지 않으며, **수동 내기순환 상태만** 읽습니다(자동 내기순환은 읽지 않음).
+  - **먼 비**: 앞 와이퍼 레버가 AUTO이고 실제로 닦을 때만 섬 뒤 수평선에 먼 비가 보이고, 범례에 "먼 비 = 와이퍼 AUTO 작동"이 붙습니다. 수동 와이퍼·AUTO 대기·읽기 실패에는 그리지 않습니다. 움직이지 않는 그림이고, 켜지고 꺼질 때 한 번만 서서히 바뀝니다. 바깥 날씨를 재지 않습니다.
   - **도착**: 주행 뒤 P에 들어오면 그림 판 전체(하늘·섬·물·부표가 함께)가 24dp 아래에서 0.3초 동안 한 번 떠오르며 나타납니다. 시작 고지가 떠 있으면 고지를 닫은 뒤 재생하고, 시스템 애니메이션이 꺼져 있으면 재생하지 않습니다.
   - **밤**: 다크 모드에서는 그림 판 전체에 남색 밤빛(물선 위 50%, 아래 76%)을 한 장 덮고, 해는 그 위에 밝기만 낮춰 그립니다. 밤에는 그림만 어두워지고 해는 그대로 떠 있습니다(해 = 설정 온도). 달과 별은 그리지 않습니다.
   - **내일 지킬 몫**: 내일 처음 갈 거리(여유분 20% 포함)를 배터리에서 따로 표시. 남은 시간은 "(추정)", 3시간 넘으면 "3시간 이상".
-  - **따뜻함 환율**: 다이얼을 바꾸는 순간 남은 시간 변화(±, 추정)와 비슷한 체감을 더 적은 전력으로 얻는 조합(운전석 열선, 저온 화상 주의) 제안.
+  - **따뜻함 환율**: 다이얼을 바꾸는 순간 토스트로 남은 시간 변화(예: "설정 26°C · 풍량 6 · −21분 (추정)")와 비슷한 체감을 더 적은 전력으로 얻는 조합(운전석 열선, 저온 화상 주의) 제안.
   - **안전 고지와 떠나기 전 영수증**: P 진입·1시간·야간에 공조 사용 경고, 운전석 문을 열면 머문 시간·쓴 전력·내일 몫·창문·실내등·충전 포트와 "뒷좌석 직접 확인" 줄. 앱은 공조를 끄지 않음.
-- **사용 SDK/API**: `ai.pleos.playground:Vehicle:2.3.2` (EvBattery, HVAC, Seat, Door, Window, Light), AAOS `CarPropertyManager` (연료 종류, 배터리 용량, 충전구, 기어 `GEAR_SELECTION`). 공개 문서에 있는 API만 씁니다.
+- **사용 SDK/API**: `ai.pleos.playground:Vehicle:2.3.2` (EvBattery, HVAC, Seat, Door, Window, Light, Wiper), AAOS `CarPropertyManager` (연료 종류, 배터리 용량, 충전구, 기어 `GEAR_SELECTION`). 공개 문서에 있는 API만 씁니다.
 
 ## 2. 실행 방법
 
@@ -122,6 +124,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 4. Virtual Console에서 아래 순서로 조작합니다.
    - 기어 **P**, 공조 전원 켬, 배터리(SOC) 19% → 머무는 화면과 섬
    - 운전석 설정온도·풍량·A/C·내기순환·열선 변경 → 시간 토스트, 섬 날씨 변화
+   - 앞 와이퍼 AUTO → 섬 뒤 먼 비와 범례 한 줄 (Low/High는 그리지 않음)
    - 운전석 문 열기 → 떠나기 전 영수증 (문을 닫으면 닫힘)
    - 기어 **D** → 차섬은 섬과 숫자를 바로 접고, 주행 중에는 시스템이 앱 화면을 가립니다
 
@@ -148,7 +151,7 @@ Android SDK 위치가 필요합니다. 환경 변수 `ANDROID_HOME`을 설정하
 | 패키지 | `app.chaseom` (디버그 `app.chaseom.debug`) |
 | UI | Jetpack Compose, Pleos 디자인 토큰, 대형 터치 타깃 |
 | 권한 (런타임 권한 요청 0, 차량 제어 권한 0) | Pleos `CAR_ENERGY`, `CAR_CLIMATE`, `CAR_SEATS`, `CAR_WINDOWS`, `CAR_DOORS`, `CAR_LIGHTS` / AAOS `CAR_INFO`, `CAR_ENERGY_PORTS`, `CAR_POWERTRAIN` / `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE` |
-| 테스트 시나리오 | Virtual Console: 기어 P↔D, 배터리 잔량, 공조(설정온도·풍량·A/C·내기순환), 운전석·조수석 열선, 문, 창문, 실내등, 2열 탑승 |
+| 테스트 시나리오 | Virtual Console: 기어 P↔D, 배터리 잔량, 공조(설정온도·풍량·A/C·내기순환), 운전석·조수석 열선, 앞 와이퍼(AUTO), 문, 창문, 실내등, 2열 탑승 |
 
 에뮬레이터 참고: Virtual Console의 등받이 각도는 에뮬레이터 차량 데이터에 반영되지 않아, 등받이 고지는 에뮬레이터에서 동작하지 않습니다(지원 차량에서만 켜짐).
 
@@ -162,7 +165,7 @@ Android SDK 위치가 필요합니다. 환경 변수 `ANDROID_HOME`을 설정하
 ### 프로젝트 구조
 ```
 app/src/main/java/app/chaseom/
-  cabin/     CabinRepository: Vehicle SDK·CarPropertyManager 구독 (공조·좌석·문·창문·조명·충전구)
+  cabin/     CabinRepository: Vehicle SDK·CarPropertyManager 구독 (공조·좌석·문·창문·조명·와이퍼·충전구)
   vehicle/   기어(AAOS GEAR_SELECTION)·배터리, 주행 중 제한 판정
   stay/      순수 모델: StayEngine(상태 기계), EnergyModel(추정 계산), Island(섬 상태), StayController, StayService
   ui/scenes/ 장면: 머무는 화면, 섬, 고지·영수증, 설정·온보딩, 주행 중 안내
