@@ -434,8 +434,9 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
         // QA condition 3 (gate 4 finding): a computed ± minutes always carries "(추정)" in the toast too.
         else -> stringResource(R.string.d_toast_delta, signedDuration(delta))
     }
-    // POLISH §0.6: on Small the toast drops the word before the temperature ("24°C · −9분").
-    val label = items.map { if (short && it is ClimateChange.Temp) "${tempText(it.celsius)}°C" else changeLabel(it) }.joinToString(" · ")
+    // QA gate 4 (condition 2): the temperature always reads "설정 24°C", on Small too; a bare number reads as the
+    // cabin temperature. A long toast wraps to two lines instead of dropping the word.
+    val label = items.map { changeLabel(it) }.joinToString(" · ")
     // Latency probe (QA IP-5): first frame showing this toast content.
     androidx.compose.runtime.LaunchedEffect(items, delta, heldAboveCap) {
         androidx.compose.runtime.withFrameNanos { }
@@ -448,12 +449,13 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
     // S-02 Level 2 shadow by day.
     val k = cui()
     Row(
-        modifier.height(ChaseomUi.toastHeight).pleosShadow(2, 24.dp, enabled = !androidx.compose.foundation.isSystemInDarkTheme())
-            .clip(ChaseomUi.rPill).background(k.toast).padding(horizontal = 22.dp),
+        modifier.heightIn(min = ChaseomUi.toastHeight).pleosShadow(2, 24.dp, enabled = !androidx.compose.foundation.isSystemInDarkTheme())
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(24.dp)).background(k.toast)
+            .padding(horizontal = 22.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(if (label.isEmpty()) deltaText else stringResource(R.string.d_toast_fmt, label, deltaText),
-            style = ChaseomUi.banner, color = k.onToast, maxLines = 1, softWrap = false)
+            style = ChaseomUi.banner, color = k.onToast, maxLines = 2)
     }
 }
 

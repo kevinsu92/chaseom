@@ -137,6 +137,11 @@ class WordingRulesTest {
         assertEquals("먼 비 = 와이퍼 AUTO 작동", strings["is_lg_rain"]) // QA verdict 12 / 15
         // QA condition 3 (gate 4): the toast's ± minutes carry "(추정)" -> "설정 26°C · 풍량 6 · −21분 (추정)".
         assertEquals("%1\$s (추정)", strings["d_toast_delta"])
+        // QA gate 4 (condition 2): the toast's temperature always has "설정" in front, Large and Small alike.
+        assertTrue(strings.getValue("hvac_temp").startsWith("설정 "))
+        val toastCode = java.io.File("src/main/java/app/chaseom/ui/scenes/StayScenes.kt").readText()
+            .substringAfter("fun DialToast(").substringBefore("\n}\n")
+        assertFalse("the toast never builds a bare temperature", toastCode.contains("}°C\""))
         assertEquals("설정 26°C · 풍량 6 · −21분 (추정)",
             String.format(strings.getValue("d_toast_fmt"), "설정 26°C · 풍량 6", String.format(strings.getValue("d_toast_delta"), "−21분")))
         assertTrue(strings.getValue("d_toast_cap").contains("(추정)"))
