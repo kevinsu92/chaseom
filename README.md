@@ -61,6 +61,8 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 | 고지가 떠 있으면 섬은 멈추고 고지가 맨 위다 | `IslandTest.frozenUnderNoticeOrReceipt` |
 | 섬은 2열 탑승·창문·문에 반응하지 않는다 (그림이 "아무도 없다"를 말하지 않게) | `IslandTest.rearSeatWindowsAndDoorsAreNotInputs` |
 | 섬은 늘 낮이고 장식이라고 말한다 (모닥불·밤·별 금지) | `WordingRulesTest.islandWordingDaytimeAndDecoration` |
+| 범례·해 옆 숫자·구름 문구는 확정 문구 그대로이고 "설정"을 빼지 않는다. 공기 상태를 판정하는 말이 없다 | `WordingRulesTest.roundOneIslandSaysNothingAboutSeatHeat` |
+| 구름은 내기순환 20분(창문 닫힘) 뒤에만, 하나로 고정, 외기·창문 열림에 조용히 사라짐 | `StayEngineTest.recircCloudAfter20MinIgnoresSnoozeAndLeavesQuietly`, `StayEngineTest.recircCloudNeedsClimateOnAndKnownClosedWindows`, `IslandInfoTest.weatherFollowsClimateAndOffIsTheSmallSun` |
 | 내일 배(= 내일 몫)는 배터리가 줄어도 기울거나 가라앉지 않는다. 바뀌는 것은 짐 상자 윤곽선과 문구뿐 | `IslandTest.belowKeepEmptiesTheDayBandButNeverChangesTheBoatOrSun`, `IslandTest.crateOutlineOnlyNearOrBelowKeep` |
 | 배의 정박(1.6초)은 차가 다녀왔을 때만 한 번, 출발할 때는 아무것도 움직이지 않고 접힌다 | `IslandTest.mooringOnlyWhenTheCarCameBack`, `IslandTest.mooringWindowAndCoverRules` |
 | 정차 중 공조를 놀이처럼 조작하게 하는 명령형 문구가 없다 | `WordingRulesTest.noImperativeDialPrompt` |
@@ -94,7 +96,8 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 - **앱 이름**: 차섬 (Chaseom)
 - **한 줄 소개**: 정차 중 차를 만지면 화면 속 작은 섬의 날씨가 바뀌고, 그 위 숫자가 내일 갈 몫을 남긴 채 오늘 머물 시간을 보여 주는 Pleos 차량 앱
 - **핵심 기능**
-  - **작은 날씨 섬**: 해 크기 = 공조 설정온도, 바람 = 풍량, 물 높이 = 배터리, 부표 = 머문 시간(30분에 1개), 배의 짐 = 내일 몫. 섬은 공조 설정·배터리로 그리며 실내 온도·공기질을 뜻하지 않음(화면 캡션 상시). 기어 P에서만 표시.
+  - **작은 날씨 섬**: 해 크기 = 공조 설정온도, 바람 = 풍량, 물 높이 = 배터리, 부표 = 머문 시간(30분에 1개), 배의 짐 = 내일 몫. 그림 위에는 글자가 없고, 그림 아래 범례 한 줄("해 = 설정 온도 · 물 = 배터리 · 부표 1개 = 30분 · 짐 = 내일 몫")과 캡션 "섬은 공조 설정·배터리로 그려요 · 실내 측정 아님"이 늘 보입니다. 다이얼로 설정온도를 바꾸면 해 옆에 "설정 22 → 26°C"가 2.5초 뜹니다. 기어 P에서만 표시.
+  - **맴도는 구름**: 공조를 켠 채 창문을 모두 닫고 내기순환을 20분 넘게 쓰면 섬 위에 구름 하나가 뜨고 범례에 "구름 = 내기순환 N분째 (공기 측정 아님)"가 붙습니다. 시간이 지나도 구름은 늘거나 진해지지 않고, 외기로 바꾸거나 창문을 열면 조용히 사라집니다. 공기질을 재지 않으며, **수동 내기순환 상태만** 읽습니다(자동 내기순환은 읽지 않음).
   - **내일 지킬 몫**: 내일 처음 갈 거리(여유분 20% 포함)를 배터리에서 따로 표시. 남은 시간은 "(추정)", 3시간 넘으면 "3시간 이상".
   - **따뜻함 환율**: 다이얼을 바꾸는 순간 남은 시간 변화(±, 추정)와 비슷한 체감을 더 적은 전력으로 얻는 조합(운전석 열선, 저온 화상 주의) 제안.
   - **안전 고지와 떠나기 전 영수증**: P 진입·1시간·야간에 공조 사용 경고, 운전석 문을 열면 머문 시간·쓴 전력·내일 몫·창문·실내등·충전 포트와 "뒷좌석 직접 확인" 줄. 앱은 공조를 끄지 않음.
