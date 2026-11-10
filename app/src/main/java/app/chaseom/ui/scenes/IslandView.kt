@@ -105,18 +105,20 @@ internal class H1Set(
     val boxGrow: Float = 1f,
 ) {
     val h = 600f
+    /** Canvas y of the water surface per step 1..5 (layers manifest water_top_y_by_step). */
+    val waterTop: FloatArray get() = if (w == 1600f) floatArrayOf(520f, 480f, 440f, 400f, 360f) else floatArrayOf(480f, 456f, 432f, 408f, 384f)
     companion object {
-        val Large = H1Set(H1Layers.L, 1600f, 40f, 1450f, 108f,
+        val Large = H1Set(H1Layers.L, 1600f, 40f, 1450f, 82f, // Pleos fit v3: sun higher (108 -> 82)
             batX = 40f, batY = 569f, buoyX = 1466f, buoyY = 569f, buoyAnchor = 0.5f, keepX = 1172f, keepY = 569f, keepAnchor = 0.5f,
             zoom = 1.08f, boxGrow = 1.08f) // POLISH v1.6: one scale per window size; the whole zoomed picture fits
         // POLISH v1.8 / layers v1.12: Small rail line 1 = battery (start) + buoys (end at 932), line 2 = crates.
-        val Small = H1Set(H1Layers.S, 960f, 24f, 836f, 118f,
+        val Small = H1Set(H1Layers.S, 960f, 24f, 836f, 92f, // Pleos fit v3: 118 -> 92
             batX = 28f, batY = 503f, buoyX = 932f, buoyY = 503f, buoyAnchor = 1f, keepX = 28f, keepY = 551f, keepAnchor = 0f)
         /** POLISH v1.8: the Small picture box fills the height left on screen, at least this tall. */
         val SMALL_MIN_DP = 560f
         /** Sky above a picture that is shorter than its box, and the sea under its lower 30 % (no seam, POLISH v1.6). */
-        val SKY_TOP = Color(0xFFC9E0F3)
-        val SEA_DEEP = Color(0xFF1F3B5C)
+        val SKY_TOP = Color(0xFFF5F6F8) // Pleos fit v3: the sky top is the page colour (the picture melts into it)
+        val SEA_DEEP = Color(0xFF3B536E) // Pleos fit v3 water bottom
         /** Sun disc radius per size (S / M / L), for the "설정 °C" label next to it. */
         val SUN_R = floatArrayOf(28f, 44f, 64f) // H1 v1.7 / v1.9
     }
@@ -197,8 +199,8 @@ fun IslandPanel(
             // Large: card width, at most 1760 dp so a full-screen window keeps the picture under 660 dp tall.
             val picW: Dp = if (set === H1Set.Large) minOf(maxWidth, 1760.dp) else maxWidth
             val k = picW.value / set.w // dp per canvas px
-            // POLISH v1.4 §0.9-⑤: night = brightness -10 % and a 1 dp #3A3D42 outline ("always day").
-            val outline = if (night) Modifier.border(1.dp, Color(0xFF3A3D42), ChaseomUi.rContainer) else Modifier
+            // Pleos fit v3.2.1: no outline at night (it read as a 1 px seam); see the night light below.
+            val outline = Modifier
             // POLISH v1.8: on Small without cards the picture box fills the height left on screen (min 560 dp, 24 dp
             // bottom margin below the cause line); the picture stays 1.0x, bottom-aligned, with plain sky above.
             val natural = picW * (set.h / set.w) * set.boxGrow
@@ -228,7 +230,17 @@ fun IslandPanel(
                 val skyLift = if (set === H1Set.Small && boxH > natural) skyLiftFor(set, k, boxH.value) else SkyLift.NONE
                 val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize(), sunMotion = !animOff && s.animating,
                     setTemp = ui.climate?.takeIf { it.powerOn == true }?.setTempC, lift = skyLift)
-                if (night) Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = 0.1f)))
+                // Pleos fit v3.2.1 (QA I10, UXR): night = ONE navy light #121E38 over the whole picture block,
+                // 76 % under the water line and 50 % above it (the day picture seen at night, never a night island).
+                if (night) {
+                    val waterTop = set.waterTop[(info.waterStep).coerceIn(0, set.waterTop.size - 1)]
+                    val lineDp = boxH.value - (set.h - waterTop) * k * set.zoom
+                    Box(Modifier.matchParentSize().drawBehind {
+                        val y = (lineDp.dp.toPx()).coerceIn(0f, size.height)
+                        drawRect(NIGHT_LIGHT.copy(alpha = 0.5f), size = androidx.compose.ui.geometry.Size(size.width, y))
+                        drawRect(NIGHT_LIGHT.copy(alpha = 0.76f), Offset(0f, y), androidx.compose.ui.geometry.Size(size.width, size.height - y))
+                    })
+                }
                 // H1: the sun and its label sit top right, so the toast takes the top-left sky up to the label.
                 var sunLabelLeft by remember { mutableFloatStateOf(Float.NaN) }
                 IslandLabels(ui, set, k, picW.value, boxH.value, shown, sunLiftDp = skyLift.sun * k, animOff = animOff) { sunLabelLeft = it }
@@ -609,3 +621,6 @@ private fun LegendItem(sw: Swatch, label: String) {
         Text(label, style = ChaseomUi.caption, color = cui().text2, softWrap = false)
     }
 }
+
+/** Pleos fit v3.2.1 night light colour (applied at 50 % / 76 %). */
+internal val NIGHT_LIGHT = Color(0xFF121E38)

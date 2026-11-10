@@ -7,7 +7,7 @@ import org.junit.Test
 /** 04_design art_v3 layers_h1: every state the island can show has its layer in both window sets. */
 class H1LayersTest {
     private val expected = buildSet {
-        addAll(listOf("base", "boat_l1", "k2_l1")) // v1.9: no sheen
+        addAll(listOf("base", "boat_l1", "k2_l1", "air")) // v1.9: no sheen; Pleos fit v3: + air (the circling cloud)
         (0..2).forEach { add("trees_w$it") }
         listOf("S", "M", "L").forEach { add("sun_$it") }
         (1..2).forEach { add("wind_w$it") }
@@ -16,9 +16,16 @@ class H1LayersTest {
     }
 
     @Test fun bothSetsHaveEveryLayer() {
-        assertEquals(43, expected.size)
+        assertEquals(44, expected.size)
         assertEquals(expected, H1Layers.L.keys)
         assertEquals(expected, H1Layers.S.keys)
+    }
+
+    // The night light sits on the water line of the current step (Pleos fit v3.2.1): same values as the manifest.
+    @Test fun waterTopMatchesTheWaterLayers() {
+        for (set in listOf(H1Set.Large, H1Set.Small)) (1..5).forEach { l ->
+            assertEquals(set.layers.getValue("water_l$l").y, set.waterTop[l - 1])
+        }
     }
 
     @Test fun windowWidthPicksTheSet() {
