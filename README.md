@@ -4,7 +4,7 @@
 
 Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**로 공조·좌석·문·창문·조명 신호를 읽습니다.
 
-![tests](https://img.shields.io/badge/unit%20tests-120%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-3.9%20MB-informational) ![domain coverage](https://img.shields.io/badge/domain%20line%20coverage-98%25-2ea44f)
+![tests](https://img.shields.io/badge/unit%20tests-131%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-4.0%20MB-informational) ![domain coverage](https://img.shields.io/badge/domain%20line%20coverage-98%25-2ea44f)
 
 ### 구조
 ![차섬 구조: 차량 신호 → 어댑터 → 순수 도메인 → Compose 화면](docs/images/architecture.svg)
@@ -17,19 +17,23 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 |---|---|---|
 | ![섬과 토스트](docs/images/dial_toast.png) | ![내일 몫 경고](docs/images/keep_k2.png) | ![영수증](docs/images/receipt.png) |
 
+| 와이퍼가 AUTO로 실제로 닦을 때만 섬 뒤 먼 비 (범례 "먼 비 = 와이퍼 AUTO 작동") |
+|---|
+| ![먼 비](docs/images/far_rain.png) |
+
 ## 검증 표
-제출 APK(`apk/Chaseom_Chaseom_release.apk`, sha256 `93a5cc4fbe11713d4371193fe1972bc108fbce5c85b5779ec0ca38cdf75b5cde`)를 Pleos Connect Emulator 2.1.0에서 잰 값입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)이고, 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`을 실행합니다. 이 표의 해시가 지금 APK와 같은지는 `python tools/check_hash.py`로 확인합니다.
+제출 APK(`apk/Chaseom_Chaseom_release.apk`, sha256 `45ca7df9e01fad9507f5bcd22ebac5920bfd7aa722632a0df57acc6b96bd0334`)를 Pleos Connect Emulator 2.1.0에서 잰 값입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)이고, 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`을 실행합니다. 이 표의 해시가 지금 APK와 같은지는 `python tools/check_hash.py`로 확인합니다.
 
 | 항목 | 값 |
 |---|---|
-| 단위 테스트 | **120개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
-| 테스트 커버리지 (Kover, 라인) | 도메인 **98.2%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 27.0% (화면·SDK 어댑터는 에뮬레이터 시나리오로 검증). `./gradlew koverXmlReportDebug`, 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
-| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **28 ms**, 최대 34 ms |
-| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **26 ms** (중앙값 11 ms) |
-| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **30 ms**, 최대 39 ms |
-| 앱 시작 (`am start -W`, 콜드 스타트) | 1.5초 이내 (이번 측정 0.92–0.95초, 에뮬레이터 상태에 따라 0.8–1.5초) |
-| 정지 화면 CPU (30초) | 평균 **0.0%** |
-| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 2.2% (전환 순간 최대 27%) |
+| 단위 테스트 | **131개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
+| 테스트 커버리지 (Kover, 라인) | 도메인 **98.4%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 28.5% (화면·SDK 어댑터는 에뮬레이터 시나리오로 검증). `./gradlew koverXmlReportDebug`, 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
+| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **42 ms**, 최대 138 ms (첫 회만 138, 나머지 29–50 ms) |
+| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **39 ms** (중앙값 18 ms) |
+| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **37 ms**, 최대 107 ms |
+| 앱 시작 (`am start -W`, 콜드 스타트) | 1.5초 이내 (이번 측정 0.99–1.04초, 에뮬레이터 상태에 따라 0.8–1.5초) |
+| 정지 화면 CPU (30초) | 평균 **0.5%** |
+| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 2.4% (전환 순간 최대 46%) |
 | 메모리 (PSS) | 54 MB |
 | 런타임 권한 팝업 | **0** (요청하는 권한은 모두 normal) |
 | 차량 제어 | **0** (앱은 차를 읽기만 하고, 공조를 끄거나 바꾸지 않음) |
@@ -150,7 +154,7 @@ Android SDK 위치가 필요합니다. 환경 변수 `ANDROID_HOME`을 설정하
 
 ## 4. APK 위치
 
-- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `93a5cc4f…5cde`)
+- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `45ca7df9…0334`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4)
 
 ---
