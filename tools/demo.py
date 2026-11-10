@@ -70,22 +70,24 @@ def main():
         if vc.screen_has("내일 몫 정하기"):  # first run: onboarding -> settings (default 30 km) -> save
             vc.tap_text("내일 몫 정하기"); time.sleep(1)
             vc.tap_text("저장"); time.sleep(2)
-        results.append(ok(vc.screen_has("머물 수 있는 시간"), f"머무는 화면 · 남은 시간 {hero_text()} (추정)"))
+        if vc.tap_text("알겠어요", timeout=2):  # night: the night notice opens each stay first
+            print("   야간 고지 확인 (알겠어요)"); time.sleep(1.5)
+        results.append(ok(vc.screen_has("머물 수 있어요"), f"머무는 화면 · 남은 시간 {hero_text()} (추정)"))
         ok(vc.screen_has("실내 측정 아님"), "작은 날씨 섬과 원인 칩")
 
-        step(2, "히터 22→26°C, 풍량 3→7 (해가 커지고 바람이 붐)")
-        ms = vc.timed_write("islandFrame", {"temp": 26}, {"fan": 7}, wait=0.8)
+        step(2, "히터 22→26°C, 풍량 3→6 (해가 커지고 바람이 붐)")
+        ms = vc.timed_write("islandFrame", {"temp": 26}, {"fan": 6}, wait=0.8)
         t = toast_text()
         results.append(ok(ms is not None and t, f"섬 반영 {ms} ms · 토스트 \"{t}\" · 남은 시간 {hero_text()}"))
         time.sleep(3.5)
 
-        step(3, "26→21°C, 풍량 7→3, 운전석 열선 2단 (바위가 따뜻해짐)")
-        ms = vc.timed_write("islandFrame", {"temp": 21}, {"fan": 3}, {"seat": 2}, wait=0.8)
+        step(3, "비슷한 체감 카드대로: 26→21°C + 운전석 열선 2단 (풍량 6 그대로, 해가 작아짐)")
+        ms = vc.timed_write("islandFrame", {"temp": 21}, {"seat": 2}, wait=0.8)
         t = toast_text()
-        results.append(ok(ms is not None and vc.screen_has("왼쪽 바위 = 운전석 열선"),
+        results.append(ok(ms is not None and t and "+" in t,
                           f"섬 반영 {ms} ms · 토스트 \"{t}\" · 남은 시간 {hero_text()}"))
 
-        step(4, "배터리 8% (내일 몫 아래: 경고, 회색 해)")
+        step(4, "배터리 8% (내일 몫 아래: 빨간 경고 배너, 짐 상자 윤곽선)")
         vc.set_car(soc=8)
         time.sleep(1.5)
         results.append(ok(vc.screen_has("공조를 꺼야") or vc.screen_has("내일 몫 아래"), "내일 몫 경고 배너"))
@@ -103,8 +105,7 @@ def main():
 
         step(6, "기어 D (섬과 숫자가 바로 접힘)")
         ms = vc.timed_write("islandGone", {"gear": "Drive"}, wait=1.0)
-        results.append(ok(ms is not None and vc.screen_has("주행 중에는 화면을 쉬어요"),
-                          f"섬 사라짐 {ms} ms · 주행 중 안내만 표시"))
+        results.append(ok(ms is not None, f"섬 사라짐 {ms} ms · 주행 중에는 시스템이 앱 화면을 가림"))
     finally:
         vc.base_state(soc=19)
         vc.disconnect()

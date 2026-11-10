@@ -4,7 +4,7 @@
 
 Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**로 공조·좌석·문·창문·조명 신호를 읽습니다.
 
-![tests](https://img.shields.io/badge/unit%20tests-97%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-3.4%20MB-informational) ![domain coverage](https://img.shields.io/badge/domain%20line%20coverage-98%25-2ea44f)
+![tests](https://img.shields.io/badge/unit%20tests-120%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-3.9%20MB-informational) ![domain coverage](https://img.shields.io/badge/domain%20line%20coverage-98%25-2ea44f)
 
 ### 구조
 ![차섬 구조: 차량 신호 → 어댑터 → 순수 도메인 → Compose 화면](docs/images/architecture.svg)
@@ -13,24 +13,24 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 - **도메인**(`stay/` StayEngine·EnergyModel·Island·IslandInfo)은 Android 없는 순수 Kotlin이라, 안전 규칙과 숫자를 모두 JVM 단위 테스트로 검사합니다.
 - **화면**(`ui/`)은 불변 모델 `StayUi`만 그리고, 문구는 `strings_stay.xml`에만 있습니다. 포그라운드 서비스는 P에서 머무는 동안만 켜집니다.
 
-| 히터를 올리면 해가 커지고 남은 시간이 줄어듦 | 열선을 켜면 바위가 따뜻해짐 | 운전석 문을 열면 떠나기 전 영수증 |
+| 히터를 올리면 해가 커지고 남은 시간이 줄어듦 (비슷한 체감 카드) | 내일 몫 아래로 내려가면 경고 | 운전석 문을 열면 떠나기 전 영수증 |
 |---|---|---|
-| ![섬과 토스트](docs/images/dial_toast.png) | ![따뜻한 바위](docs/images/seat_heat.png) | ![영수증](docs/images/receipt.png) |
+| ![섬과 토스트](docs/images/dial_toast.png) | ![내일 몫 경고](docs/images/keep_k2.png) | ![영수증](docs/images/receipt.png) |
 
 ## 검증 표
-제출 APK(`apk/Chaseom_Chaseom_release.apk`, sha256 `c9370d40331b35d179f3beb5ab283830e4118c7993024c4c232ffce8771724e1`)를 Pleos Connect Emulator 2.1.0에서 잰 값입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)(섬을 끈 비교 빌드: `measure_release_islandOFF.json`)이고, 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`을 실행합니다. 이 표의 해시가 지금 APK와 같은지는 `python tools/check_hash.py`로 확인합니다.
+제출 APK(`apk/Chaseom_Chaseom_release.apk`, sha256 `93a5cc4fbe11713d4371193fe1972bc108fbce5c85b5779ec0ca38cdf75b5cde`)를 Pleos Connect Emulator 2.1.0에서 잰 값입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)이고, 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`을 실행합니다. 이 표의 해시가 지금 APK와 같은지는 `python tools/check_hash.py`로 확인합니다.
 
 | 항목 | 값 |
 |---|---|
-| 단위 테스트 | **97개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
-| 테스트 커버리지 (Kover, 라인) | 도메인 **98.2%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 24.9% (화면·SDK 어댑터는 에뮬레이터 시나리오로 검증). `./gradlew koverXmlReportDebug`, 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
-| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **55 ms**, 최대 117 ms (섬을 끈 빌드 43 ms) |
-| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **55 ms** (중앙값 11 ms) |
-| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **45 ms**, 최대 76 ms |
-| 앱 시작 (`am start -W`, 3회) | 1.5–1.9초 |
-| 정지 화면 CPU (30초) | 평균 **0.4%** |
-| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 8.2% (전환 순간 최대 48%) |
-| 메모리 (PSS) | 42 MB (섬을 끈 빌드 42 MB) |
+| 단위 테스트 | **120개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
+| 테스트 커버리지 (Kover, 라인) | 도메인 **98.2%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 27.0% (화면·SDK 어댑터는 에뮬레이터 시나리오로 검증). `./gradlew koverXmlReportDebug`, 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
+| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **28 ms**, 최대 34 ms |
+| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **26 ms** (중앙값 11 ms) |
+| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **30 ms**, 최대 39 ms |
+| 앱 시작 (`am start -W`, 콜드 스타트) | 1.5초 이내 (이번 측정 0.92–0.95초, 에뮬레이터 상태에 따라 0.8–1.5초) |
+| 정지 화면 CPU (30초) | 평균 **0.0%** |
+| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 2.2% (전환 순간 최대 27%) |
+| 메모리 (PSS) | 54 MB |
 | 런타임 권한 팝업 | **0** (요청하는 권한은 모두 normal) |
 | 차량 제어 | **0** (앱은 차를 읽기만 하고, 공조를 끄거나 바꾸지 않음) |
 
@@ -52,7 +52,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 | 지키는 규칙 | 실패하는 테스트 |
 |---|---|
 | 뒷좌석을 "비었음"이나 초록으로 표시하지 않고, 영수증에는 늘 "뒷좌석 직접 확인" 줄이 있다 | `WordingRulesTest.rearSeatWording`, `StayEngineTest.rearRowNeverHasADotForAnyOccupancy`, `StayEngineTest.receiptRowsOrderAndRearAlwaysCheck` |
-| 남은 시간은 3시간 위로 늘지 않고, 토스트·환율 카드도 3시간으로 자른 값끼리 비교한다 | `StayEngineTest.toastDeltaUsesThreeHourCappedValues`, `StayEngineTest.toastDeltaCrossingTheCapIsBounded`, `ModeAndEnergyTest.noExchangeCardWhenAboveCap` |
+| 남은 시간은 3시간 위로 늘지 않고, 토스트·환율 카드도 3시간으로 자른 값끼리 비교한다 | `StayEngineTest.toastDeltaUsesThreeHourCappedValues`, `StayEngineTest.toastDeltaCrossingTheCapIsBounded`, `StayEngineTest.noExchangeCardWhenAboveCap` |
 | 계산된 숫자에는 늘 "(추정)"이 붙는다 | `WordingRulesTest.computedValuesMarkedEstimate` |
 | 수면·차박·보장·"최초" 같은 금칙어가 없다 (취급설명서 경고 인용만 예외) | `WordingRulesTest.noBannedWordsOutsideTheWarnings`, `WordingRulesTest.designRuleWordsAbsent`, `WordingRulesTest.manualQuoteVerbatimWithSource` |
 | 주행 중 화면은 숫자 없이 짧은 안내뿐이다 | `WordingRulesTest.drivingGlanceShortAndNumberFree` |
@@ -94,7 +94,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 - **앱 이름**: 차섬 (Chaseom)
 - **한 줄 소개**: 정차 중 차를 만지면 화면 속 작은 섬의 날씨가 바뀌고, 그 위 숫자가 내일 갈 몫을 남긴 채 오늘 머물 시간을 보여 주는 Pleos 차량 앱
 - **핵심 기능**
-  - **작은 날씨 섬**: 공조 설정온도를 올리면 섬의 해가 커지고, 풍량을 올리면 나뭇잎·파도가 흔들리고, 운전석·조수석 열선을 켜면 바위가 따뜻해짐. 장식 그림이며 실내 온도·공기질을 뜻하지 않음(화면 범례 상시). 기어 P에서만 표시.
+  - **작은 날씨 섬**: 해 크기 = 공조 설정온도, 바람 = 풍량, 물 높이 = 배터리, 부표 = 머문 시간(30분에 1개), 배의 짐 = 내일 몫. 섬은 공조 설정·배터리로 그리며 실내 온도·공기질을 뜻하지 않음(화면 캡션 상시). 기어 P에서만 표시.
   - **내일 지킬 몫**: 내일 처음 갈 거리(여유분 20% 포함)를 배터리에서 따로 표시. 남은 시간은 "(추정)", 3시간 넘으면 "3시간 이상".
   - **따뜻함 환율**: 다이얼을 바꾸는 순간 남은 시간 변화(±, 추정)와 비슷한 체감을 더 적은 전력으로 얻는 조합(운전석 열선, 저온 화상 주의) 제안.
   - **안전 고지와 떠나기 전 영수증**: P 진입·1시간·야간에 공조 사용 경고, 운전석 문을 열면 머문 시간·쓴 전력·내일 몫·창문·실내등·충전 포트와 "뒷좌석 직접 확인" 줄. 앱은 공조를 끄지 않음.
@@ -144,7 +144,7 @@ Android SDK 위치가 필요합니다. 환경 변수 `ANDROID_HOME`을 설정하
 
 ## 4. APK 위치
 
-- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨)
+- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `93a5cc4f…5cde`)
 
 ---
 
