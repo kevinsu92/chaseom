@@ -3,6 +3,8 @@ package app.chaseom.ui.theme
 // Reference implementation of 04_design/COMPONENTS.md. Engineering may restyle internals
 // but must keep sizes, colors and the driving rules (DR-xx in DESIGN_SYSTEM.md).
 
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.graphicsLayer
 import android.view.HapticFeedbackConstants
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
@@ -80,8 +82,11 @@ fun BigButton(
         modifier = modifier
             .defaultMinSize(minWidth = size.minWidth, minHeight = size.height)
             .height(size.height)
+            // Pleos I-02: pressed = 95 % and the mode's pressed fill over the button (every kind).
+            .graphicsLayer { val sc = if (pressed && enabled) PRESSED_SCALE else 1f; scaleX = sc; scaleY = sc }
             .clip(RoundedCornerShape(50))
             .background(bg)
+            .drawWithContent { drawContent(); if (pressed && enabled && kind != ButtonKind.Basic) drawRect(c.buttonBasicPressed) }
             .clickable(
                 interactionSource = interaction,
                 indication = null, // pressed color above is the feedback (<= 250ms, no ripple loop)
@@ -229,7 +234,7 @@ fun AlertBanner(
         Text(text, style = PleosType.bodyLargeStrong, color = c.onStatus, maxLines = 1, modifier = Modifier.weight(1f))
         if (!driving) {
             Box(
-                Modifier.size(PleosDimens.touchMin).clickable(role = Role.Button, onClick = onDismiss),
+                Modifier.size(PleosDimens.touchMin).pressable(onClick = onDismiss),
                 contentAlignment = Alignment.Center,
             ) { Text("✕", style = PleosType.titleSmall, color = c.onStatus) }
         }

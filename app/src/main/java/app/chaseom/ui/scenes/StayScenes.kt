@@ -1,5 +1,7 @@
 package app.chaseom.ui.scenes
 
+import app.chaseom.ui.theme.pleosShadow
+import app.chaseom.ui.theme.pressable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -348,8 +350,7 @@ private fun MainColumnContent(
                             // POLISH §0.2: the one shadow in the app, day only (0 4 16 8 %).
                             val night = androidx.compose.foundation.isSystemInDarkTheme()
                             DialToast(t.items, t.deltaMinutes, t.heldAboveCap,
-                                Modifier.padding(top = ChaseomUi.related).then(if (night) Modifier else
-                                    Modifier.shadow(16.dp, ChaseomUi.rPill, ambientColor = Color.Black.copy(alpha = 0.08f), spotColor = Color.Black.copy(alpha = 0.08f))),
+                                Modifier.padding(top = ChaseomUi.related), // the toast draws its own Level 2 shadow (day)
                                 short = true)
                         }
                     },
@@ -442,14 +443,14 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
     // HANDOFF 9.6 v1.1: neutral pill (red is for K2 only). Direction circle (HANDOFF 8, round1b): amber down,
     // ink up with a white symbol, grey dot for no change. The symbol always goes with the colour.
     // POLISH v1.3: one-line pill, 48 dp, caption 24 SemiBold, 28 dp direction circle with a vector triangle.
+    // Pleos K-04: a toast is its message only (no icon); the sign of the number says the direction.
+    // S-02 Level 2 shadow by day.
     val k = cui()
     Row(
-        modifier.height(ChaseomUi.toastHeight).clip(ChaseomUi.rPill).background(k.toast)
-            .padding(start = 10.dp, end = 20.dp),
+        modifier.height(ChaseomUi.toastHeight).pleosShadow(2, 24.dp, enabled = !androidx.compose.foundation.isSystemInDarkTheme())
+            .clip(ChaseomUi.rPill).background(k.toast).padding(horizontal = 22.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        DirectionCircle(if (none) 0 else delta, on = k.toast, size = ChaseomUi.toastDirCircle)
-        Spacer(Modifier.width(ChaseomUi.line))
         Text(if (label.isEmpty()) deltaText else stringResource(R.string.d_toast_fmt, label, deltaText),
             style = ChaseomUi.banner, color = k.onToast, maxLines = 1, softWrap = false)
     }
@@ -629,7 +630,7 @@ private fun IslandCard(onClose: (() -> Unit)?, content: @Composable androidx.com
     val k = cui()
     val shape = RoundedCornerShape(16.dp)
     Row(
-        Modifier.fillMaxWidth().shadow(4.dp, shape, ambientColor = Color(0x14131417), spotColor = Color(0x14131417))
+        Modifier.fillMaxWidth().pleosShadow(1, 16.dp, enabled = !androidx.compose.foundation.isSystemInDarkTheme()) // Pleos S-01 Level 1
             .clip(shape).background(k.surface).border(1.dp, if (androidx.compose.foundation.isSystemInDarkTheme()) k.line else Color(0xFFECEEF1), shape),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -645,7 +646,7 @@ private fun IslandCard(onClose: (() -> Unit)?, content: @Composable androidx.com
 internal fun TextButton76(label: String, onClick: () -> Unit) {
     Box(
         Modifier.heightIn(min = ChaseomUi.touchMin).widthIn(min = ChaseomUi.touchMin)
-            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(horizontal = 18.dp),
+            .pressable(shape = ChaseomUi.rPill, onClick = onClick).padding(horizontal = 18.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(label, style = ChaseomUi.body.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = cui().primary)
@@ -657,7 +658,7 @@ internal fun TextButton76(label: String, onClick: () -> Unit) {
 internal fun LightPillButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val night = androidx.compose.foundation.isSystemInDarkTheme()
     Box(
-        modifier.heightIn(min = ChaseomUi.touchMin).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick),
+        modifier.heightIn(min = ChaseomUi.touchMin).pressable(shape = ChaseomUi.rPill, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Box(

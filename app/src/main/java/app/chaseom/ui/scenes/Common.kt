@@ -1,5 +1,6 @@
 package app.chaseom.ui.scenes
 
+import app.chaseom.ui.theme.pressable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -92,7 +93,7 @@ fun IconButton76(icon: Int, contentDescription: String, onClick: () -> Unit) {
     Box(
         // POLISH §0.6 (panel K-2): a bare icon, no grey circle; the 76 dp touch area stays (T-1).
         Modifier.size(PleosDimens.touchMin).clip(RoundedCornerShape(50))
-            .clickable(role = Role.Button, onClick = onClick),
+            .pressable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Icon(painterResource(icon), contentDescription, tint = c.textPrimary, modifier = Modifier.size(40.dp))

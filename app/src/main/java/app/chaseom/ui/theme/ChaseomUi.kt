@@ -30,35 +30,42 @@ object ChaseomUi {
     private val Base = TextStyle(fontFamily = ChaseomFonts.family, fontFeatureSettings = "tnum",
         lineBreak = androidx.compose.ui.text.style.LineBreak.Paragraph.copy(wordBreak = androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase))
 
-    /** Hero number "약 2시간 47분". The one display-size text. */
-    fun hero(s: Size) = Base.copy(fontSize = if (s == Size.Large) 72.sp else 56.sp, lineHeight = if (s == Size.Large) 80.sp else 64.sp,
-        fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp)
+    // Pleos T-07: four role families (Headline, Title, Body, Label). Sizes are unchanged; a role's variants differ
+    // by weight only. T-03 / panel B2: the heaviest weight is Bold (700), never ExtraBold.
+    private val Headline = Base.copy(fontWeight = FontWeight.Bold)
+    private val TitleRole = Base.copy(fontWeight = FontWeight.SemiBold)
+    private val BodyRole = Base.copy(fontWeight = FontWeight.Normal)
+    private val LabelRole = Base.copy(fontWeight = FontWeight.Medium)
+
+    /** Headline: hero number "약 2시간 47분". The one display-size text. */
+    fun hero(s: Size) = Headline.copy(fontSize = if (s == Size.Large) 72.sp else 56.sp, lineHeight = if (s == Size.Large) 80.sp else 64.sp,
+        letterSpacing = (-0.5).sp)
     /** K2 hero sentence "내일 몫을 쓰고 있어요". */
     fun heroSentence(s: Size) = hero(s).copy(fontSize = if (s == Size.Large) 56.sp else 44.sp, lineHeight = if (s == Size.Large) 64.sp else 52.sp)
     /** "머물 수 있어요" after the number, on its baseline. */
-    fun heroTail(s: Size) = Base.copy(fontSize = if (s == Size.Large) 32.sp else 26.sp, lineHeight = 40.sp, fontWeight = FontWeight.SemiBold)
+    fun heroTail(s: Size) = TitleRole.copy(fontSize = if (s == Size.Large) 32.sp else 26.sp, lineHeight = 40.sp)
     /** "(추정)" = 40 % of the hero, Regular, text3. Same size wherever it follows a hero.
      *  QA 11-11: every "(추정)" stays (17 lines, all different estimates). text3 #6E727B passes only on bg #F7F8FA / white (4.54:1);
      *  on any darker grey surface use text2. */
-    fun estimate(s: Size) = Base.copy(fontSize = if (s == Size.Large) 29.sp else 24.sp,   // Small 24 = the 24 sp floor (REFERENCES H3), not 40 %
+    fun estimate(s: Size) = LabelRole.copy(fontSize = if (s == Size.Large) 29.sp else 24.sp,   // Small 24 = the 24 sp floor (REFERENCES H3), not 40 %
         lineHeight = 36.sp, fontWeight = FontWeight.Normal)
 
     /** Title: card first line, sheet title, toast. [status] = the status line (Medium, text2). */
-    val title = Base.copy(fontSize = 28.sp, lineHeight = 36.sp, fontWeight = FontWeight.SemiBold)
+    val title = TitleRole.copy(fontSize = 28.sp, lineHeight = 36.sp)
     val status = title.copy(fontWeight = FontWeight.Medium)
     /** Body: description line under the hero, receipt rows (label Regular / value Medium), settings help. */
-    val body = Base.copy(fontSize = 26.sp, lineHeight = 34.sp, fontWeight = FontWeight.Normal)
+    val body = BodyRole.copy(fontSize = 26.sp, lineHeight = 34.sp)
     val bodyValue = body.copy(fontWeight = FontWeight.Medium)
     /** Caption: cause line under the picture, card second line, source lines. 24 sp floor (DESIGN_SYSTEM 2). */
-    val caption = Base.copy(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.Medium)
+    val caption = LabelRole.copy(fontSize = 24.sp, lineHeight = 32.sp)
     val banner = caption.copy(fontWeight = FontWeight.SemiBold)
     /** Picture label: "설정 °C" and the sea rail (24 sp Bold, 24 dp line icon in front of each rail label). */
-    val pictureLabel = Base.copy(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold)
+    val pictureLabel = LabelRole.copy(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold)
     /** Driving glance keeps the DR sizes (DESIGN_SYSTEM 6.2): title 36, sub 30; app icon 160 dp above. */
-    val glanceTitle = Base.copy(fontSize = 36.sp, lineHeight = 44.sp, fontWeight = FontWeight.Bold)
-    val glanceSub = Base.copy(fontSize = 30.sp, lineHeight = 38.sp, fontWeight = FontWeight.Normal)
+    val glanceTitle = Headline.copy(fontSize = 36.sp, lineHeight = 44.sp)
+    val glanceSub = BodyRole.copy(fontSize = 30.sp, lineHeight = 38.sp)
     /** Onboarding headline (Large 48 / Small 36). */
-    fun onboardingTitle(s: Size) = Base.copy(fontSize = if (s == Size.Large) 48.sp else 36.sp, lineHeight = if (s == Size.Large) 60.sp else 46.sp, fontWeight = FontWeight.ExtraBold)
+    fun onboardingTitle(s: Size) = Headline.copy(fontSize = if (s == Size.Large) 48.sp else 36.sp, lineHeight = if (s == Size.Large) 60.sp else 46.sp)
 
     /* ---------------------------------------------------------------- Space */
     val block: Dp = 32.dp      // between blocks (hero group / picture / cards / sections)
@@ -110,7 +117,7 @@ object ChaseomUi {
         pictureSkyTop = Color(0xFFC9E0F3),
     )
     val Night = Colors(
-        bg = Color(0xFF16181B), surface = Color(0xFF24272C), line = Color(0xFF2F3338), tint = Color(0x14FFFFFF),
+        bg = Color(0xFF0B0C0E), surface = Color(0xFF24272C), line = Color(0xFF2F3338), tint = Color(0x14FFFFFF),
         text1 = Color(0xF5FFFFFF), text2 = Color(0xFFC3C7CE),   // white 96 % (REFERENCES H10 / AAOS)
          text3 = Color(0xFF9AA0A8),
         primary = Color(0xFF8DB4D9), onPrimary = Color(0xFF0F1D2E), selected = Color(0xFFF2F3F5), onSelected = Color(0xFF131417),

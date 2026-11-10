@@ -1,5 +1,7 @@
 package app.chaseom.ui.scenes
 
+import app.chaseom.ui.theme.pleosShadow
+import app.chaseom.ui.theme.pressable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -102,7 +104,7 @@ fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app
         // Pleos fit P4: the sheet edge is a soft shadow (the scrim is only 25 %).
         Column(
             Modifier.widthIn(max = ChaseomUi.receiptWidthLarge).padding(vertical = 24.dp, horizontal = ChaseomUi.margin(size))
-                .shadow(16.dp, ChaseomUi.rContainer, ambientColor = Color(0x2E0B0F14), spotColor = Color(0x2E0B0F14))
+                .pleosShadow(2, 28.dp, enabled = !androidx.compose.foundation.isSystemInDarkTheme()) // Pleos S-02 Level 2
                 .clip(ChaseomUi.rContainer).background(k.surface).padding(ChaseomUi.block).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(ChaseomUi.line),
         ) {
@@ -126,7 +128,7 @@ fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app
             Spacer(Modifier.height(ChaseomUi.line))
             // Panel §7-②: closing the receipt is the sheet's one action -> navy primary, 64 dp, full width.
             Box(
-                Modifier.fillMaxWidth().heightIn(min = ChaseomUi.touchMin).clickable(role = androidx.compose.ui.semantics.Role.Button) { actions.closeReceipt() },
+                Modifier.fillMaxWidth().heightIn(min = ChaseomUi.touchMin).pressable(shape = ChaseomUi.rPill) { actions.closeReceipt() },
                 contentAlignment = Alignment.Center,
             ) {
                 Box(Modifier.fillMaxWidth().height(ChaseomUi.buttonHeight).clip(ChaseomUi.rPill).background(k.primary), contentAlignment = Alignment.Center) {
