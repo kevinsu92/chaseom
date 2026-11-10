@@ -145,6 +145,7 @@ Android SDK 위치가 필요합니다. 환경 변수 `ANDROID_HOME`을 설정하
 ## 4. APK 위치
 
 - **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `93a5cc4f…5cde`)
+- 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4)
 
 ---
 
