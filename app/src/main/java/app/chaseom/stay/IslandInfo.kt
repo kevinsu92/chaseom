@@ -29,6 +29,9 @@ data class IslandInfo(
     val cloud: Boolean,
     val heatDrv: Int,
     val heatPas: Int,
+    /** Director #5: the hatch on the boat's after deck (trunk open) and the charge cable (charge port open). */
+    val trunkOpen: Boolean = false,
+    val chargePortOpen: Boolean = false,
 ) {
     companion object {
         const val MAX_BUOYS = 6
@@ -77,6 +80,8 @@ data class IslandInfo(
                 cloud = ui.recircMinutes != null,
                 heatDrv = (c?.driverSeatHeat ?: 0).coerceIn(0, 3),
                 heatPas = (ui.passengerSeatHeat ?: 0).coerceIn(0, 3),
+                trunkOpen = ui.trunkOpen,
+                chargePortOpen = ui.chargePortOpen,
             )
         }
     }

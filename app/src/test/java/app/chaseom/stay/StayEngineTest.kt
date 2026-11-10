@@ -331,6 +331,15 @@ class StayEngineTest {
         assertEquals(20, e.at(54 * min, recirc).recircMinutes)
     }
 
+    // Director #5: the boat shows the car's trunk and charge port; unknown is drawn closed.
+    @Test fun trunkAndChargePortReachTheIsland() {
+        val e = StayEngine()
+        val ui = e.at(0, ev.copy(doorsOpen = mapOf("trunk" to true), chargePortOpen = true))
+        assertTrue(ui.trunkOpen && ui.chargePortOpen)
+        val unknown = StayEngine().at(0, ev.copy(doorsOpen = emptyMap(), chargePortOpen = null))
+        assertFalse(unknown.trunkOpen || unknown.chargePortOpen)
+    }
+
     @Test fun recircCloudNeedsClimateOnAndKnownClosedWindows() {
         val e = StayEngine()
         e.at(0, ev.copy(recirculationOn = true, hvacPowerOn = false))

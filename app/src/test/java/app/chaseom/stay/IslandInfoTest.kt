@@ -104,6 +104,10 @@ class IslandInfoTest {
         assertFalse(i.cloud)
         assertTrue(IslandInfo.of(u.copy(recircMinutes = 20))!!.cloud)
         assertEquals(IslandInfo.of(u.copy(recircMinutes = 20)), IslandInfo.of(u.copy(recircMinutes = 95)))
+        // Director #5 (QA PASS): trunk -> hatch, charge port -> cable; nothing else changes with them.
+        val both = IslandInfo.of(u.copy(trunkOpen = true, chargePortOpen = true))!!
+        assertTrue(both.trunkOpen && both.chargePortOpen)
+        assertEquals(i, both.copy(trunkOpen = false, chargePortOpen = false))
         assertEquals(2, i.heatDrv)
         val off = IslandInfo.of(ui(null, off = true, c = climate.copy(powerOn = false)))!!
         assertEquals(0, off.sunLevel)

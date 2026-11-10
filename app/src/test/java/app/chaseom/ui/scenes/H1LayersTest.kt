@@ -8,6 +8,8 @@ import org.junit.Test
 class H1LayersTest {
     private val expected = buildSet {
         addAll(listOf("base", "boat_l1", "k2_l1", "air")) // v1.9: no sheen; Pleos fit v3: + air (the circling cloud)
+        addAll(listOf("sky", "island", "hatch_l1")) // director extra: rise (sky + island = base), trunk hatch
+        (1..5).forEach { add("cable_l$it") }          // charge cable, one per water step
         (0..2).forEach { add("trees_w$it") }
         listOf("S", "M", "L").forEach { add("sun_$it") }
         (1..2).forEach { add("wind_w$it") }
@@ -16,7 +18,7 @@ class H1LayersTest {
     }
 
     @Test fun bothSetsHaveEveryLayer() {
-        assertEquals(44, expected.size)
+        assertEquals(52, expected.size)
         assertEquals(expected, H1Layers.L.keys)
         assertEquals(expected, H1Layers.S.keys)
     }
