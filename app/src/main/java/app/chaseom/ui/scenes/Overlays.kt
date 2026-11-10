@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -51,9 +52,10 @@ import java.util.Locale
 
 /** Window-wide scrim that swallows touches to the scene below. */
 @Composable
-private fun Scrim(content: @Composable () -> Unit) {
+private fun Scrim(light: Boolean = false, content: @Composable () -> Unit) {
     Box(
-        Modifier.fillMaxSize().background(Pleos.colors.scrim)
+        // Pleos fit P4: the receipt dims the screen only lightly (25 %); its sheet edge is its shadow.
+        Modifier.fillMaxSize().background(if (light) Color(0xFF0B0F14).copy(alpha = 0.25f) else Pleos.colors.scrim)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
         contentAlignment = Alignment.Center,
     ) { content() }
@@ -95,18 +97,16 @@ fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app
     val c = Pleos.colors
     val k = cui()
     val size = uiSize()
-    Scrim {
+    Scrim(light = true) {
         // POLISH_PASS v1.2 §0.6 / §2-17: 800 dp sheet (Small: window width minus margins), radius 28, padding 32.
+        // Pleos fit P4: the sheet edge is a soft shadow (the scrim is only 25 %).
         Column(
             Modifier.widthIn(max = ChaseomUi.receiptWidthLarge).padding(vertical = 24.dp, horizontal = ChaseomUi.margin(size))
+                .shadow(16.dp, ChaseomUi.rContainer, ambientColor = Color(0x2E0B0F14), spotColor = Color(0x2E0B0F14))
                 .clip(ChaseomUi.rContainer).background(k.surface).padding(ChaseomUi.block).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(ChaseomUi.line),
         ) {
-            // HANDOFF 10.4: pier + boat + plank still picture on top of the receipt only. The island itself
-            // never reacts to the door; no people, no check marks.
-            ui?.let { ReceiptHeaderPicture(it) }
-            // POLISH v1.4: thumbnail -> 24 -> title 32 SemiBold (two steps above the 26 rows).
-            Spacer(Modifier.height(24.dp - ChaseomUi.line))
+            // Pleos fit P4: no island picture in the sheet (the same island stays visible behind the light scrim).
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.e_title), style = ChaseomUi.title.copy(fontSize = 32.sp, lineHeight = 40.sp), color = k.text1, modifier = Modifier.weight(1f))
                 Text(SimpleDateFormat("HH:mm", Locale.KOREA).format(Date(remember(r) { System.currentTimeMillis() })) /* wall time for display only; engine times are monotonic */, style = ChaseomUi.body, color = k.text3)
@@ -174,6 +174,6 @@ private fun ReceiptLine(row: ReceiptRow, size: ChaseomUi.Size, last: Boolean = f
             Text(label, style = ChaseomUi.body, color = if (grey) k.text3 else k.text2, modifier = Modifier.width(ChaseomUi.receiptLabelCol(size)))
             Text(value, style = ChaseomUi.bodyValue, color = if (grey) k.text3 else k.text1)
         }
-        if (!last) Box(Modifier.fillMaxWidth().height(ChaseomUi.divider).background(k.line))
+        // Pleos fit P4: rows are divided by their spacing only, like the Pleos settings list (no lines).
     }
 }

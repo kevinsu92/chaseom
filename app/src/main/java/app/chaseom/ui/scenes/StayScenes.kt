@@ -562,9 +562,8 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
             }
         }
         if (ui.seatHeatLong) {
-            IslandCard(onClose = null) {
-                Text(stringResource(R.string.x_burn_30), style = ChaseomUi.title, color = k.text1)
-            }
+            // Pleos fit P3: the seat-heat warning uses the white warning part, like every other warning.
+            WhiteWarn(androidx.compose.ui.text.AnnotatedString(stringResource(R.string.x_burn_30)), Modifier.fillMaxWidth())
         } else {
             ui.exchange?.let { x ->
                 IslandCard(onClose = { actions.dismissExchange(x.rule) }) {
@@ -590,7 +589,9 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                             if (at > 0) Text(line.substring(0, at), style = ChaseomUi.title, color = k.text1)
                             if (at < line.length) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                    DirectionCircle(x.gainMinutes, on = k.surface, size = 36.dp)
+                                    // Pleos fit P3: a small ink arrow, no filled circle (the darkest shape came before the number).
+                                    Icon(painterResource(if (x.gainMinutes >= 0) R.drawable.ic_tri_up else R.drawable.ic_tri_down), null,
+                                        tint = k.text1, modifier = Modifier.size(20.dp))
                                     Spacer(Modifier.width(ChaseomUi.line))
                                     Text(gain, style = ChaseomUi.title.copy(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
                                         color = k.text1, softWrap = false)
@@ -623,21 +624,31 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
 
 @Composable
 private fun IslandCard(onClose: (() -> Unit)?, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    // POLISH_PASS v1.2 §0.6 (panel K): white surface, 1 dp outline, an 8 dp amber bar on the left (the sun's colour),
-    // padding 32 x 24; close is an underlined text button with a 76 dp touch area.
+    // Pleos fit P3 (HQ 2026-11-10): white surface, soft shadow, 1 dp #ECEEF1 hairline, radius 16; no amber bar
+    // (it read as a warning bar); close is a navy text button (the card's minor action), 76 dp touch area.
     val k = cui()
+    val shape = RoundedCornerShape(16.dp)
     Row(
-        Modifier.fillMaxWidth().clip(ChaseomUi.rContainer).background(k.surface).border(ChaseomUi.cardOutline, k.line, ChaseomUi.rContainer)
-            .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+        Modifier.fillMaxWidth().shadow(4.dp, shape, ambientColor = Color(0x14131417), spotColor = Color(0x14131417))
+            .clip(shape).background(k.surface).border(1.dp, if (androidx.compose.foundation.isSystemInDarkTheme()) k.line else Color(0xFFECEEF1), shape),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // POLISH v1.4 §0.9-③: the amber bar sits inside (6 wide, radius 3, 24 from top and bottom, 16 from the left).
-        Spacer(Modifier.width(ChaseomUi.related))
-        Box(Modifier.padding(vertical = 24.dp).width(6.dp).fillMaxHeight().clip(androidx.compose.foundation.shape.RoundedCornerShape(3.dp)).background(ChaseomUi.amber))
-        Column(Modifier.weight(1f).padding(start = 24.dp, end = ChaseomUi.related, top = 28.dp, bottom = 28.dp),
+        Column(Modifier.weight(1f).padding(start = 28.dp, end = ChaseomUi.related, top = 24.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(ChaseomUi.line), content = content)
-        if (onClose != null) LightPillButton(stringResource(R.string.close), onClose)
-        Spacer(Modifier.width(24.dp))
+        if (onClose != null) TextButton76(stringResource(R.string.close), onClose)
+        Spacer(Modifier.width(ChaseomUi.line))
+    }
+}
+
+/** Navy text button, 26 SemiBold, 76 dp touch area (Pleos fit P3: a card closes with a text button). */
+@Composable
+internal fun TextButton76(label: String, onClick: () -> Unit) {
+    Box(
+        Modifier.heightIn(min = ChaseomUi.touchMin).widthIn(min = ChaseomUi.touchMin)
+            .clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onClick).padding(horizontal = 18.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = ChaseomUi.body.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = cui().primary)
     }
 }
 
