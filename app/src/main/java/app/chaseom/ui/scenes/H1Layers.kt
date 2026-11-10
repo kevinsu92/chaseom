@@ -2,7 +2,7 @@ package app.chaseom.ui.scenes
 
 import app.chaseom.R
 
-/** Generated from 04_design/pleos_fit layers (v3.2.1 manifest + v3/extra/extra_manifest.json): each layer is cropped to its drawn area; x, y = its top-left in the canvas. */
+/** Generated from 04_design/art_v3/layers_h1/manifest.json: each layer is cropped to its drawn area; x, y = its top-left in the canvas. */
 internal object H1Layers {
     val L = mapOf(
         "base" to H1Layer(R.drawable.isl_l_base, 0f, 0f),
@@ -49,14 +49,6 @@ internal object H1Layers {
         "wind_w1" to H1Layer(R.drawable.isl_l_wind_w1, 240f, 101f),
         "wind_w2" to H1Layer(R.drawable.isl_l_wind_w2, 240f, 101f),
         "air" to H1Layer(R.drawable.isl_l_air, 766f, 53f),
-        "sky" to H1Layer(R.drawable.isl_l_sky, 0f, 0f),
-        "island" to H1Layer(R.drawable.isl_l_island, 151f, 167f),
-        "hatch_l1" to H1Layer(R.drawable.isl_l_hatch_l1, 1047f, 452f),
-        "cable_l1" to H1Layer(R.drawable.isl_l_cable_l1, 1026f, 293f),
-        "cable_l2" to H1Layer(R.drawable.isl_l_cable_l2, 1026f, 293f),
-        "cable_l3" to H1Layer(R.drawable.isl_l_cable_l3, 1026f, 293f),
-        "cable_l4" to H1Layer(R.drawable.isl_l_cable_l4, 1026f, 293f),
-        "cable_l5" to H1Layer(R.drawable.isl_l_cable_l5, 1026f, 293f),
     )
     val S = mapOf(
         "base" to H1Layer(R.drawable.isl_s_base, 0f, 0f),
@@ -103,13 +95,5 @@ internal object H1Layers {
         "wind_w1" to H1Layer(R.drawable.isl_s_wind_w1, 400f, 153f),
         "wind_w2" to H1Layer(R.drawable.isl_s_wind_w2, 400f, 153f),
         "air" to H1Layer(R.drawable.isl_s_air, 612f, 42f),
-        "sky" to H1Layer(R.drawable.isl_s_sky, 0f, 0f),
-        "island" to H1Layer(R.drawable.isl_s_island, 50f, 237f),
-        "hatch_l1" to H1Layer(R.drawable.isl_s_hatch_l1, 551f, 416f),
-        "cable_l1" to H1Layer(R.drawable.isl_s_cable_l1, 531f, 318f),
-        "cable_l2" to H1Layer(R.drawable.isl_s_cable_l2, 531f, 318f),
-        "cable_l3" to H1Layer(R.drawable.isl_s_cable_l3, 531f, 318f),
-        "cable_l4" to H1Layer(R.drawable.isl_s_cable_l4, 531f, 318f),
-        "cable_l5" to H1Layer(R.drawable.isl_s_cable_l5, 531f, 318f),
     )
 }

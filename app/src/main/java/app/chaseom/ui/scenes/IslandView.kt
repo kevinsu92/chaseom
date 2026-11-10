@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -132,10 +133,11 @@ internal const val GLOW_GAP_MS = 1_200L
 internal const val GLOW_EXTRA = 0.6f // QA ROUND1B_GATE: glow 1 -> 1.6 PASS (glow only, colour unchanged)
 
 /** What the picture shows; changes are batched and cross-faded (platform ISLAND_V2_SIGNALS, MOTION v3). */
-internal data class H1Pic(val sun: Int, val wind: Int, val level: Int, val buoys: Int, val k2: Boolean, val air: Boolean = false,
-                          val hatch: Boolean = false, val cable: Boolean = false) {
+internal data class H1Pic(val sun: Int, val wind: Int, val level: Int, val buoys: Int, val k2: Boolean, val air: Boolean = false) {
     companion object {
-        fun of(i: IslandInfo) = H1Pic(i.sunLevel, i.wind, i.waterStep + 1, i.buoys, i.crateOutline, i.cloud, i.trunkOpen, i.chargePortOpen)
+        // Director #5 (boat = car) is off for round 1 (panel PLEOS_FIT_REVIEW section 7, V-05): the cable read as
+        // "charging" for a port that is only open, and the hatch is ~25 px and repeats the Pleos 3D car.
+        fun of(i: IslandInfo) = H1Pic(i.sunLevel, i.wind, i.waterStep + 1, i.buoys, i.crateOutline, i.cloud)
     }
 }
 
@@ -221,9 +223,15 @@ fun IslandPanel(
             // Panel APP_GAP_TO_85 §10-4: Small without cards fills the height left (sky side only; the picture
             // stays at 1.0x across, so the buoy x 955/960 limit is untouched). Sun and wind lift, see skyLiftFor.
             val boxH = filled
+            // Director #1 (HQ revision): arriving in P, the whole picture block (sky, island, water, buoys together,
+            // so the water never seems to drop) rises 24 dp -> 0 and fades in, 300 ms, cubic-bezier(0, 0, 0.2, 1),
+            // once per arrival, the first time it is not covered (a night notice opening the stay is read first),
+            // within 2 min of arriving; never with animations off. Leaving P still folds at once.
+            val rise = rememberRise(ui.moorAtMs, covered = ui.notice != null || ui.receipt != null, enabled = !animOff)
             Box(
                 // POLISH v1.6: the whole picture is clipped once here (no per-layer clip).
                 Modifier.width(picW).height(boxH).onGloballyPositioned { topInWindow = it.positionInWindow().y }
+                    .graphicsLayer { translationY = (1f - rise) * RISE_DP.dp.toPx(); alpha = rise }
                     .clip(ChaseomUi.rContainer).then(outline)
                     .semantics { contentDescription = cd; liveRegion = LiveRegionMode.Polite },
             ) {
@@ -231,19 +239,8 @@ fun IslandPanel(
                 // the box height. The sun's position carries no meaning; only its size does.
                 val skyLift = if (set === H1Set.Small && boxH > natural) skyLiftFor(set, k, boxH.value) else SkyLift.NONE
                 val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize(), sunMotion = !animOff && s.animating,
-                    outsideAir = ui.climate?.recircOn == false, covered = ui.notice != null || ui.receipt != null,
+                    outsideAir = ui.climate?.recircOn == false, night = night,
                     setTemp = ui.climate?.takeIf { it.powerOn == true }?.setTempC, lift = skyLift)
-                // Pleos fit v3.2.1 (QA I10, UXR): night = ONE navy light #121E38 over the whole picture block,
-                // 76 % under the water line and 50 % above it (the day picture seen at night, never a night island).
-                if (night) {
-                    val waterTop = set.waterTop[(info.waterStep).coerceIn(0, set.waterTop.size - 1)]
-                    val lineDp = boxH.value - (set.h - waterTop) * k * set.zoom
-                    Box(Modifier.matchParentSize().drawBehind {
-                        val y = (lineDp.dp.toPx()).coerceIn(0f, size.height)
-                        drawRect(NIGHT_LIGHT.copy(alpha = 0.5f), size = androidx.compose.ui.geometry.Size(size.width, y))
-                        drawRect(NIGHT_LIGHT.copy(alpha = 0.76f), Offset(0f, y), androidx.compose.ui.geometry.Size(size.width, size.height - y))
-                    })
-                }
                 // H1: the sun and its label sit top right, so the toast takes the top-left sky up to the label.
                 var sunLabelLeft by remember { mutableFloatStateOf(Float.NaN) }
                 IslandLabels(ui, set, k, picW.value, boxH.value, shown, sunLiftDp = skyLift.sun * k, animOff = animOff) { sunLabelLeft = it }
@@ -403,7 +400,7 @@ private fun rememberBitmaps(): H1Bitmaps {
  */
 @Composable
 private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring: Boolean, motionOff: Boolean, modifier: Modifier,
-                          sunMotion: Boolean = false, outsideAir: Boolean = false, covered: Boolean = false, setTemp: Float? = null,
+                          sunMotion: Boolean = false, outsideAir: Boolean = false, night: Boolean = false, setTemp: Float? = null,
                           lift: SkyLift = SkyLift.NONE): H1Shown {
     val target = H1Pic.of(info)
     val bmp = rememberBitmaps()
@@ -465,25 +462,6 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         moor.animateTo(0f, tween(Island.MOOR_SLIDE_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0.33f, 1f, 0.68f, 1f)))
         bob.animateTo(0f, keyframes { durationMillis = Island.MOOR_BOB_MS; Island.BOB_DP at Island.MOOR_BOB_MS / 2 })
     }
-    // Director #1 / 04_design extra / QA verdict 9-10: arriving in P, the island and its trees rise out of the water
-    // once (800 ms, cubic-bezier(0, 0, 0.2, 1)); everything that floats appears in place, never under the water line.
-    // Trigger: a new stay after driving (the mooring's moorAtMs), played once the first time the island is not
-    // covered (a notice that opens the stay - the night notice - is read first), within RISE_WINDOW_MS of arriving.
-    // Never with animations off, never twice for one arrival.
-    val canRise = set.layers.containsKey("island") && !motionOff
-    val riseFor = remember { longArrayOf(Long.MIN_VALUE) }
-    val rise = remember { Animatable(RISE_MS.toFloat()) }
-    LaunchedEffect(moorAtMs, covered) {
-        val at = moorAtMs ?: return@LaunchedEffect
-        if (!canRise || covered || riseFor[0] == at) return@LaunchedEffect
-        if (android.os.SystemClock.elapsedRealtime() - at !in 0..RISE_WINDOW_MS) return@LaunchedEffect
-        riseFor[0] = at
-        rise.snapTo(0f)
-        withTimeoutOrNull(400) { snapshotFlow { windowInfo.isWindowFocused }.first { it } }
-        withFrameNanos { }
-        android.util.Log.i("PROBE", "riseFrame wall=${System.currentTimeMillis()}")
-        rise.animateTo(RISE_MS.toFloat(), tween(RISE_MS, easing = androidx.compose.animation.core.LinearEasing))
-    }
     // Director #16: switching to outside air while the cloud is up, the cloud drifts off the picture once and is
     // gone (no text, no other change). A window opening just fades it, like every other state change.
     val drift = remember { Animatable(-1f) } // -1 = none, 0..1 = drifting
@@ -508,11 +486,25 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         // v5: the boat starts inside the visible picture: min(360 dp, right edge - boat right - 8 dp).
         val slide = minOf(Island.MOOR_SLIDE_DP.dp.toPx(), (set.w - boatRight) * k - 8.dp.toPx()).coerceAtLeast(0f)
         // Zoom about the bottom-right corner: the canvas right and bottom edges stay at the box's edges.
-        translate(left = size.width - set.w * k, top = size.height - set.h * k) {
+        val ox = size.width - set.w * k; val oy = size.height - set.h * k
+        translate(left = ox, top = oy) {
             scale(k, k, pivot = Offset.Zero) {
                 drawH1(set, bmp, cur.value, before.value, t.value, boatDx = moor.value * slide / k, boatDy = bob.value.dp.toPx() / k,
                     sunScale = sunR.value / H1Set.SUN_R[cur.value.sun], glow = glow.value * GLOW_EXTRA, lift = lift,
-                    riseMs = rise.value, mooringBoat = moor.value > 0f || moor.isRunning, driftT = drift.value)
+                    driftT = drift.value, withSun = !night)
+            }
+        }
+        if (night) {
+            // Pleos fit v3.2.1 (QA I10, UXR): ONE navy light #121E38 over the whole picture block, 76 % under the
+            // current water line and 50 % above it; then the sun above it, brightness lowered only (HQ, #C98A2E).
+            val waterTop = set.waterTop[(cur.value.level - 1).coerceIn(0, set.waterTop.size - 1)]
+            val y = (oy + waterTop * k).coerceIn(0f, size.height)
+            drawRect(NIGHT_LIGHT.copy(alpha = 0.5f), size = androidx.compose.ui.geometry.Size(size.width, y))
+            drawRect(NIGHT_LIGHT.copy(alpha = 0.76f), Offset(0f, y), androidx.compose.ui.geometry.Size(size.width, size.height - y))
+            translate(left = ox, top = oy) {
+                scale(k, k, pivot = Offset.Zero) {
+                    drawSun(set, bmp, cur.value, sunR.value / H1Set.SUN_R[cur.value.sun], glow.value * GLOW_EXTRA, lift, NIGHT_SUN)
+                }
             }
         }
     })
@@ -525,9 +517,7 @@ internal data class H1Shown(val pic: H1Pic, val sunR: Float)
 /** The 13-layer stack (ART_H.md section 8 order), in canvas px. [t] cross-fades [prev] -> [cur]. */
 internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, prev: H1Pic?, t: Float, boatDx: Float = 0f, boatDy: Float = 0f,
                               sunScale: Float = 1f, glow: Float = 0f, lift: SkyLift = SkyLift.NONE,
-                              riseMs: Float = RISE_MS.toFloat(), mooringBoat: Boolean = false, driftT: Float = -1f) {
-    val rising = riseMs < RISE_MS && set.layers.containsKey("island")
-    val rf = Rise(riseMs, set)
+                              driftT: Float = -1f, withSun: Boolean = true) {
     val p = prev ?: cur
     val a = if (prev == null) 1f else t
     val dyCur = -(cur.level - 1) * set.step
@@ -539,26 +529,14 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
         drawImage(bmp(l.id), Offset(l.x + x, l.y + y), alpha = alpha)
     }
     /** Same layer name -> drawn once; else old fades out under the new one. */
-    fun slot(old: String?, new: String?, x: Float = 0f, y: Float = 0f, scale: Float = 1f) {
-        if (old == new) { if (new != null) one(new, scale, x, y); return }
-        if (old != null) one(old, (1f - a) * scale, x, y)
-        if (new != null) one(new, a * scale, x, y)
+    fun slot(old: String?, new: String?, x: Float = 0f, y: Float = 0f) {
+        if (old == new) { if (new != null) one(new, 1f, x, y); return }
+        if (old != null) one(old, 1f - a, x, y)
+        if (new != null) one(new, a, x, y)
     }
-    val sun = "SML"
-    if (rising) one("sky", 1f) else one("base", 1f)
-    if (!rising) slot("trees_w${p.wind}", "trees_w${cur.wind}")
-    // The sun is one layer scaled about its centre (POLISH §0.10), not a cross-fade; its glow is in the bitmap.
-    translate(top = lift.sun) {
-    if (sunScale == 1f) one("sun_${sun[cur.sun]}", 1f)
-    else scale(sunScale, sunScale, pivot = Offset(set.sunX, set.sunY)) { one("sun_${sun[cur.sun]}", 1f) }
-    if (glow > 0.01f) {
-        // Glow only: the same sun bitmap again, with the disc cut out, so the disc and its colour never change.
-        val disc = androidx.compose.ui.graphics.Path().apply {
-            addOval(androidx.compose.ui.geometry.Rect(Offset(set.sunX, set.sunY), H1Set.SUN_R[cur.sun] * sunScale + 1f))
-        }
-        clipPath(disc, androidx.compose.ui.graphics.ClipOp.Difference) { one("sun_${sun[cur.sun]}", glow) }
-    }
-    }
+    one("base", 1f)
+    slot("trees_w${p.wind}", "trees_w${cur.wind}")
+    if (withSun) drawSun(set, bmp, cur, sunScale, glow, lift)
     slot(if (p.wind > 0) "wind_w${p.wind}" else null, if (cur.wind > 0) "wind_w${cur.wind}" else null, y = lift.wind)
     // Pleos fit v3 P8: one fixed cloud layer after the wind, same lift as the sun (only in layer sets that have it).
     if (driftT >= 0f) {
@@ -566,40 +544,46 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
         val air = set.layers["air"]
         if (air != null) one("air", (2f - 2f * driftT).coerceIn(0f, 1f), x = (set.w - air.x) * driftT, y = lift.sun)
     } else if (set.layers.containsKey("air")) slot(if (p.air) "air" else null, if (cur.air) "air" else null, y = lift.sun)
-    if (rising) {
-        // Only the land and its trees move (from Large 120 / Small 80 px below), fading in over 0-320 ms.
-        one("island", rf.landAlpha, y = rf.landDy)
-        one("trees_w${cur.wind}", rf.landAlpha, y = rf.landDy)
-    }
-    // The boat either moors (horizontal, on the water: the approved arrival) or appears in place 400-800 ms.
-    val boatA = if (!rising || mooringBoat) 1f else rf.fade(400f, 800f)
-    if (rising) one("wet_l${cur.level}", rf.fade(600f, 800f)) else slot("wet_l${p.level}", "wet_l${cur.level}")
-    one("boat_l1", boatA, boatDx, dy + boatDy)
-    // Director #5 (QA PASS): trunk open = the hatch on the boat's after deck (rides with the boat).
-    slot(if (p.hatch) "hatch_l1" else null, if (cur.hatch) "hatch_l1" else null, boatDx, dy + boatDy, scale = boatA)
-    // Charge port open = the cable from the pier box to the boat, one drawing per water step, no offset;
-    // while rising it appears last (700-800 ms) once the pier is up.
-    if (rising) { if (cur.cable && !mooringBoat) one("cable_l${cur.level}", rf.fade(700f, 800f)) }
-    else if (boatDx == 0f) slot(if (p.cable) "cable_l${p.level}" else null, if (cur.cable) "cable_l${cur.level}" else null)
-    if (rising) one("buoys_n${cur.buoys}_l1", rf.fade(400f, 800f), y = dy) else slot("buoys_n${p.buoys}_l1", "buoys_n${cur.buoys}_l1", y = dy)
+    slot("wet_l${p.level}", "wet_l${cur.level}")
+    one("boat_l1", 1f, boatDx, dy + boatDy)
+    slot("buoys_n${p.buoys}_l1", "buoys_n${cur.buoys}_l1", y = dy)
     slot("water_l${p.level}", "water_l${cur.level}")
-    if (rising) one("refl_l${cur.level}", rf.fade(600f, 800f)) else slot("refl_l${p.level}", "refl_l${cur.level}")
+    slot("refl_l${p.level}", "refl_l${cur.level}")
     slot("surf_l${p.level}", "surf_l${cur.level}")
-    if (rising) one("ticks_l${cur.level}", rf.fade(600f, 800f)) else slot("ticks_l${p.level}", "ticks_l${cur.level}")
+    slot("ticks_l${p.level}", "ticks_l${cur.level}")
     // The crate frame rides on the boat (K1 / K2: IslandInfo.crateOutline).
-    slot(if (p.k2) "k2_l1" else null, if (cur.k2) "k2_l1" else null, boatDx, dy + boatDy, scale = boatA)
+    slot(if (p.k2) "k2_l1" else null, if (cur.k2) "k2_l1" else null, boatDx, dy + boatDy)
 }
 
-/** Director #1 rise timing (04_design extra README, QA verdict 9-10), all in ms from the start. */
-internal class Rise(private val ms: Float, set: H1Set) {
-    private val drop = if (set.w == 1600f) 120f else 80f
-    private val ease = androidx.compose.animation.core.CubicBezierEasing(0f, 0f, 0.2f, 1f)
-    val landDy: Float get() = drop * (1f - ease.transform((ms / RISE_MS).coerceIn(0f, 1f)))
-    val landAlpha: Float get() = (ms / 320f).coerceIn(0f, 1f)
-    fun fade(from: Float, to: Float): Float = ((ms - from) / (to - from)).coerceIn(0f, 1f)
+/**
+ * The sun: one layer scaled about its centre (POLISH section 0.10), not a cross-fade; its glow is in the bitmap.
+ * At night it is drawn above the night light with only its brightness lowered (HQ 2026-11-10, centre ~#C98A2E).
+ */
+internal fun DrawScope.drawSun(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, sunScale: Float, glow: Float, lift: SkyLift,
+                               filter: androidx.compose.ui.graphics.ColorFilter? = null) {
+    val name = "sun_${"SML"[cur.sun]}"
+    val l = set.layers[name] ?: return
+    fun draw(alpha: Float) = drawImage(bmp(l.id), Offset(l.x, l.y), alpha = alpha, colorFilter = filter)
+    translate(top = lift.sun) {
+        if (sunScale == 1f) draw(1f) else scale(sunScale, sunScale, pivot = Offset(set.sunX, set.sunY)) { draw(1f) }
+        if (glow > 0.01f) {
+            // Glow only: the same sun bitmap again, with the disc cut out, so the disc and its colour never change.
+            val disc = androidx.compose.ui.graphics.Path().apply {
+                addOval(androidx.compose.ui.geometry.Rect(Offset(set.sunX, set.sunY), H1Set.SUN_R[cur.sun] * sunScale + 1f))
+            }
+            clipPath(disc, androidx.compose.ui.graphics.ClipOp.Difference) { draw(glow) }
+        }
+    }
 }
 
-internal const val RISE_MS = 800
+/** Night sun: day sun centre (251, 198, 100) x these = (201, 138, 46) = #C98A2E; brightness only, same hue family. */
+internal val NIGHT_SUN = androidx.compose.ui.graphics.ColorFilter.colorMatrix(androidx.compose.ui.graphics.ColorMatrix().apply {
+    setToScale(0.80f, 0.70f, 0.46f, 1f)
+})
+
+/** Director #1 (HQ revision 2026-11-10): the whole picture block rises 24 dp -> 0 and fades in, 300 ms, once. */
+internal const val RISE_MS = 300
+internal const val RISE_DP = 24f
 /** The rise belongs to the arrival: not after this long in P. */
 internal const val RISE_WINDOW_MS = 120_000L
 
@@ -702,3 +686,28 @@ internal val NIGHT_LIGHT = Color(0xFF121E38)
 
 /** Director #16: the cloud's one drift out of the picture on outside air. */
 internal const val DRIFT_MS = 1_400
+
+/** 0 -> 1 rise progress for the arrival (1 at rest). */
+@Composable
+private fun rememberRise(moorAtMs: Long?, covered: Boolean, enabled: Boolean): Float {
+    val done = remember { longArrayOf(Long.MIN_VALUE) }
+    val a = remember { Animatable(1f) }
+    val windowInfo = LocalWindowInfo.current
+    LaunchedEffect(moorAtMs, covered) {
+        val at = moorAtMs ?: return@LaunchedEffect
+        if (!enabled || covered || done[0] == at) return@LaunchedEffect
+        if (android.os.SystemClock.elapsedRealtime() - at !in 0..RISE_WINDOW_MS) return@LaunchedEffect
+        done[0] = at
+        a.snapTo(0f)
+        withTimeoutOrNull(400) { snapshotFlow { windowInfo.isWindowFocused }.first { it } }
+        withFrameNanos { }
+        android.util.Log.i("PROBE", "riseFrame wall=${System.currentTimeMillis()}")
+        a.animateTo(1f, tween(RISE_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0f, 0f, 0.2f, 1f)))
+    }
+    // The frame the island is first uncovered must already be the start state (no one-frame flash of the full
+    // picture before the effect runs).
+    val at = moorAtMs
+    val pending = at != null && enabled && !covered && done[0] != at &&
+        android.os.SystemClock.elapsedRealtime() - at in 0..RISE_WINDOW_MS
+    return if (pending) 0f else a.value
+}
