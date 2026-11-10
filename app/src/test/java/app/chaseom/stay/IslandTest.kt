@@ -68,10 +68,14 @@ class IslandTest {
         assertTrue(Island.layers(st(ev.copy(socPercent = 8))).any { it.id == "is_boat" })
     }
 
-    @Test fun roundOneLeavesOutWiperGullMoveAndLamp() {
+    // The old vector island has no rain, moving gull or lamp. Far rain lives only in the H1 picture and only for the
+    // AUTO wiper actually wiping (X-09: StayEngineTest.rainOnlyForAutoWiperActuallyWiping); manual wiping, turn
+    // signals and the cabin light never drive the picture.
+    @Test fun noManualWiperTurnSignalOrLampInput() {
         val ids = Island.layers(st()).map { it.id }
         assertFalse(ids.any { it.startsWith("is_rain") || it == "is_cloud_rain" || it == "is_lighthouse_lamp" })
         assertEquals(1, ids.count { it == "is_gull" })
+        assertFalse(IslandInfo.of(ui(StayEngine(), 0, ev.copy(wiperAuto = false, wiperOn = true)))!!.rain)
     }
 
     @Test fun passengerHeatOpensTransitionWindow() {

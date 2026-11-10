@@ -431,7 +431,8 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
     val deltaText = when {
         heldAboveCap -> stringResource(R.string.d_toast_cap) // QA M-11: never an hours-long delta
         none -> stringResource(R.string.d_toast_none)
-        else -> signedDuration(delta)
+        // QA condition 3 (gate 4 finding): a computed ± minutes always carries "(추정)" in the toast too.
+        else -> stringResource(R.string.d_toast_delta, signedDuration(delta))
     }
     // POLISH §0.6: on Small the toast drops the word before the temperature ("24°C · −9분").
     val label = items.map { if (short && it is ClimateChange.Temp) "${tempText(it.celsius)}°C" else changeLabel(it) }.joinToString(" · ")

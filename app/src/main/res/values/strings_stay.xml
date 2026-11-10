@@ -52,6 +52,8 @@
     <string name="dur_hm">%1$d시간 %2$d분</string>
     <string name="dur_m">%1$d분</string>
     <string name="d_toast_fmt">%1$s · %2$s</string>
+    <!-- QA condition 3: the toast's ± minutes are an estimate, e.g. "설정 26°C · 풍량 6 · −21분 (추정)". -->
+    <string name="d_toast_delta">%1$s (추정)</string>
     <string name="d_toast_none">변화 거의 없음</string>
     <string name="hvac_on">공조 켜짐</string>
     <string name="hvac_off">공조 꺼짐</string>

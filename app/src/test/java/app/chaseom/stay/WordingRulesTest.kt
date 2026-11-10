@@ -135,6 +135,11 @@ class WordingRulesTest {
         assertEquals("짐 = 내일 몫", strings["is_lg_keep"])
         assertEquals("구름 = 내기순환 %1\$d분째 (공기 측정 아님)", strings["is_lg_air"])
         assertEquals("먼 비 = 와이퍼 AUTO 작동", strings["is_lg_rain"]) // QA verdict 12 / 15
+        // QA condition 3 (gate 4): the toast's ± minutes carry "(추정)" -> "설정 26°C · 풍량 6 · −21분 (추정)".
+        assertEquals("%1\$s (추정)", strings["d_toast_delta"])
+        assertEquals("설정 26°C · 풍량 6 · −21분 (추정)",
+            String.format(strings.getValue("d_toast_fmt"), "설정 26°C · 풍량 6", String.format(strings.getValue("d_toast_delta"), "−21분")))
+        assertTrue(strings.getValue("d_toast_cap").contains("(추정)"))
         // The transient sun number always says "설정" (never a bare temperature that reads as the cabin's).
         assertEquals("설정 %1\$s → %2\$s°C", strings["is_sun_change"])
         assertTrue(strings.getValue("hvac_temp").startsWith("설정 "))

@@ -38,7 +38,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 - 시간은 Virtual Console에 값을 쓴 시각부터, 앱이 남긴 로그 시각까지입니다. 토스트는 화면에 그린 첫 프레임까지, P→D는 섬이 화면 구성에서 빠지는 시각까지입니다. 호스트와 에뮬레이터 시계 차를 보정하므로 약 ±20 ms 오차가 있습니다.
 
 ## 30초 체험
-1. Pleos Connect Emulator를 켜고 APK를 설치합니다: `adb install -r apk/Chaseom_Chaseom_release.apk`
+1. 먼저 배터리 19%: Pleos Connect Emulator를 켜고 Virtual Console에서 배터리를 **19%**로 둡니다(약 20% 이상이면 남은 시간이 "3시간 이상"으로 묶여 변화가 보이지 않습니다). 그다음 APK를 설치합니다: `adb install -r apk/Chaseom_Chaseom_release.apk`
 2. 손으로 해 보기: Virtual Console에서 **배터리를 19%**로, 기어를 **P**로 둡니다. 그다음 운전석 설정온도를 22°C에서 26°C로, 풍량을 3에서 6으로 올려 보세요(토스트 약 −21분). 비슷한 체감 카드가 뜨면 설정 21°C + 운전석 열선 2단으로 바꿔 보세요(약 +16분). 배터리가 약 20% 이상이면 남은 시간이 "3시간 이상"으로 표시돼 숫자 변화가 보이지 않습니다.
 3. 또는 자동으로: `python tools/demo.py`
    - Virtual Console 조작을 자동으로 재생합니다. 앱은 그 값을 실제 차량 신호 경로(Vehicle SDK·AAOS)로 받습니다. 앱 안에 데모 모드나 가짜 값은 없습니다.
@@ -87,7 +87,8 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 | 창문 | 영수증에 "확인 안 됨" (어느 창이든 값이 없으면 "닫힘"이라고 하지 않음). 공기 카드도 "모두 닫힘"으로 치지 않음 | 모르는 것을 "닫힘"으로 말하지 않음 | `StayEngineTest.windowsUnknownIsReportedNotClosed`, `StayEngineTest.unknownWindowDoesNotCountAsClosed` |
 | 앱이 꺼진 사이의 시간·배터리 | 10분 넘게 지났거나, 충전됐거나, 배터리가 5%p 넘게 다르면 이전 체류를 잇지 않고 새로 시작 | 오래된 체류 시간("1440분째")을 말하지 않음 | `StayEngineTest.restoreStartsNewStayAfter10Min` 외 4개 |
 | 체류 중 충전 | 영수증 "충전 중이라 계산하지 않았어요" (0.0kWh라고 하지 않음) | 쓴 전력을 지어내지 않음 | `StayEngineTest.receiptShowsChargingInsteadOfZeroKwh` |
-| 와이퍼 · 방향지시등 · 실내등 (섬 입력) | 섬 입력으로 쓰지 않음 | 정차 중 놀이 조작을 만들지 않음 | `IslandTest.roundOneLeavesOutWiperGullMoveAndLamp` |
+| 와이퍼 (섬 입력) | 레버가 AUTO이고 실제로 닦을 때만 먼 비. 수동 작동·AUTO 대기·읽기 실패는 비 없음 | 사람이 와이퍼를 놀이처럼 조작하게 만들지 않고, 모르는 것을 '비'라고 하지 않음 | `StayEngineTest.rainOnlyForAutoWiperActuallyWiping` |
+| 방향지시등 · 실내등 (섬 입력) | 섬 입력으로 쓰지 않음 | 정차 중 놀이 조작을 만들지 않음 | `IslandTest.noManualWiperTurnSignalOrLampInput` |
 
 ---
 
