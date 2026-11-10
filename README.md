@@ -87,7 +87,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 | 배터리 % 또는 용량 | 축소 모드 | 숫자를 지어내지 않음 | `ModeAndEnergyTest.modeRules` |
 | 전비 | 기본값 5 km/kWh (차가 준 값이 더 작으면 그 값) | 내일 몫을 크게 잡는 쪽 | `ModeAndEnergyTest.efficiencyUsesTheSmallerOfVehicleAndDefault` |
 | 등받이 각도 | 등받이 고지를 끔 (시간 고지·야간 고지는 그대로) | 값이 안 움직이면 판단하지 않음 | `StayEngineTest.noBackrestCapabilityMeansNoN3` |
-| 2열 탑승 | 영수증에 늘 "뒷좌석 직접 확인", 감지 안 되면 회색 "감지 안 됨 — 직접 확인하세요" | 감지 실패가 "비었음"으로 읽히지 않게 | `StayEngineTest.rearRowNeverHasADotForAnyOccupancy` |
+| 2열 탑승 | 감지 안 되면 회색 '감지 안 됨'(마지막 줄 '뒷좌석 직접 확인'은 늘 있습니다) | 감지 실패가 "비었음"으로 읽히지 않게 | `StayEngineTest.rearRowNeverHasADotForAnyOccupancy` |
 | 실내등 · 충전 포트 | 영수증에서 빼지 않고 "확인 안 됨" | 모르는 것을 "꺼짐"으로 말하지 않음 | `StayEngineTest.lightUnknownIsReportedNotDropped` |
 | 창문 | 영수증에 "확인 안 됨" (어느 창이든 값이 없으면 "닫힘"이라고 하지 않음). 공기 카드도 "모두 닫힘"으로 치지 않음 | 모르는 것을 "닫힘"으로 말하지 않음 | `StayEngineTest.windowsUnknownIsReportedNotClosed`, `StayEngineTest.unknownWindowDoesNotCountAsClosed` |
 | 앱이 꺼진 사이의 시간·배터리 | 10분 넘게 지났거나, 충전됐거나, 배터리가 5%p 넘게 다르면 이전 체류를 잇지 않고 새로 시작 | 오래된 체류 시간("1440분째")을 말하지 않음 | `StayEngineTest.restoreStartsNewStayAfter10Min` 외 4개 |
