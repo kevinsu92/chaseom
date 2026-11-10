@@ -534,7 +534,10 @@ private fun InfoCard(text: String) {
     // POLISH §2-15: the same surface as the cards (radius 28, 1 dp outline), the yellow bar kept.
     val k = cui()
     Row(
-        Modifier.fillMaxWidth().clip(ChaseomUi.rContainer).background(k.surface).border(ChaseomUi.cardOutline, k.line, ChaseomUi.rContainer)
+        // QA candidate C prejudge: on the #0B0C0E night page the card edge needs 3:1 -> a #6B6F76 outline at night
+        // (about 3.8:1; the card surface alone is about 1.3:1).
+        Modifier.fillMaxWidth().clip(ChaseomUi.rContainer).background(k.surface)
+            .border(ChaseomUi.cardOutline, if (androidx.compose.foundation.isSystemInDarkTheme()) NIGHT_CARD_EDGE else k.line, ChaseomUi.rContainer)
             .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -670,3 +673,6 @@ internal fun LightPillButton(label: String, onClick: () -> Unit, modifier: Modif
         }
     }
 }
+
+/** Night card edge on #0B0C0E: contrast about 3.8:1 (QA candidate C prejudge, K1 card boundary >= 3:1). */
+internal val NIGHT_CARD_EDGE = Color(0xFF6B6F76)

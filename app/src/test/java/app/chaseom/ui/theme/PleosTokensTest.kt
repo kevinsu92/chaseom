@@ -30,4 +30,14 @@ class PleosTokensTest {
     }
 
     @Test fun nightBackgroundIsNearBlack() = assertEquals(Color(0xFF0B0C0E), ChaseomUi.Night.bg)
+
+    // QA prejudge: the K1 card edge on the night page is at least 3:1.
+    @Test fun nightCardEdgeHasThreeToOne() {
+        fun lum(c: Color): Double {
+            fun ch(v: Float) = if (v <= 0.03928f) v / 12.92 else Math.pow((v + 0.055) / 1.055, 2.4)
+            return 0.2126 * ch(c.red) + 0.7152 * ch(c.green) + 0.0722 * ch(c.blue)
+        }
+        val ratio = (lum(app.chaseom.ui.scenes.NIGHT_CARD_EDGE) + 0.05) / (lum(ChaseomUi.Night.bg) + 0.05)
+        assertTrue("ratio $ratio", ratio >= 3.0)
+    }
 }
