@@ -115,7 +115,8 @@ fun OnboardingScene(mode: AppMode, actions: StayActions, modifier: Modifier) {
             points.forEach { (icon, title, body) ->
                 Row(verticalAlignment = Alignment.Top) {
                     Box(Modifier.size(ChaseomUi.iconPointCircle).clip(ChaseomUi.rPill).background(k.tint), contentAlignment = Alignment.Center) {
-                        Icon(painterResource(icon), null, tint = k.text1, modifier = Modifier.size(ChaseomUi.iconPoint))
+                        // pleos_icons48: 48 dp so the 3-line grid draws a 3 dp line, like Pleos' own panel icons.
+                        Icon(painterResource(icon), null, tint = k.text1, modifier = Modifier.size(48.dp))
                     }
                     Spacer(Modifier.width(ChaseomUi.related + ChaseomUi.line))
                     Column(verticalArrangement = Arrangement.spacedBy(ChaseomUi.line)) {

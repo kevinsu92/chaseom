@@ -266,8 +266,9 @@ fun IslandPanel(
         val small = h1SetFor(with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value }) === H1Set.Small
         val chip: @Composable () -> Unit = {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Pleos fit: legend and chip icons at 32 dp (48-grid icon, 2 dp line).
                 androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_info), null,
-                    tint = k.text2, modifier = Modifier.size(24.dp))
+                    tint = k.text2, modifier = Modifier.size(32.dp))
                 Spacer(Modifier.width(ChaseomUi.line))
                 Text(stringResource(R.string.is_legend), style = ChaseomUi.caption, color = k.text2, softWrap = false)
             }
@@ -668,7 +669,7 @@ internal enum class Swatch { SUN, WATER, BUOY, CRATE, CLOUD, RAIN }
 @Composable
 private fun LegendItem(sw: Swatch, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        androidx.compose.foundation.Canvas(Modifier.size(24.dp)) {
+        androidx.compose.foundation.Canvas(Modifier.size(32.dp)) { // swatches 32 dp (legend icons >= 32)
             val u = size.width / 24f
             when (sw) {
                 Swatch.SUN -> drawCircle(

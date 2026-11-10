@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 04_design app icon v3 (POLISH_PASS v1.3): sky + navy water, same hexes as the H1 island. -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 04_design app icon v4 background: sky melting to the page at the top (gradient #EEF3F9 -> #DCE9F6), slate water (clay v3 #4B627C / #3B536E, surface #7F95AD), bright horizon band. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#DCEAF6" android:pathData="M0,0h108v69h-108z"/>
-    <path android:fillColor="#2A527C" android:pathData="M0,69h108v39h-108z"/>
-    <path android:fillColor="#1F3B5C" android:pathData="M0,90h108v18h-108z"/>
-    <path android:fillColor="#8DB4D9" android:pathData="M0,69h108v2h-108z"/>
+    <path android:pathData="M0,0h108v69h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear" android:startX="0" android:startY="0" android:endX="0" android:endY="69"
+                android:startColor="#FFF2F5F9" android:centerColor="#FFE6EFF8" android:endColor="#FFDCE9F6"/>
+        </aapt:attr>
+    </path>
+    <path android:fillColor="#4B627C" android:pathData="M0,69h108v20h-108z"/>
+    <path android:fillColor="#3B536E" android:pathData="M0,89h108v19h-108z"/>
+    <path android:fillColor="#7F95AD" android:pathData="M0,69h108v3h-108z"/>
+    <path android:fillColor="#FFFFFF" android:fillAlpha="0.9" android:pathData="M0,68.2h108v1.4h-108z"/>
 </vector>

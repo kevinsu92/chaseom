@@ -103,7 +103,7 @@ internal fun WarnBanner(text: String, danger: Boolean, trailing: (@Composable ()
         Spacer(Modifier.width(ChaseomUi.related))
         // Pleos fit v2 section 4: K2 (the one warning that asks for an action) = white octagon, red '!', on the red fill.
         if (danger) StopOctagon(Modifier.size(32.dp)) else
-            Icon(painterResource(R.drawable.ic_warn_line), null, tint = fg, modifier = Modifier.size(ChaseomUi.bannerIcon))
+            Icon(painterResource(R.drawable.ic_warn_line), null, tint = fg, modifier = Modifier.size(32.dp)) // 48-grid icon: 2 dp line at 32
         Spacer(Modifier.width(ChaseomUi.related))
         // Critique final 2 ③: N0 and K2 share 26 sp SemiBold (W600); wording unchanged.
         Text(text, style = ChaseomUi.banner.copy(fontSize = 26.sp, lineHeight = 34.sp), color = fg,
@@ -543,7 +543,7 @@ private fun InfoCard(text: String) {
     ) {
         Box(Modifier.width(ChaseomUi.cardBar).fillMaxHeight().background(k.safeBar))
         Spacer(Modifier.width(24.dp))
-        Icon(painterResource(R.drawable.ic_warn_line), null, tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
+        Icon(painterResource(R.drawable.ic_warn_line), null, tint = ChaseomUi.amberRim, modifier = Modifier.size(32.dp))
         Spacer(Modifier.width(ChaseomUi.related))
         Text(text, style = ChaseomUi.title, color = k.text1, modifier = Modifier.padding(vertical = ChaseomUi.related).weight(1f))
     }
