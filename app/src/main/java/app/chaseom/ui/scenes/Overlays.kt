@@ -115,9 +115,13 @@ fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app
                 r.rows.forEach { row -> ReceiptLine(row, size) }
             }
             if (r.rearCheckAlways) {
-                // Panel §7-②: the always-last check line reads as a title (28 SemiBold, eye 24, 16 above).
-                Row(Modifier.padding(top = ChaseomUi.related).heightIn(min = ChaseomUi.receiptRow), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(painterResource(R.drawable.ic_eye), null, tint = k.text1, modifier = Modifier.size(24.dp))
+                // Panel §7-② / APP_GAP_TO_85 §10-1: the always-last check line stands apart from the table:
+                // 16 dp gap, a 1 dp divider, then 28 SemiBold with a 24 dp eye. The eye glyph fills 40 of its 48
+                // viewport, so the icon box is 29 dp for a 24 dp glyph.
+                Spacer(Modifier.height(ChaseomUi.related - ChaseomUi.line))
+                Box(Modifier.fillMaxWidth().height(ChaseomUi.divider).background(k.line))
+                Row(Modifier.heightIn(min = ChaseomUi.receiptRow), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(painterResource(R.drawable.ic_eye), null, tint = k.text1, modifier = Modifier.size(29.dp))
                     Spacer(Modifier.width(ChaseomUi.line))
                     Text(stringResource(R.string.e_rear_always), style = ChaseomUi.title, color = k.text1)
                 }

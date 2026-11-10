@@ -212,8 +212,9 @@ fun IslandPanel(
             val minH = if (set === H1Set.Small) H1Set.SMALL_MIN_DP.dp else natural
             val filled = if (!fill || topInWindow.isNaN()) natural else
                 maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH)
-            // Critique final ① / final 2 ①: Small grows at most 1.35x its picture (sun and wind lifted, see skyLiftFor).
-            val boxH = if (set === H1Set.Small) minOf(filled, natural * 1.35f) else filled
+            // Panel APP_GAP_TO_85 §10-4: Small without cards fills the height left (sky side only; the picture
+            // stays at 1.0x across, so the buoy x 955/960 limit is untouched). Sun and wind lift, see skyLiftFor.
+            val boxH = filled
             Box(
                 // POLISH v1.6: the whole picture is clipped once here (no per-layer clip).
                 Modifier.width(picW).height(boxH).onGloballyPositioned { topInWindow = it.positionInWindow().y }
@@ -243,11 +244,12 @@ fun IslandPanel(
             Text(stringResource(R.string.is_legend), style = ChaseomUi.caption, color = k.text2)
         }
         if (ui.firstStayHint) {
-            // Critique final 2 ②: no chip; one caption line like the cause line (28 dp amber fan, 24 Medium #4A4E57).
+            // Critique final 2 ②: no chip; one caption line like the cause line (28 dp fan, 24 Medium #4A4E57).
+            // Panel §10-5: the fan is ink #4A4E57, not amber (amber = a value the user changed).
             Spacer(Modifier.height(ChaseomUi.related))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_fan), null,
-                    tint = ChaseomUi.amberRim, modifier = Modifier.size(ChaseomUi.iconInline))
+                    tint = Color(0xFF4A4E57), modifier = Modifier.size(ChaseomUi.iconInline))
                 Spacer(Modifier.width(ChaseomUi.line))
                 // QA REVIEW_COPY_B 5 (UXR E-2): at the 3-hour cap the time cannot change, so only the island is promised.
                 val hint = if (ui.hero?.overCap == true) R.string.is_hint_first_cap else R.string.is_hint_first

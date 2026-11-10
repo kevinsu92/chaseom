@@ -14,7 +14,7 @@
     <string name="onb_p1_title">내일 몫을 먼저 남겨 둬요</string>
     <string name="onb_p1_body">내일 갈 거리만큼은 오늘 쓰지 않게 표시해요</string>
     <string name="onb_p2_title">다이얼을 돌리면 섬과 시간이 바뀌어요</string>
-    <string name="onb_p2_body">공조 설정을 바꾸면 섬과 머물 수 있는 시간이 바로 바뀌어요 (섬은 공조 설정·배터리로 그려요)</string>
+    <string name="onb_p2_body">공조 설정을 바꾸면 섬과 머물 수 있는 시간이 바로 바뀌어요</string>
     <string name="onb_p3_title">내리기 전 영수증 한 장</string>
     <string name="onb_p3_body">창문·실내등·뒷좌석을 한 번 더 확인해요</string>
     <string name="onb_start_ev">내일 몫 정하기</string>

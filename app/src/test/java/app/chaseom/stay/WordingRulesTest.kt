@@ -118,6 +118,11 @@ class WordingRulesTest {
         assertTrue(strings.getValue("is_cd").contains("추정"))
     }
 
+    // Panel APP_GAP_TO_85 §10-2: the island chip already says what draws it, so onboarding item 2 has no bracket.
+    @Test fun onboardingItemTwoHasNoBracketNote() {
+        assertEquals("공조 설정을 바꾸면 섬과 머물 수 있는 시간이 바로 바뀌어요", strings["onb_p2_body"])
+    }
+
     // QA ROUND1B_GATE (H1 v1.5): the round-1 island draws no seat heat, so no rock or "follows the heat" wording.
     @Test fun roundOneIslandSaysNothingAboutSeatHeat() {
         assertEquals(emptyMap<String, String>(), strings.filterValues { it.contains("바위") || it.contains("열선을 따라") || it.contains("장식") })
