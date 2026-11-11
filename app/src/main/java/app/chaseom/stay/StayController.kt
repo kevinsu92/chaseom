@@ -24,8 +24,8 @@ enum class Page { NONE, ONBOARDING, SETTINGS, ABOUT }
 
 /**
  * Glue between Android and [StayEngine]: runs the engine on every signal change and once per
- * second, persists settings and the running stay (QA G-4), keeps [StayService] running during a
- * stay (FINDINGS M-01), and owns the parked page navigation (first run -> onboarding -> settings).
+ * second, persists settings and the running stay, keeps [StayService] running during a
+ * stay, and owns the parked page navigation (first run -> onboarding -> settings).
  */
 class StayController(
     context: Context,
@@ -33,7 +33,7 @@ class StayController(
     private val cabin: CabinRepository,
     private val restriction: StateFlow<DrivingRestriction>,
     private val vehicle: StateFlow<VehicleSnapshot>,
-    /** Monotonic: stay timers never move when the wall clock is changed (QA E4-4). */
+    /** Monotonic: stay timers never move when the wall clock is changed. */
     private val clock: () -> Long = SystemClock::elapsedRealtime,
 ) {
     private val appContext = context.applicationContext
@@ -57,12 +57,12 @@ class StayController(
 
     private var serviceRunning = false
     private var last: Triple<Boolean?, CabinState, StaySettings>? = null
-    /** A gear value has been read at least once since start (QA E4-5: "connecting" vs driving). */
+    /** A gear value has been read at least once since start ("connecting" vs driving). */
     private var gearEverRead = false
     private var lastSeenSaveMs = 0L
     private var hintDone = prefs.getBoolean(K_HINT_DONE, false)
     private var stayedOnce = false
-    // Mooring (HANDOFF 10.3 ①): when the car left P and whether it was in D/R meanwhile.
+    // Mooring: when the car left P and whether it was in D/R meanwhile.
     private var awaySinceMs: Long? = null
     private var awayDrivingOrReverse = false
     /** A gear other than P was actually read while away (startup restriction lag alone is not "away"). */
@@ -105,7 +105,7 @@ class StayController(
             false -> if (awaySinceMs == null) awaySinceMs = now
             true -> {
                 awaySinceMs?.let { since ->
-                    // HANDOFF 10.2 v2: only a real trip (D/R) or a non-P gear held >= 3 s. A restart while in P
+                    // Only a real trip (D/R) or a non-P gear held >= 3 s. A restart while in P
                     // (restriction catching up, gear always P) draws the end picture.
                     if (awayGearNotPark && Island.shouldMoor(now - since, awayDrivingOrReverse)) moorAtMs = now
                 }
@@ -173,7 +173,7 @@ class StayController(
         _page.value = Page.NONE
     }
 
-    // ---- persistence (local only: QA G-6, nothing leaves the car) ------------------------------
+    // ---- persistence (local only: nothing leaves the car) ------------------------------
 
     private fun loadSettings() = StaySettings(
         prefs.getInt(K_KM, StaySettings.DEFAULT_KM),

@@ -28,7 +28,7 @@ data class CabinState(
     val recirculationOn: Boolean? = null,
     /** Driver seat heat level: >0 heat, <0 ventilation, 0 off. */
     val driverSeatHeat: Int? = null,
-    /** Passenger seat heater level; used only by the weather island (HANDOFF 8.4). */
+    /** Passenger seat heater level; used only by the weather island. */
     val passengerSeatHeat: Int? = null,
     // Seats
     val driverBackrest: Int? = null,
@@ -47,7 +47,7 @@ data class CabinState(
     val windows: Map<String, Int> = emptyMap(),
     val cabinLightOn: Boolean? = null,
     val readingLightOn: Boolean? = null,
-    /** Front wiper lever on AUTO (Pleos getCurrentWiperSwitch); null = not readable (X-09: then no rain input). */
+    /** Front wiper lever on AUTO (Pleos getCurrentWiperSwitch); null = not readable (then no rain input). */
     val wiperAuto: Boolean? = null,
     /** Front wiper actually wiping (Pleos WiperState.ON). */
     val wiperOn: Boolean? = null,

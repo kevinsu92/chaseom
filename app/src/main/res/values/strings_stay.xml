@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 차섬 (Chaseom) UI strings (04_design, 2026-11-09). Merge into res/values/strings.xml.
-     Wording rules W1-W12 in 04_design/FLOWS.md section 5 (QA conditions 1-14). Do not change wording without design + QA review.
-     app_name: CEO decision 2026-11-09 = 차섬 (Latin: Chaseom). -->
+<!-- 차섬 (Chaseom) UI strings. Merge into res/values/strings.xml.
+     Wording rules W1-W12. Do not change wording without a design review.
+     app_name = 차섬 (Latin: Chaseom). -->
 <resources>
 
     <!-- G: driving glance (DR: <= 20 chars, 1 line) -->
@@ -52,7 +52,7 @@
     <string name="dur_hm">%1$d시간 %2$d분</string>
     <string name="dur_m">%1$d분</string>
     <string name="d_toast_fmt">%1$s · %2$s</string>
-    <!-- QA condition 3: the toast's ± minutes are an estimate, e.g. "설정 26°C · 풍량 6 · −21분 (추정)". -->
+    <!-- The toast's ± minutes are an estimate, e.g. "설정 26°C · 풍량 6 · −21분 (추정)". -->
     <string name="d_toast_delta">%1$s (추정)</string>
     <string name="d_toast_none">변화 거의 없음</string>
     <string name="hvac_on">공조 켜짐</string>
@@ -81,7 +81,7 @@
     <string name="air_card">창문이 닫힌 채 내기순환 %1$d분째예요. 바깥 공기를 한 번 들여 주세요.</string>
 
     <!-- H·K keep-share banners -->
-    <string name="k1">곧 내일 몫에 닿아요 · 공조를 꺼야 지켜집니다 (앱은 공조를 끄지 않아요)</string>
+    <string name="k1">곧 내일 몫에 닿아요 · 계속 켜 두면 내일 몫을 쓰게 돼요 (앱은 공조를 끄지 않아요)</string>
     <string name="k2">내일 몫 아래로 내려갔어요 · 충전하거나 출발을 고려하세요</string>
 
     <!-- R: reduced mode -->
@@ -131,24 +131,24 @@
     <string name="about_fuel_reduced">차종: 전기차로 확인되지 않음 (경고·하차 확인만)</string>
 
 
-    <!-- Face: small weather island (HANDOFF section 8, flag FACE_ISLAND). Picture has no text; chips only. -->
+    <!-- Face: small weather island (flag FACE_ISLAND). Picture has no text; chips only. -->
     <string name="is_legend">섬은 공조 설정·배터리로 그려요 · 실내 측정 아님</string>
-    <!-- Pleos fit v3 P7 legend, QA AIR_SAFETY verdict 2 (2026-11-10): picture shapes = values, no numbers. -->
+    <!-- Legend: picture shapes = values, no numbers. -->
     <string name="is_lg_sun">해 = 설정 온도</string>
     <string name="is_lg_water">물 = 배터리</string>
     <string name="is_lg_buoy">부표 1개 = 30분</string>
     <string name="is_lg_keep">짐 = 내일 몫</string>
-    <!-- Only while the cloud shows; N = minutes recirculation has been on (QA verdict 2, A1-2/A1-3/A1-6). -->
+    <!-- Only while the cloud shows; N = minutes recirculation has been on. -->
     <string name="is_lg_air">구름 = 내기순환 %1$d분째 (공기 측정 아님)</string>
-    <!-- X-09 far rain legend (QA verdict 12 / 15, panel agreed): only while the AUTO wiper is wiping. -->
+    <!-- Far rain legend: only while the AUTO wiper is wiping. -->
     <string name="is_lg_rain">먼 비 = 와이퍼 AUTO 작동</string>
-    <!-- Next to the sun for 2.5 s after the set temperature changes; "설정" always (QA verdict 2, condition 2). -->
+    <!-- Next to the sun for 2.5 s after the set temperature changes; "설정" always. -->
     <string name="is_sun_change">설정 %1$s → %2$s°C</string>
     <string name="is_cd">섬 그림: 공조 설정·배터리로 그려요. 지금 설정으로 %1$s 머물 수 있어요 (추정), 배터리 %2$d%%, 내일 몫 %3$dkm</string>
-    <!-- Toast when both before/after are over the 3-hour cap (QA M-11, moved from 03_engineering strings.xml) -->
+    <!-- Toast when both before/after are over the 3-hour cap -->
     <string name="d_toast_cap">3시간 이상 유지 (추정)</string>
 
-    <!-- ===== GAP_FIX 묶음 B (CEO 승인 2026-11-09). 05_qa 판정본 `05_qa/REVIEW_COPY_B.md` §1 확정 문구 반영(2026-11-09). 엔지니어링 사본: 쓰지 않는 st_loading·st_disconnected·h_soc_unknown·is_unsupported·hg_*·is_key_rock은 뺐다. =====
+    <!-- ===== 묶음 B 확정 문구. 쓰지 않는 st_loading·st_disconnected·h_soc_unknown·is_unsupported·hg_*·is_key_rock은 뺐다. =====
          is_day / is_keep 은 지금 엔지니어링 res/values/strings.xml에 있다: 그쪽 두 줄을 지우고 이 파일 값을 쓴다(중복 리소스 방지). -->
     <string name="is_hint_first">공조 다이얼을 바꾸면 섬과 남은 시간이 함께 바뀌어요</string>
     <string name="is_hint_first_cap">공조 다이얼을 바꾸면 섬이 바뀌어요</string>

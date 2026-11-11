@@ -57,7 +57,7 @@ import androidx.compose.ui.draw.clip
 fun GlanceScene(firstRun: Boolean) {
     val c = Pleos.colors
     Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-        // POLISH_PASS v1.2 §0.5: the only thing on this screen is the app icon, so it carries the brand (DR sizes kept).
+        // The only thing on this screen is the app icon, so it carries the brand (DR sizes kept).
         AppIcon(ChaseomUi.glanceIcon)
         Spacer(Modifier.height(PleosDimens.space24))
         Text(stringResource(R.string.drv_title), style = ChaseomUi.glanceTitle, color = c.textPrimary, textAlign = TextAlign.Center)
@@ -66,7 +66,7 @@ fun GlanceScene(firstRun: Boolean) {
     }
 }
 
-/** Before any gear value has been read: no numbers, no buttons, just the state (QA E4-5). */
+/** Before any gear value has been read: no numbers, no buttons, just the state. */
 @Composable
 fun ConnectingScene() {
     val c = Pleos.colors
@@ -82,7 +82,7 @@ fun OnboardingScene(mode: AppMode, actions: StayActions, modifier: Modifier) {
     val k = cui()
     val size = uiSize()
     val ev = mode == AppMode.FULL
-    // POLISH_PASS v1.2 §0.5: the island scene first (left on Large, top on Small), no labels; point icons are
+    // The island scene first (left on Large, top on Small), no labels; point icons are
     // crate / sun-dial / receipt in tinted circles (no lock); the manual quote stays with an amber caution icon.
     val points = if (ev) {
         listOf(
@@ -99,7 +99,7 @@ fun OnboardingScene(mode: AppMode, actions: StayActions, modifier: Modifier) {
     val picture = @Composable { m: Modifier ->
         Column(m, verticalArrangement = Arrangement.spacedBy(ChaseomUi.related)) {
             OnboardingIsland(Modifier.fillMaxWidth())
-            // Pleos fit v2.1: the safety quote is the white warning part (quote W600 ink, source W500 #4A4E57).
+            // The safety quote is the white warning part (quote W600 ink, source W500 #4A4E57).
             val quote = androidx.compose.ui.text.buildAnnotatedString {
                 append(stringResource(R.string.manual_quote))
                 pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
@@ -134,7 +134,7 @@ fun OnboardingScene(mode: AppMode, actions: StayActions, modifier: Modifier) {
     if (size == ChaseomUi.Size.Large) {
         Row(modifier.verticalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(ChaseomUi.block * 2),
             verticalAlignment = Alignment.CenterVertically) {
-            // POLISH v1.4: picture 890 dp on the left, text column at most 720, both centred vertically.
+            // Picture 890 dp on the left, text column at most 720, both centred vertically.
             picture(Modifier.width(890.dp))
             text(Modifier.weight(1f).widthIn(max = 720.dp))
         }
@@ -154,7 +154,7 @@ fun SettingsScene(current: StaySettings, actions: StayActions, modifier: Modifie
     val c = Pleos.colors
     var km by remember { mutableIntStateOf(current.keepKm) }
     var label by remember { mutableStateOf(current.label) }
-    // POLISH_PASS v1.2 §0.6: the same 960 dp reading width as the first-use screen.
+    // The same 960 dp reading width as the first-use screen.
     Column(modifier.widthIn(max = ChaseomUi.readableMax).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(PleosDimens.space32)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton76(R.drawable.ic_back, stringResource(R.string.cd_back)) { actions.open(Page.NONE) }
@@ -182,7 +182,7 @@ fun SettingsScene(current: StaySettings, actions: StayActions, modifier: Modifie
             }
         }
         Body(stringResource(R.string.s_margin), color = c.textSecondary)
-        // HANDOFF 9.8 v5 (UXR E-5): save is the only primary button; "use defaults" is a small text link
+        // Save is the only primary button; "use defaults" is a small text link
         // above it on the left (76 dp touch), shown until the user has chosen once; "about" is a list row.
         if (!current.saved) {
             Box(Modifier.heightIn(min = 76.dp).clickable { actions.useDefaults() }, contentAlignment = Alignment.CenterStart) {
@@ -231,7 +231,7 @@ fun AboutScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
     }
 }
 
-/** The adaptive app icon (04_design POLISH_PASS v1.2) drawn from its two layers, clipped like a launcher tile. */
+/** The adaptive app icon drawn from its two layers, clipped like a launcher tile. */
 @Composable
 fun AppIcon(size: androidx.compose.ui.unit.Dp) {
     Box(Modifier.size(size).clip(androidx.compose.foundation.shape.RoundedCornerShape(size / 4)), contentAlignment = Alignment.Center) {

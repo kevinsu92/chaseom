@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 
-/** Colour roles for the current theme (04_design POLISH_PASS v1.2 §0.3). */
+/** Colour roles for the current theme. */
 @Composable
 fun cui(): ChaseomUi.Colors = if (isSystemInDarkTheme()) ChaseomUi.Night else ChaseomUi.Day
 

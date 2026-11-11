@@ -8,7 +8,7 @@ import java.io.File
 /**
  * Pleos system font Asta Sans (with Hangul) loaded by weight from the platform's own files, so 500 / 600 / 700
  * render as real Medium / SemiBold / Bold instead of collapsing to Regular / Bold through the CJK fallback
- * (independent critique final verdict ②, QA ROUND1B_GATE: system font first, nothing bundled, no licence to add).
+ * (system font first, nothing bundled, no licence to add).
  * Any other device without these files keeps the default family.
  */
 object ChaseomFonts {

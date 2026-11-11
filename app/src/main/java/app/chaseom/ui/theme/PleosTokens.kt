@@ -1,8 +1,8 @@
 package app.chaseom.ui.theme
 
-// Design tokens for the in-vehicle app, owned by 04_design.
+// Design tokens for the in-vehicle app.
 // Source of values: Pleos Connect UI Design Guide (colors / typography / shadow / animation),
-// gaps filled from Android for Cars guidance (touch target 76dp). See 04_design/DESIGN_SYSTEM.md.
+// gaps filled from Android for Cars guidance (touch target 76dp).
 // Drop-in: copy this file and PleosComponents.kt into app/src/main/java/app/chaseom/ui/theme/
 // and delete the old Theme.kt (this file defines PleosAppTheme with the same signature).
 
@@ -62,7 +62,7 @@ object PleosStatic {
 }
 
 /**
- * Semantic tokens actually used by app UI. Contrast rules (DESIGN_SYSTEM.md 3.4):
+ * Semantic tokens actually used by app UI. Contrast rules:
  * - textQuaternary is for disabled only (fails 4.5:1).
  * - status fills (active/warning/negative/brand) carry [onStatus] text, never white text.
  * - [positiveText] is the only colored text allowed, and only in day theme.
@@ -174,7 +174,7 @@ val NightColors = PleosColors(
 
 private val Base = TextStyle(fontFamily = FontFamily.Default, fontFeatureSettings = "tnum")
 
-/** Pleos type scale (sp). Driving-allowed styles are marked in DESIGN_SYSTEM.md section 2. */
+/** Pleos type scale (sp). */
 object PleosType {
     val headlineLarge = Base.copy(fontSize = 60.sp, lineHeight = 80.sp, fontWeight = FontWeight.ExtraBold)
     val headlineMedium = Base.copy(fontSize = 56.sp, lineHeight = 72.sp, fontWeight = FontWeight.ExtraBold)
@@ -238,12 +238,12 @@ object PleosDimens {
     val gutterNarrow = 16.dp
     val gutter = 24.dp
 
-    /** T-1: minimum touch target, any state. */
+    /** Minimum touch target, any state. */
     val touchMin = 76.dp
-    /** T-2: minimum height of a button usable while driving. */
+    /** Minimum height of a button usable while driving. */
     val touchDriving = 96.dp
     val touchDrivingMinWidth = 160.dp
-    /** T-3 spacing between targets. */
+    /** Spacing between targets. */
     val targetGap = 16.dp
     val targetGapDriving = 24.dp
 
@@ -272,7 +272,7 @@ private val M3Shapes = Shapes(
 
 /* ---------------------------------------------------------------- Motion */
 
-/** M-1..M-6. No looping animation anywhere; only single state transitions. */
+/** No looping animation anywhere; only single state transitions. */
 object PleosMotion {
     const val TOUCH_FEEDBACK_MAX_MS = 250
     const val TRANSITION_MS = 200
@@ -297,7 +297,7 @@ object Pleos {
     val colors: PleosColors @Composable get() = LocalPleosColors.current
 }
 
-/** Follows the vehicle day/night mode (uiMode). No in-app theme toggle (DESIGN_SYSTEM.md 3.5). */
+/** Follows the vehicle day/night mode (uiMode). No in-app theme toggle. */
 @Composable
 fun PleosAppTheme(night: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val c = if (night) NightColors else DayColors

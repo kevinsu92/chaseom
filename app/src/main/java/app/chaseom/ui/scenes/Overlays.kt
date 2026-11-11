@@ -56,14 +56,14 @@ import java.util.Locale
 @Composable
 private fun Scrim(light: Boolean = false, content: @Composable () -> Unit) {
     Box(
-        // Pleos fit P4: the receipt dims the screen only lightly (25 %); its sheet edge is its shadow.
+        // The receipt dims the screen only lightly (25 %); its sheet edge is its shadow.
         Modifier.fillMaxSize().background(if (light) Color(0xFF0B0F14).copy(alpha = 0.25f) else Pleos.colors.scrim)
             .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
         contentAlignment = Alignment.Center,
     ) { content() }
 }
 
-// ---- N1 / N2 / N3: notice card. Informs only (QA S4-a): no detection/prevention wording. ------
+// ---- N1 / N2 / N3: notice card. Informs only: no detection/prevention wording. ------
 
 @Composable
 fun NoticeOverlay(kind: NoticeKind, policy: ModePolicy, actions: StayActions) {
@@ -80,7 +80,7 @@ fun NoticeOverlay(kind: NoticeKind, policy: ModePolicy, actions: StayActions) {
                 NoticeKind.NIGHT -> R.string.n2_title
                 NoticeKind.BACKREST -> R.string.n3_title
             }
-            // POLISH §2-18: one overlay title size (28), the quote as a caption.
+            // One overlay title size (28), the quote as a caption.
             Text(stringResource(title), style = ChaseomUi.title, color = c.textPrimary)
             Body(stringResource(R.string.n_body))
             Text(stringResource(R.string.manual_quote) + " — " + stringResource(R.string.manual_source),
@@ -100,33 +100,33 @@ fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app
     val k = cui()
     val size = uiSize()
     Scrim(light = true) {
-        // POLISH_PASS v1.2 §0.6 / §2-17: 800 dp sheet (Small: window width minus margins), radius 28, padding 32.
-        // Pleos fit P4: the sheet edge is a soft shadow (the scrim is only 25 %).
+        // 800 dp sheet (Small: window width minus margins), radius 28, padding 32.
+        // The sheet edge is a soft shadow (the scrim is only 25 %).
         Column(
             Modifier.widthIn(max = ChaseomUi.receiptWidthLarge).padding(vertical = 24.dp, horizontal = ChaseomUi.margin(size))
-                .pleosShadow(2, 28.dp, enabled = !androidx.compose.foundation.isSystemInDarkTheme()) // Pleos S-02 Level 2
+                .pleosShadow(2, 28.dp, enabled = !androidx.compose.foundation.isSystemInDarkTheme()) // Pleos Level 2 shadow
                 .clip(ChaseomUi.rContainer).background(k.surface).padding(ChaseomUi.block).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(ChaseomUi.line),
         ) {
-            // Pleos fit P4: no island picture in the sheet (the same island stays visible behind the light scrim).
+            // No island picture in the sheet (the same island stays visible behind the light scrim).
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.e_title), style = ChaseomUi.title.copy(fontSize = 32.sp, lineHeight = 40.sp), color = k.text1, modifier = Modifier.weight(1f))
                 Text(SimpleDateFormat("HH:mm", Locale.KOREA).format(Date(remember(r) { System.currentTimeMillis() })) /* wall time for display only; engine times are monotonic */, style = ChaseomUi.body, color = k.text3)
             }
             Column {
-                // Panel APP_GAP_TO_85 §11-1: no line under the last row; the one line above the check line closes the table.
+                // No line under the last row; the one line above the check line closes the table.
                 r.rows.forEachIndexed { i, row -> ReceiptLine(row, size, last = i == r.rows.lastIndex && r.rearCheckAlways) }
             }
             if (r.rearCheckAlways) {
-                // Pleos fit v2.1 P4: the always-last check line is the white warning part (the one thing the app
-                // cannot check), 16 dp under the table. Text stays 30 sp SemiBold (panel APP_GAP_TO_85 section 11)
+                // The always-last check line is the white warning part (the one thing the app
+                // cannot check), 16 dp under the table. Text stays 30 sp SemiBold
                 // and wraps on a narrow window instead of shrinking.
                 Spacer(Modifier.height(ChaseomUi.related - ChaseomUi.line))
                 WhiteWarn(androidx.compose.ui.text.AnnotatedString(stringResource(R.string.e_rear_always)), Modifier.fillMaxWidth(),
                     style = ChaseomUi.title.copy(fontSize = 30.sp, lineHeight = 38.sp))
             }
             Spacer(Modifier.height(ChaseomUi.line))
-            // Panel §7-②: closing the receipt is the sheet's one action -> navy primary, 64 dp, full width.
+            // Closing the receipt is the sheet's one action -> navy primary, 64 dp, full width.
             Box(
                 Modifier.fillMaxWidth().heightIn(min = ChaseomUi.touchMin).pressable(shape = ChaseomUi.rPill) { actions.closeReceipt() },
                 contentAlignment = Alignment.Center,
@@ -146,7 +146,7 @@ private fun ReceiptLine(row: ReceiptRow, size: ChaseomUi.Size, last: Boolean = f
     val (label, value) = when (row) {
         is ReceiptRow.Stayed -> stringResource(R.string.e_stay) to duration(row.minutes)
         is ReceiptRow.Energy -> stringResource(R.string.e_energy) to when (row.kind) {
-            app.chaseom.stay.EnergyKind.CHARGED -> stringResource(R.string.e_energy_charging) // QA E4-3: never "0.0kWh"
+            app.chaseom.stay.EnergyKind.CHARGED -> stringResource(R.string.e_energy_charging) // never "0.0kWh"
             app.chaseom.stay.EnergyKind.SMALL -> stringResource(R.string.e_energy_small)
             app.chaseom.stay.EnergyKind.IMPLAUSIBLE -> stringResource(R.string.e_energy_implausible)
             app.chaseom.stay.EnergyKind.VALUE -> stringResource(R.string.e_energy_val, row.kwh)
@@ -165,8 +165,8 @@ private fun ReceiptLine(row: ReceiptRow, size: ChaseomUi.Size, last: Boolean = f
         is ReceiptRow.Rear -> stringResource(R.string.e_rear) to
             stringResource(if (row.detected) R.string.e_rear_detected else R.string.e_rear_not_detected)
     }
-    val grey = row is ReceiptRow.Rear // condition 4: neutral grey either way, never green
-    // POLISH §0.6: rows 56 dp with a 1 dp line, label Regular / value Medium 26, label column 224 (Small 168).
+    val grey = row is ReceiptRow.Rear // neutral grey either way, never green
+    // Rows 56 dp with a 1 dp line, label Regular / value Medium 26, label column 224 (Small 168).
     // The attention dot stays (an open window etc.) in the sun amber: warning colours belong to banners only.
     val k = cui()
     Column {
@@ -176,6 +176,6 @@ private fun ReceiptLine(row: ReceiptRow, size: ChaseomUi.Size, last: Boolean = f
             Text(label, style = ChaseomUi.body, color = if (grey) k.text3 else k.text2, modifier = Modifier.width(ChaseomUi.receiptLabelCol(size)))
             Text(value, style = ChaseomUi.bodyValue, color = if (grey) k.text3 else k.text1)
         }
-        // Pleos fit P4: rows are divided by their spacing only, like the Pleos settings list (no lines).
+        // Rows are divided by their spacing only, like the Pleos settings list (no lines).
     }
 }

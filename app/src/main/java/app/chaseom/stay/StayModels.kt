@@ -4,14 +4,14 @@ import app.chaseom.cabin.CabinState
 
 /**
  * UI model of a stay. The engine only produces structured values; every sentence lives in
- * res/values/strings_stay.xml (owned by 04_design + 05_qa) and is checked by WordingRulesTest.
+ * res/values/strings_stay.xml and is checked by WordingRulesTest.
  */
 
 /** Full = EV (energy budget, toast, exchange). Reduced = everything else (notices, air, receipt). */
 enum class AppMode { FULL, REDUCED }
 
 /**
- * What each mode is allowed to show (QA condition 10: reduced mode has no energy budget, exchange,
+ * What each mode is allowed to show (reduced mode has no energy budget, exchange,
  * dial toast or "keep the climate on" nuance). Scenes ask the policy instead of checking the mode,
  * so a new mode (e.g. PHEV later) is one more policy object.
  */
@@ -47,8 +47,7 @@ sealed class ModePolicy(val mode: AppMode) {
 }
 
 /**
- * Condition 12: unknown or unreadable fuel type -> REDUCED. Rule from
- * 08_ideation/platform_top10_check.md 7.0-4 / 04_design/HANDOFF.md 3.2. D1 probe: emulator = [10].
+ * Unknown or unreadable fuel type -> REDUCED. The emulator reports [10].
  */
 object ModeDetector {
     /** android.car.FuelType.ELECTRIC */
@@ -77,7 +76,7 @@ data class Hero(
     val hvacOff: Boolean,
     /** Estimated draw at the current setting (kW). */
     val drawKw: Float = 0f,
-    /** SOC at or under tomorrow's share: the hero shows a status line, never "약 0분" (QA E4-2). */
+    /** SOC at or under tomorrow's share: the hero shows a status line, never "약 0분". */
     val belowKeep: Boolean = false,
     /** Below keep: estimated km of tomorrow's distance the battery still covers. */
     val coveredKm: Int? = null,
@@ -100,7 +99,7 @@ sealed class ClimateChange {
 data class Toast(
     /** Last two changed items of the batch, oldest first. */
     val items: List<ClimateChange>,
-    /** Signed minutes between the 3-hour-capped before/after values (QA M-11); |delta| < 1 = "no real change". */
+    /** Signed minutes between the 3-hour-capped before/after values; |delta| < 1 = "no real change". */
     val deltaMinutes: Int,
     val untilMs: Long,
     /** Both before and after are at/above the display cap: show "3시간 이상 유지 (추정)" instead of a delta. */
@@ -116,10 +115,10 @@ enum class ExchangeRule { X1_SEAT_HEAT, X2_FAN, X3_AC }
 
 data class Exchange(val rule: ExchangeRule, val gainMinutes: Int)
 
-/** Receipt rows in the order of 04_design/HANDOFF.md 3.8. [dot] = warning dot (open / on). */
+/** Receipt rows in display order. [dot] = warning dot (open / on). */
 sealed class ReceiptRow(val dot: Boolean) {
     data class Stayed(val minutes: Int) : ReceiptRow(false)
-    /** [kind]: VALUE = "약 n kWh", SMALL = under 1 kWh, CHARGED = SOC rose during the stay (QA E4-3). */
+    /** [kind]: VALUE = "약 n kWh", SMALL = under 1 kWh, CHARGED = SOC rose during the stay. */
     data class Energy(val kwh: String, val kind: EnergyKind = EnergyKind.VALUE) : ReceiptRow(false)
     /** [coveredKm] null = whole distance still covered; otherwise the estimate below [km]. */
     data class Keep(val km: Int, val coveredKm: Int?) : ReceiptRow(coveredKm != null)
@@ -127,7 +126,7 @@ sealed class ReceiptRow(val dot: Boolean) {
     data class Windows(val open: List<String>, val known: Boolean = true) : ReceiptRow(open.isNotEmpty())
     data class Light(val on: Boolean?) : ReceiptRow(on == true)
     data class ChargePort(val open: Boolean?) : ReceiptRow(open == true)
-    /** Condition 4: always grey, never a dot, never green. */
+    /** Always grey, never a dot, never green. */
     data class Rear(val detected: Boolean) : ReceiptRow(false)
 }
 
@@ -138,7 +137,7 @@ sealed class ReceiptRow(val dot: Boolean) {
 enum class EnergyKind { VALUE, SMALL, CHARGED, IMPLAUSIBLE }
 
 data class Receipt(val rows: List<ReceiptRow>, val createdAtMs: Long) {
-    /** Condition 4: "뒷좌석 직접 확인" is part of every receipt, rendered as the last line. */
+    /** "뒷좌석 직접 확인" is part of every receipt, rendered as the last line. */
     val rearCheckAlways: Boolean get() = true
 }
 
@@ -179,21 +178,21 @@ data class StayUi(
     val backrestSupported: Boolean = false,
     /** Wall time of the last climate change (K1 hourglass emphasis window). */
     val lastClimateChangeMs: Long? = null,
-    /** Passenger seat heater level, island input only (HANDOFF 8.4). */
+    /** Passenger seat heater level, island input only. */
     val passengerSeatHeat: Int? = null,
-    /** No gear has been read yet since start: "차와 연결하는 중" instead of the driving glance (QA E4-5). */
+    /** No gear has been read yet since start: "차와 연결하는 중" instead of the driving glance. */
     val connecting: Boolean = false,
     /** First stay only, until the first climate change: "다이얼을 돌려 보세요" hint under the island. */
     val firstStayHint: Boolean = false,
     /** Minutes recirculation has held with the windows closed, once past 20 min (the circling cloud); else null. */
     val recircMinutes: Int? = null,
-    /** Director #5 (boat = car): trunk / charge port known open (unknown = closed on the picture, never guessed open). */
-    /** X-09: wiper lever on AUTO and actually wiping (QA I-2); manual Low/High/once never count. Picture only. */
+    /** Boat = car: trunk / charge port known open (unknown = closed on the picture, never guessed open). */
+    /** Wiper lever on AUTO and actually wiping; manual Low/High/once never count. Picture only. */
     val rain: Boolean = false,
     val trunkOpen: Boolean = false,
     val chargePortOpen: Boolean = false,
     /** The saved stay was too old or the battery changed: a new stay started (title "새로 시작했어요"). */
     val restartedFromStale: Boolean = false,
-    /** Monotonic time the car arrived in P after driving (HANDOFF 10.3 ① mooring); null = draw the end picture. */
+    /** Monotonic time the car arrived in P after driving (mooring); null = draw the end picture. */
     val moorAtMs: Long? = null,
 )

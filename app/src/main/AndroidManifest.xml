@@ -14,7 +14,7 @@
     <uses-feature android:name="android.hardware.faketouch" android:required="false" />
 
     <!--
-        Only what the shipped features read (QA G-7, FINDINGS M-02). All are normal-level:
+        Only what the shipped features read. All are normal-level:
         no runtime permission dialog. Pleos: SOC (CAR_ENERGY), climate,
         seats (heat, backrest, occupancy), windows, doors, cabin light.
     -->
@@ -28,7 +28,7 @@
     <uses-permission android:name="android.car.permission.CAR_INFO" />
     <uses-permission android:name="android.car.permission.CAR_ENERGY_PORTS" />
     <uses-permission android:name="android.car.permission.CAR_POWERTRAIN" />
-    <!-- Stay service (FINDINGS M-01): keeps signals alive while another app is in front. Normal. -->
+    <!-- Stay service: keeps signals alive while another app is in front. Normal. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
@@ -56,7 +56,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <!--
-                No "distractionOptimized" meta-data (FINDINGS M-03): every screen is park-only, so
+                No "distractionOptimized" meta-data: every screen is park-only, so
                 the system hides the app while driving. DrivingStateGate is a second layer.
             -->
         </activity>

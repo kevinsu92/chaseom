@@ -1,14 +1,13 @@
 package app.chaseom.ui.theme
 
-// 04_design Visual Polish Pass v1.2 (2026-11-11) — one world: island palette = UI palette.
-// Spec and the reason for every value: 04_design/POLISH_PASS.md (v1.2). Mock: 04_design/polish/polish.html.
+// One world: island palette = UI palette.
 // Drop this file next to PleosTokens.kt (which stays). Screens use these roles instead of raw sp/dp.
 //   Type   : 5 roles (hero, title, body, caption, picture label) + hero tail / estimate.
 //   Space  : 32 between blocks, 16 between related items, 8 between lines. Window margin 40 (Large) / 24 (Small).
 //   Radius : 16 inline (banner 12 is the one exception, inside the inline family), 28 container, pill.
 //   Colour : ink, navy (island water), amber (island sun), warning yellow / danger red (banners only). No blue, no green.
 //   Line break: Korean by word (Compose TextStyle(lineBreak = LineBreak.Paragraph.copy(wordBreak = LineBreak.WordBreak.Phrase)), API 33+;
-//               below 33 keep softWrap and avoid long unbroken runs). Never split a word (panel §4-②).
+//               below 33 keep softWrap and avoid long unbroken runs). Never split a word.
 //   Shadow : one level, only for the Small toast over the picture, day theme only.
 
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,12 +25,12 @@ object ChaseomUi {
     enum class Size { Large, Small }
 
     /* ---------------------------------------------------------------- Type */
-    // 03_engineering: Korean breaks by word (API 33+; older platforms ignore it and keep softWrap).
+    // Korean breaks by word (API 33+; older platforms ignore it and keep softWrap).
     private val Base = TextStyle(fontFamily = ChaseomFonts.family, fontFeatureSettings = "tnum",
         lineBreak = androidx.compose.ui.text.style.LineBreak.Paragraph.copy(wordBreak = androidx.compose.ui.text.style.LineBreak.WordBreak.Phrase))
 
-    // Pleos T-07: four role families (Headline, Title, Body, Label). Sizes are unchanged; a role's variants differ
-    // by weight only. T-03 / panel B2: the heaviest weight is Bold (700), never ExtraBold.
+    // Pleos: four role families (Headline, Title, Body, Label). Sizes are unchanged; a role's variants differ
+    // by weight only. The heaviest weight is Bold (700), never ExtraBold.
     private val Headline = Base.copy(fontWeight = FontWeight.Bold)
     private val TitleRole = Base.copy(fontWeight = FontWeight.SemiBold)
     private val BodyRole = Base.copy(fontWeight = FontWeight.Normal)
@@ -45,9 +44,9 @@ object ChaseomUi {
     /** "머물 수 있어요" after the number, on its baseline. */
     fun heroTail(s: Size) = TitleRole.copy(fontSize = if (s == Size.Large) 32.sp else 26.sp, lineHeight = 40.sp)
     /** "(추정)" = 40 % of the hero, Regular, text3. Same size wherever it follows a hero.
-     *  QA 11-11: every "(추정)" stays (17 lines, all different estimates). text3 #6E727B passes only on bg #F7F8FA / white (4.54:1);
+     *  Every "(추정)" stays (17 lines, all different estimates). text3 #6E727B passes only on bg #F7F8FA / white (4.54:1);
      *  on any darker grey surface use text2. */
-    fun estimate(s: Size) = LabelRole.copy(fontSize = if (s == Size.Large) 29.sp else 24.sp,   // Small 24 = the 24 sp floor (REFERENCES H3), not 40 %
+    fun estimate(s: Size) = LabelRole.copy(fontSize = if (s == Size.Large) 29.sp else 24.sp,   // Small 24 = the 24 sp floor, not 40 %
         lineHeight = 36.sp, fontWeight = FontWeight.Normal)
 
     /** Title: card first line, sheet title, toast. [status] = the status line (Medium, text2). */
@@ -56,12 +55,12 @@ object ChaseomUi {
     /** Body: description line under the hero, receipt rows (label Regular / value Medium), settings help. */
     val body = BodyRole.copy(fontSize = 26.sp, lineHeight = 34.sp)
     val bodyValue = body.copy(fontWeight = FontWeight.Medium)
-    /** Caption: cause line under the picture, card second line, source lines. 24 sp floor (DESIGN_SYSTEM 2). */
+    /** Caption: cause line under the picture, card second line, source lines. 24 sp floor. */
     val caption = LabelRole.copy(fontSize = 24.sp, lineHeight = 32.sp)
     val banner = caption.copy(fontWeight = FontWeight.SemiBold)
     /** Picture label: "설정 °C" and the sea rail (24 sp Bold, 24 dp line icon in front of each rail label). */
     val pictureLabel = LabelRole.copy(fontSize = 24.sp, lineHeight = 32.sp, fontWeight = FontWeight.Bold)
-    /** Driving glance keeps the DR sizes (DESIGN_SYSTEM 6.2): title 36, sub 30; app icon 160 dp above. */
+    /** Driving glance keeps the driving sizes: title 36, sub 30; app icon 160 dp above. */
     val glanceTitle = Headline.copy(fontSize = 36.sp, lineHeight = 44.sp)
     val glanceSub = BodyRole.copy(fontSize = 30.sp, lineHeight = 38.sp)
     /** Onboarding headline (Large 48 / Small 36). */
@@ -82,7 +81,7 @@ object ChaseomUi {
 
     /* ---------------------------------------------------------------- Sizes */
     val bannerHeight = 56.dp; val bannerBar = 6.dp; val bannerIcon = 28.dp; val bannerGap = 8.dp
-    val toastHeight = 48.dp; val dirCircle = 32.dp; val toastDirCircle = 28.dp   // v1.3: toast 48 fixed, text = caption 24 SemiBold
+    val toastHeight = 48.dp; val dirCircle = 32.dp; val toastDirCircle = 28.dp   // toast 48 fixed, text = caption 24 SemiBold
     val buttonHeight = 64.dp; val pillHeight = 48.dp; val touchMin = 76.dp   // visual 64 / 48, hit area always 76
     val cardBar = 8.dp; val cardPadH = 32.dp; val cardPadV = 24.dp; val cardOutline = 1.dp
     val iconInline = 28.dp; val iconPoint = 36.dp; val iconPointCircle = 64.dp; val iconButton = 40.dp; val glanceIcon = 160.dp
@@ -109,16 +108,16 @@ object ChaseomUi {
         bg = Color(0xFFF7F8FA), surface = Color.White, line = Color(0xFFE3E6EB), tint = Color(0x0D131417),
         text1 = Color(0xFF131417), text2 = Color(0xFF4A4E57), text3 = Color(0xFF6E727B),
         primary = navy, onPrimary = Color.White, selected = Color(0xFF131417), onSelected = Color.White,
-        safeBg = Color(0xFFFFC224), safeBar = Color(0xFFFFC224),   // v1.3: N0 back to the filled warning yellow (safety strength, QA)
-           // = warning token, same as the crate K2 outline (REFERENCES H1)
+        safeBg = Color(0xFFFFC224), safeBar = Color(0xFFFFC224),   // N0 filled warning yellow (safety strength)
+           // = warning token, same as the crate K2 outline
          safeFg = Color(0xFF131417),
-        dangerBg = Color(0xFFA8231C), dangerBar = Color(0xFFA8231C), dangerFg = Color.White,   // Pleos fit v3: #A8231C + white 7.19:1
+        dangerBg = Color(0xFFA8231C), dangerBar = Color(0xFFA8231C), dangerFg = Color.White,   // #A8231C + white 7.19:1
         toast = Color(0xF01C2129), onToast = Color.White, scrim = Color(0x730B0F14),
         pictureSkyTop = Color(0xFFC9E0F3),
     )
     val Night = Colors(
         bg = Color(0xFF0B0C0E), surface = Color(0xFF24272C), line = Color(0xFF2F3338), tint = Color(0x14FFFFFF),
-        text1 = Color(0xF5FFFFFF), text2 = Color(0xFFC3C7CE),   // white 96 % (REFERENCES H10 / AAOS)
+        text1 = Color(0xF5FFFFFF), text2 = Color(0xFFC3C7CE),   // white 96 % (AAOS)
          text3 = Color(0xFF9AA0A8),
         primary = Color(0xFF8DB4D9), onPrimary = Color(0xFF0F1D2E), selected = Color(0xFFF2F3F5), onSelected = Color(0xFF131417),
         safeBg = Color(0xFFFFC224), safeBar = Color(0xFFFFC224), safeFg = Color(0xFF131417),

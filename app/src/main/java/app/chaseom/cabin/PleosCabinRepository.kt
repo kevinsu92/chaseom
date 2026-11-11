@@ -150,7 +150,7 @@ class PleosCabinRepository(
                 val open = doorOpenFromPosition(value)
                 val apply = { set("door.$key", value) { it.withDoor(key, open) } }
                 // The receipt is built the moment the driver door opens, from the state at that moment.
-                // The light switch is polled once a second, so read it again first (D-1: a light switched
+                // The light switch is polled once a second, so read it again first (a light switched
                 // off just before the door opened must not show as "on").
                 if (key == "driver" && open == true && _state.value.driverDoorOpen != true) readLightThen(apply) else apply()
             }
@@ -388,7 +388,7 @@ class PleosCabinRepository(
                         { fail("readingLight", it) },
                     )
                 }
-                // X-09 wiper (02_platform 11.2): lever by polling, wiping state read in the same tick. A read
+                // Wiper: lever by polling, wiping state read in the same tick. A read
                 // failure leaves the value null, and null never counts as rain.
                 guard("wiper") {
                     v.getWiper().getCurrentWiperSwitch(
@@ -495,9 +495,9 @@ class PleosCabinRepository(
         private const val LIGHT_READ_TIMEOUT_MS = 300L
 
         /**
-         * D1 probe 2026-11-09: on the Pleos Connect 2.1.0 emulator the SDK reports `false` when the
+         * On the Pleos Connect 2.1.0 emulator the SDK reports `false` when the
          * Virtual Console says "Occupied" (and `true` for "Empty"), for both rear seats. Inverted
-         * so the demo matches the console. Real-car meaning to be confirmed by 02_platform.
+         * so the demo matches the console. Real-car meaning still to be confirmed.
          * Safe either way: the UI never shows "empty", and "check the rear seat" is always shown.
          */
         const val OCCUPANCY_SDK_INVERTED = true

@@ -1,25 +1,24 @@
 package app.chaseom.stay
 
 /**
- * "작은 날씨 섬" face of the stay screen (00_HQ/DECISIONS.md 2026-11-09 CEO decision,
- * 04_design/HANDOFF.md section 8, QA 08_ideation/qa_top10_check.md 10.2). Pure model, rendered by
+ * "작은 날씨 섬" face of the stay screen. Pure model, rendered by
  * ui/scenes/IslandView behind BuildConfig.KICK_ISLAND. [layers] is a 1:1 port of
- * 04_design/assets/island/island_state.js `islandLayers`, minus the inputs round 1 leaves out.
+ * the design prototype's island_state.js `islandLayers`, minus the inputs this version leaves out.
  *
  * Rules (tested in IslandTest):
- *  - P only: no island when not parked or in reduced mode (condition 10); leaving P unmounts the
+ *  - P only: no island when not parked or in reduced mode; leaving P unmounts the
  *    whole stay scene (SceneHost), measured fold <= 0.2 s.
  *  - Still picture by default: short one-shot transitions only inside [EMPHASIS_MS] after a
- *    climate change; no frame loop, nothing repeats (HANDOFF 8.6, QA L-4, FINDINGS E-02).
+ *    climate change; no frame loop, nothing repeats.
  *  - Notices and the receipt freeze it: changes snap to the end picture.
- *  - Day length shows at most [CAP_MINUTES] (M-1 / M-11 / QA L-5); the "(추정)" number stays on
- *    the hero line above the picture. The picture is decoration only (legend chip, QA L-6).
- *  - Round 1 inputs: climate and seat heaters only (QA D-07). Never inputs: rear occupancy,
- *    doors, windows (QA L-1, W-D1). Not in round 1: wiper (QA L-2, AUTO read pending), turn
- *    signal (QA D-05 deleted; also 02_platform: the blind-spot camera window covers the app),
- *    cabin/reading light. Always daytime; no fire, moon or stars (QA L-3).
+ *  - Day length shows at most [CAP_MINUTES]; the "(추정)" number stays on
+ *    the hero line above the picture. The picture is decoration only (legend chip).
+ *  - Inputs: climate and seat heaters only. Never inputs: rear occupancy,
+ *    doors, windows. Not used here: wiper (AUTO read pending), turn
+ *    signal (dropped: the blind-spot camera window covers the app),
+ *    cabin/reading light. Always daytime; no fire, moon or stars.
  */
-/** Sun size from the set temperature only (K2 no longer swaps the sun: the boat carries tomorrow, HQ 1-A'). */
+/** Sun size from the set temperature only (K2 no longer swaps the sun: the boat carries tomorrow). */
 enum class IslandSun(val layer: String) { S("is_sun_s"), M("is_sun_m"), L("is_sun_l") }
 
 data class IslandLayer(val id: String, val alpha: Float = 1f)
@@ -39,9 +38,9 @@ data class IslandState(
     val dayLength: Float,
     /** SOC at or under tomorrow's share (K2): band empty, amber crate outline. */
     val alert: Boolean,
-    /** Near tomorrow's share (K1): amber crate outline (HANDOFF 10.2). */
+    /** Near tomorrow's share (K1): amber crate outline. */
     val near: Boolean = false,
-    /** Inside the 1.6 s mooring window after arriving in P from driving, nothing on top (HANDOFF 10.3 ①). */
+    /** Inside the 1.6 s mooring window after arriving in P from driving, nothing on top. */
     val mooring: Boolean = false,
     /** Inside the transition window and nothing on top. */
     val animating: Boolean,
@@ -53,32 +52,32 @@ object Island {
     const val EMPHASIS_MS = 1_600L
     const val FADE_MS = 400
     const val MOTION_MS = 1_600
-    /** More moving layers than this at once -> crossfade only (HANDOFF 8.6). */
+    /** More moving layers than this at once -> crossfade only. */
     const val MAX_MOVING = 3
 
-    /** Layer alpha per seat-heat level 1..3 (HANDOFF 8.4). */
+    /** Layer alpha per seat-heat level 1..3. */
     val HEAT_ALPHA = floatArrayOf(0f, 0.45f, 0.7f, 1f)
 
-    /** Layers drawn once into a cached bitmap (HANDOFF 8.3, 10.7). The gull stays home in round 1. */
+    /** Layers drawn once into a cached bitmap. The gull is not drawn in this version. */
     val STATIC_LAYERS = listOf("is_sky", "is_island", "is_rock_l", "is_rock_r", "is_lighthouse", "is_pier", "is_gull")
 
-    /** HANDOFF 10.3 ① mooring: 1.0 s slide + 0.2 s rope + 0.4 s half bob. */
+    /** Mooring: 1.0 s slide + 0.2 s rope + 0.4 s half bob. */
     const val MOOR_MS = 1_600L
     const val MOOR_SLIDE_MS = 1_000
     const val MOOR_ROPE_MS = 200
     const val MOOR_BOB_MS = 400
-    /** HANDOFF 10.3 ① v5 (UXR E-3): twice the distance so the arrival is seen; the boat keeps its size.
+    /** Twice the distance so the arrival is seen; the boat keeps its size.
      *  Also used as the animation's 1 -> 0 progress scale; the drawn distance is [moorSlideUnits]. */
     const val MOOR_SLIDE_DP = 360f
-    /** Picture geometry (04_design extra-wide set): 2000 x 480 units, 960-space art shifted by 520. */
+    /** Picture geometry (extra-wide set): 2000 x 480 units, 960-space art shifted by 520. */
     const val PIC_W = 2000f
     const val PIC_H = 480f
     const val ART_OFF = 520f
-    /** Right end of the boat body in the 960 art space (HANDOFF 10.6 v3: x 706..946). */
+    /** Right end of the boat body in the 960 art space (x 706..946). */
     const val BOAT_RIGHT = 946f
 
     /**
-     * HANDOFF 10.3 ① v5: start offset in picture units = min(360, visible right edge - 946 - 8), so the boat
+     * Start offset in picture units = min(360, visible right edge - 946 - 8), so the boat
      * always starts inside the visible picture. The picture is Crop-scaled (cover) and centred in the area.
      * Full / Large windows give 360, Small (792 x 340 dp) about 85.
      */
@@ -98,7 +97,7 @@ object Island {
     /** Boat x offset (dp) at slide progress [f] (1 = start at sea, 0 = moored at the pier). */
     fun boatOffsetDp(f: Float, areaW: Float, areaH: Float): Float = f.coerceIn(0f, 1f) * moorSlideDp(areaW, areaH)
 
-    /** Wake alpha follows the distance left: 1 at the start, 0 in the end picture (QA v5). */
+    /** Wake alpha follows the distance left: 1 at the start, 0 in the end picture. */
     fun wakeAlpha(f: Float): Float = f.coerceIn(0f, 1f)
 
     /** Right edge of the boat in the area (dp) at progress [f], to check it starts inside the visible picture. */
@@ -107,23 +106,22 @@ object Island {
         val left = (areaW - PIC_W * k) / 2f
         return left + (ART_OFF + BOAT_RIGHT) * k + boatOffsetDp(f, areaW, areaH)
     }
-    /** The slide starts this long after the stay screen is visible, once N0, title and hint have settled
-     *  (HANDOFF 10.3 ① v3, UXR M-1/M-2, panel R14). */
+    /** The slide starts this long after the stay screen is visible, once N0, title and hint have settled. */
     const val MOOR_START_DELAY_MS = 500L
     /** Only a non-P state at least this long counts as "came back" (P->N->P toggles do not moor). */
     const val MOOR_MIN_AWAY_MS = 3_000L
-    /** HANDOFF 10.2/10.7 v3: the bob after climate changes moved to round 2 (UXR M-4: it pulls the eye off
-     *  the numbers). Kept behind this switch, off in B. */
+    /** The bob after climate changes is deferred (it pulls the eye off
+     *  the numbers). Kept behind this switch, off for now. */
     const val SWAY_ENABLED = false
-    /** HANDOFF 10.3 ②: one bob after the controls stop for this long; events during the bob are ignored. */
+    /** One bob after the controls stop for this long; events during the bob are ignored. */
     const val SWAY_DEBOUNCE_MS = 300L
     const val SWAY_MS = 1_200
     const val BOB_DP = 3f
 
     /**
-     * HANDOFF 10.2 v2: moor only when arriving in P after D/R, or after any non-P state that lasted at
+     * Moor only when arriving in P after D/R, or after any non-P state that lasted at
      * least [MOOR_MIN_AWAY_MS]. App start, coming back from the background, or P->N->P draw the end picture.
-     * The boat only slides in, bobs 3 dp and gets its rope: never tilts, sinks or leaves (QA I-6, R).
+     * The boat only slides in, bobs 3 dp and gets its rope: never tilts, sinks or leaves.
      */
     fun shouldMoor(awayFromParkMs: Long?, wasDrivingOrReverse: Boolean): Boolean =
         awayFromParkMs != null && (wasDrivingOrReverse || awayFromParkMs >= MOOR_MIN_AWAY_MS)
@@ -146,7 +144,7 @@ object Island {
     }
 
     fun state(ui: StayUi, nowMs: Long): IslandState? {
-        if (!ui.parked || !ui.policy.energyBudget) return null // condition 10, P only
+        if (!ui.parked || !ui.policy.energyBudget) return null // P only
         val hero = ui.hero ?: return null
         val c = ui.climate
         val power = c?.powerOn == true
@@ -187,7 +185,7 @@ object Island {
         if (s.heatDrv > 0) add(IslandLayer("is_rock_l_warm", HEAT_ALPHA[s.heatDrv]))
         if (s.heatPas > 0) add(IslandLayer("is_rock_r_warm", HEAT_ALPHA[s.heatPas]))
         add(IslandLayer("is_lighthouse"))
-        // HANDOFF 10.6: the boat is pier + body + rope (same picture as the old single layer).
+        // The boat is pier + body + rope (same picture as the old single layer).
         add(IslandLayer("is_pier"))
         add(IslandLayer("is_boat"))
         add(IslandLayer("is_rope"))

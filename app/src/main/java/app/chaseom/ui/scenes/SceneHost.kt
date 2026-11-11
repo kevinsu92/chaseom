@@ -17,9 +17,9 @@ import app.chaseom.ui.theme.PleosDimens
 /**
  * Scene router. Each scene is a self-contained composable in this package that only reads the
  * [app.chaseom.stay.StayUi] model and reports user intents through [StayActions], so scenes
- * can be added, swapped or reordered without touching the engine (HQ: modular scene structure).
+ * can be added, swapped or reordered without touching the engine (modular scene structure).
  *
- * Order of precedence (04_design/FLOWS.md 1):
+ * Order of precedence:
  *  1. not PARKED -> [GlanceScene] only (no numbers, no buttons; all cards closed)
  *  2. parked pages: onboarding / settings / about
  *  3. stay scene by mode policy (H full / R reduced), then overlays: receipt, notice card on top
@@ -32,7 +32,7 @@ fun SceneHost(container: AppContainer) {
     val actions = StayActions(stay)
     Box(Modifier.fillMaxSize().background(Pleos.colors.backgroundPrimary)) {
         if (!ui.parked) {
-            // QA E4-5: before the first gear value arrives, say "connecting" instead of "driving".
+            // Before the first gear value arrives, say "connecting" instead of "driving".
             if (ui.connecting) ConnectingScene() else GlanceScene(firstRun = stay.firstRun)
             return@Box
         }
@@ -47,7 +47,7 @@ fun SceneHost(container: AppContainer) {
                 if (ui.policy.mode == AppMode.FULL) StayFullScene(ui, actions, content) else StayReducedScene(ui, actions, content)
                 ui.receipt?.let { ReceiptOverlay(it, ui.policy, actions, ui) }
                 ui.notice?.let { NoticeOverlay(it, ui.policy, actions) }
-                // QA ROUND1B_GATE §10-①: the N0 safety banner stays at full contrast above any scrim.
+                // The N0 safety banner stays at full contrast above any scrim.
                 if (bannerAboveScrim(ui)) androidx.compose.foundation.layout.Column(content) { N0Banner(ui, actions) }
             }
         }

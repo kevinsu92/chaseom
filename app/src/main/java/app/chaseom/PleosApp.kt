@@ -20,7 +20,7 @@ class PleosApp : Application() {
 
 /**
  * Connects the vehicle signals when the app first comes to the foreground and keeps them for the
- * life of the process (FINDINGS M-01): a stay usually outlasts the time our screen is in front
+ * life of the process: a stay usually outlasts the time our screen is in front
  * (the driver opens music or navigation), and the receipt / backrest notice must still be decided
  * from live signals. Listeners are cheap ON_CHANGE subscriptions plus two 1 Hz polls; the platform
  * reclaims everything when it kills the process (Suspend after IGN OFF).

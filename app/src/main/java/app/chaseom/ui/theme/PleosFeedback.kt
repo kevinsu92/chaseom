@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Pleos I-02 (required): a pressed touch target shrinks to 95 % and takes the mode's pressed fill
+ * Pleos (required): a pressed touch target shrinks to 95 % and takes the mode's pressed fill
  * (buttonBasicPressed: day #1A131417, night #29FFFFFF), drawn over its own background. One modifier for every
  * button, close and chip; no ripple (the fill is the feedback, <= 100 ms in and out).
  */
@@ -50,7 +50,7 @@ fun Modifier.pressable(
 internal const val PRESSED_SCALE = 0.95f
 
 /**
- * Pleos S-01 / S-02 shadows drawn as specified (Y offset, blur, alpha), not Compose elevation:
+ * Pleos Level 1 / Level 2 shadows drawn as specified (Y offset, blur, alpha), not Compose elevation:
  * Level 1 = Y 6 / Blur 24 / 8 %; Level 2 = Y 8 / Blur 32 / 16 % + Y 2 / Blur 2 / 8 %.
  * Put it before the clip and the background of the surface it belongs to. Day only (night surfaces have none).
  */

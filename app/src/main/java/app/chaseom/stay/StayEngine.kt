@@ -2,7 +2,7 @@ package app.chaseom.stay
 
 import app.chaseom.cabin.CabinState
 
-/** Timing rules (04_design/HANDOFF.md 3, QA CONDITIONS). Tests may shorten them; release never does. */
+/** Timing rules. Tests may shorten them; release never does. */
 data class StayTiming(
     val bannerExpandedMs: Long = 10_000L,
     val hourMs: Long = 60 * 60_000L,
@@ -15,7 +15,7 @@ data class StayTiming(
     val toastBatchMs: Long = 1_200L,
     val toastShowMs: Long = 3_000L,
     val receiptMinStayMs: Long = 60_000L,
-    /** A saved stay is continued only if the app comes back within this time (QA G-4 / E4-1b). */
+    /** A saved stay is continued only if the app comes back within this time. */
     val resumeWindowMs: Long = 10 * 60_000L,
     /** Night = local hour in [nightStartHour, 24) or [0, nightEndHour). */
     val nightStartHour: Int = 22,
@@ -25,8 +25,8 @@ data class StayTiming(
 )
 
 /**
- * Persisted part of a stay (QA G-4: restore after the process is recreated). All times are the
- * controller's monotonic clock (elapsed since boot), so changing the wall clock moves nothing (E4-4).
+ * Persisted part of a stay (restored after the process is recreated). All times are the
+ * controller's monotonic clock (elapsed since boot), so changing the wall clock moves nothing.
  */
 data class StaySession(
     val startMs: Long,
@@ -43,7 +43,7 @@ data class StaySession(
 class StayEngine(
     private val timing: StayTiming = StayTiming(),
     restored: StaySession? = null,
-    /** When the saved stay was last seen running, and the SOC then (QA E4-1). */
+    /** When the saved stay was last seen running, and the SOC then. */
     restoredSeenAtMs: Long? = null,
     restoredSocAtSave: Int? = null,
 ) {
@@ -145,7 +145,7 @@ class StayEngine(
         updateReceipt(cabin, settings, policy, nowMs)
 
         // Passenger seat heat drives only the island (no toast, no energy); it still opens the
-        // short transition window like any climate change (HANDOFF 8.6).
+        // short transition window like any climate change.
         val pas = cabin.passengerSeatHeat
         if (prevPassengerHeat != null && pas != null && pas != prevPassengerHeat) lastClimateChangeMs = nowMs
         if (pas != null) prevPassengerHeat = pas
@@ -200,7 +200,7 @@ class StayEngine(
     }
 
     /**
-     * QA E4-1: a stay saved before the process died is continued only when the app is back within
+     * A stay saved before the process died is continued only when the app is back within
      * [StayTiming.resumeWindowMs] (and not after a reboot: the monotonic clock restarted) and the
      * battery did not rise meanwhile (charged = a different stay). Otherwise a new stay starts.
      */
@@ -216,7 +216,7 @@ class StayEngine(
         val socAtSave = pendingSocCheck ?: return
         val soc = cabin.socPercent ?: return
         pendingSocCheck = null
-        // Charged, or a different battery state than when last seen: a different stay (QA REVIEW_COPY_B).
+        // Charged, or a different battery state than when last seen: a different stay.
         if (soc > socAtSave || socAtSave - soc > RESUME_SOC_TOLERANCE) {
             if (session != null) restartedFromStale = true
             session = null
@@ -317,7 +317,7 @@ class StayEngine(
         }
         changes.forEach { ch -> batchItems.removeAll { it::class == ch::class }; batchItems += ch }
         // Drawn immediately on the callback, then refined while the 1.2 s batch is open.
-        // QA M-11: both values are cut at the 3-hour display cap before the difference is taken,
+        // Both values are cut at the 3-hour display cap before the difference is taken,
         // so a toast can never show an hours-long delta.
         val cap = EnergyModel.DISPLAY_CAP_MINUTES
         val before = batchBaseMinutes!!.coerceAtMost(cap)
@@ -345,7 +345,7 @@ class StayEngine(
     }
 
     /**
-     * Pleos fit v3 P8 'circling cloud' (QA AIR_SAFETY section 1, verdict 2): minutes the same condition as the air
+     * 'Circling cloud': minutes the same condition as the air
      * card has held (HVAC on, recirculation on, every window known closed), once it has held [StayTiming.airAfterMs].
      * Unlike the card it is not snoozed by closing the card: it is a fact on the picture, not a prompt. It never
      * grows or darkens with time (one fixed layer) and leaves without any reward when the condition ends. Manual
@@ -365,7 +365,7 @@ class StayEngine(
             val elapsed = nowMs - since
             return if (elapsed >= timing.airAfterMs && nowMs >= airSnoozeUntil) (elapsed / 60_000L).toInt() else null
         }
-        airSinceMs = null // disappears quietly: there is no "air is fine" state (condition 11)
+        airSinceMs = null // disappears quietly: there is no "air is fine" state
         return null
     }
 
@@ -395,7 +395,7 @@ class StayEngine(
             s?.socAtStart?.let { start ->
                 val kwh = EnergyModel.usedKwh(start, soc, cap)
                 val stayedH = ((nowMs - (s.startMs)).coerceAtLeast(60_000L)) / 3_600_000f
-                // QA REVIEW_UXR_B_v2 (E-1), in this order: charged, <= 1 %p (integer SOC resolution),
+                // In this order: charged, <= 1 %p (integer SOC resolution),
                 // >= 2 %p faster than any parked climate load, otherwise the number.
                 val drop = start - soc
                 val kind = when {

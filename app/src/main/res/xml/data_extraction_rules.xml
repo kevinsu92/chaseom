@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Nothing leaves the car (QA G-6): no cloud backup, no device-to-device transfer of the stay or settings. -->
+<!-- Nothing leaves the car: no cloud backup, no device-to-device transfer of the stay or settings. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" />

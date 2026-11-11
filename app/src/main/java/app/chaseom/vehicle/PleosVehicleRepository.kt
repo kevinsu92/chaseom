@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.update
 /**
  * Gear from the documented AAOS property `GEAR_SELECTION` (CAR_POWERTRAIN, normal permission), EV SOC
  * from the Pleos Vehicle SDK. The Pleos `Vehicle.getGear()` domain is not in the public Pleos
- * documentation, so it is not used (02_platform API_MAP: the official alternative is GEAR_SELECTION).
+ * documentation, so it is not used (the official alternative is GEAR_SELECTION).
  * Other cabin signals live in PleosCabinRepository.
  *
  * Signatures verified against Vehicle-2.3.2.aar (class files) on 2026-11-08.

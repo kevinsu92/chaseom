@@ -18,8 +18,8 @@ data class ClimateSetting(
  *
  * Neither the Pleos SDK nor AAOS exposes per-item climate power and the emulator does not report EV
  * efficiency, so the app multiplies the car's own climate state by a published coefficient table.
- * Sources and grades: docs/ENERGY_MODEL.md (same table as the proposal's "숫자 근거표",
- * 01_strategy PRODUCT_SPEC 4.2, QA COEFF judgement). Heating assumes -10 C outside (no outside
+ * Sources and grades: docs/ENERGY_MODEL.md (same table as the proposal's "숫자 근거표").
+ * Heating assumes -10 C outside (no outside
  * temperature signal), so the app labels the estimate "영하 10°C 기준".
  */
 object EnergyModel {
@@ -45,7 +45,7 @@ object EnergyModel {
     /** Keep share = tomorrow's need x 1.2 (S1-b, "여유분 20%"). */
     const val KEEP_FACTOR = 1.2f
 
-    /** Display cap (QA L-A2): above this the hero says "3시간 이상" (QA M-1). */
+    /** Display cap: above this the hero says "3시간 이상". */
     const val DISPLAY_CAP_MINUTES = 180
 
     fun efficiency(vehicleKmPerKwh: Float?): Float =
@@ -89,11 +89,11 @@ object EnergyModel {
     fun coveredKm(socPercent: Int, capacityKwh: Float, kmPerKwh: Float): Int =
         floor(socPercent / 100f * capacityKwh * kmPerKwh / KEEP_FACTOR).toInt().coerceAtLeast(0)
 
-    /** H·X: X1..X3 (04_design/FLOWS.md 4), biggest gain >= [MIN_GAIN_MINUTES], skipping [dismissed]. */
+    /** H·X: X1..X3, biggest gain >= [MIN_GAIN_MINUTES], skipping [dismissed]. */
     fun exchange(
         soc: Int, capacityKwh: Float, keepPercent: Float, current: ClimateSetting, dismissed: Set<ExchangeRule>,
     ): Exchange? {
-        // QA M-11: gains are measured on the 3-hour-capped values. Already at/above the cap -> gain 0 -> no card.
+        // Gains are measured on the 3-hour-capped values. Already at/above the cap -> gain 0 -> no card.
         fun minutes(s: ClimateSetting) = minutesToKeep(soc, keepPercent, capacityKwh, drawKw(s)).coerceAtMost(DISPLAY_CAP_MINUTES)
         val base = minutes(current)
         val temp = current.setTempC

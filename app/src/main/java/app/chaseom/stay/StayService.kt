@@ -16,7 +16,7 @@ import app.chaseom.R
 /**
  * Foreground service held only while a stay is running (gear P). It keeps the process, and so the
  * vehicle listeners and [StayController], alive while the driver uses another app, so the exit
- * receipt and the 1-hour / backrest notices are still decided from live signals (FINDINGS M-01).
+ * receipt and the 1-hour / backrest notices are still decided from live signals.
  * It does no work itself. Type "specialUse" (no other FGS type matches "watch parked-car signals").
  *
  * No POST_NOTIFICATIONS runtime request: on API 33+ the ongoing notification may then be hidden,

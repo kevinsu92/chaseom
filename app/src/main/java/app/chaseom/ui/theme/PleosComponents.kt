@@ -1,7 +1,7 @@
 package app.chaseom.ui.theme
 
-// Reference implementation of 04_design/COMPONENTS.md. Engineering may restyle internals
-// but must keep sizes, colors and the driving rules (DR-xx in DESIGN_SYSTEM.md).
+// Reference implementation of the design components. Internals may be restyled,
+// but sizes, colors and the driving rules must stay.
 
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.graphicsLayer
@@ -48,7 +48,7 @@ import kotlinx.coroutines.delay
 /* ------------------------------------------------------------- BigButton */
 
 enum class ButtonSize(val height: Dp, val minWidth: Dp, val icon: Dp) {
-    /** Allowed while driving (T-2). */
+    /** Allowed while driving. */
     Large(PleosDimens.buttonLarge, PleosDimens.touchDrivingMinWidth, PleosDimens.iconInButton),
     /** Parked screens. */
     Medium(PleosDimens.buttonMedium, 120.dp, 32.dp),
@@ -73,7 +73,7 @@ fun BigButton(
     val pressed by interaction.collectIsPressedAsState()
     val (bg, fg) = when {
         !enabled -> c.buttonFilledDisabled to c.textQuaternary
-        // POLISH_PASS v1.2 §0.3: primary = island navy (no blue), selected pill = ink.
+        // Primary = island navy (no blue), selected pill = ink.
         kind == ButtonKind.Primary -> cui().let { it.primary to it.onPrimary }
         kind == ButtonKind.Filled -> cui().let { it.selected to it.onSelected }
         else -> (if (pressed) c.buttonBasicPressed else c.buttonBasicEnabled) to c.textPrimary
@@ -82,7 +82,7 @@ fun BigButton(
         modifier = modifier
             .defaultMinSize(minWidth = size.minWidth, minHeight = size.height)
             .height(size.height)
-            // Pleos I-02: pressed = 95 % and the mode's pressed fill over the button (every kind).
+            // Pleos: pressed = 95 % and the mode's pressed fill over the button (every kind).
             .graphicsLayer { val sc = if (pressed && enabled) PRESSED_SCALE else 1f; scaleX = sc; scaleY = sc }
             .clip(RoundedCornerShape(50))
             .background(bg)
@@ -159,7 +159,7 @@ fun InfoCard(
 enum class GlanceState { Idle, OnTime, Missed, NotRecording }
 
 /**
- * Non-interactive driving widget (DR-01, DR-10). One key value + max 2 supporting lines.
+ * Non-interactive driving widget. One key value + max 2 supporting lines.
  * [statusIcon] is drawn on the filled circle; [label] <= 10 chars, [supporting] <= 20 chars.
  */
 @Composable
@@ -210,7 +210,7 @@ fun GlanceWidget(
 
 enum class AlertLevel { Info, Caution, Danger }
 
-/** Driving-related alerts only (DR-12). Auto hides after 6s while driving (no close button). */
+/** Driving-related alerts only. Auto hides after 6s while driving (no close button). */
 @Composable
 fun AlertBanner(
     text: String,

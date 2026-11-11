@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Engineering-owned strings. Stay UI wording lives in strings_stay.xml (04_design + 05_qa).
+<!-- Engineering-owned strings. Stay UI wording lives in strings_stay.xml.
      Both files are checked by WordingRulesTest. -->
 <resources>
     <!-- app_name (차섬) comes from app.label in gradle.properties (build.gradle.kts resValue). -->
@@ -11,13 +11,12 @@
     <string name="win_rear_right">뒷좌석 오른쪽</string>
     <string name="list_sep">, </string>
 
-    <!-- Foreground service notification (FINDINGS M-01) -->
+    <!-- Foreground service notification -->
     <string name="svc_channel">머무는 중</string>
     <string name="svc_title">머무는 중</string>
-    <!-- FINDINGS E-04 wording -->
     <string name="svc_text">머무는 중 · 떠날 때 영수증을 보여 드려요</string>
 
-    <!-- About: coefficient source line (engineering assumptions until 02_platform confirms) -->
+    <!-- About: coefficient source line (engineering assumptions until confirmed on a real car) -->
     <string name="about_coeff">소비 계수 (출처, 영하 10°C 기준 추정): 기본 0.30kW (INL 보조부하 측정) · 난방 2.3kW × (설정온도 + 10) / 32 (ADAC 2022) · 냉방 2.0kW(사용자 보고 상단값) · 내기순환 난방 × 0.76 · 풍량 단당 0.03kW · 열선 1·2·3단 0.049·0.066·0.100kW (MDPI 2023) · 전비 5km/kWh(상온 상한, 겨울엔 더 낮을 수 있음)</string>
     <string name="about_backrest_none">이 차는 등받이 각도를 읽을 수 없어 등받이 고지를 쓰지 않아요</string>
 

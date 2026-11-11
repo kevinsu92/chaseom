@@ -2,7 +2,7 @@ package app.chaseom.ui.scenes
 
 import app.chaseom.R
 
-/** Generated from 04_design/pleos_fit layers (v3.2.1 manifest + v3/extra/night_sun_manifest.json): each layer is cropped to its drawn area; x, y = its top-left in the canvas. */
+/** Generated from the design layer set (layer manifest + night_sun_manifest.json): each layer is cropped to its drawn area; x, y = its top-left in the canvas. */
 internal object H1Layers {
     val L = mapOf(
         "base" to H1Layer(R.drawable.isl_l_base, 0f, 0f),

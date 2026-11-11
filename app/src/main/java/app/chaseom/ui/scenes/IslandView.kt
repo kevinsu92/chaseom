@@ -86,7 +86,7 @@ import kotlin.math.roundToInt
 internal data class H1Layer(val id: Int, val x: Float, val y: Float)
 
 /**
- * The two H1 layer sets (04_design art_v3/ART_H.md section 8): Large 1600x600 for windows >= 1200 dp,
+ * The two H1 layer sets: Large 1600x600 for windows >= 1200 dp,
  * Small 960x600 for the 1:1 split (about 840 dp). Label anchors come from the H1 renderer art_h.html (d=4).
  */
 internal class H1Set(
@@ -100,7 +100,7 @@ internal class H1Set(
     val batX: Float, val batY: Float,
     val buoyX: Float, val buoyY: Float, val buoyAnchor: Float,
     val keepX: Float, val keepY: Float, val keepAnchor: Float,
-    /** POLISH v1.4 §0.9-①: picture scale about the bottom-right corner (water line fixed). */
+    /** Picture scale about the bottom-right corner (water line fixed). */
     val zoom: Float = 1f,
     /** Box height over the set's own ratio (the zoomed picture's top sky is cropped above this). */
     val boxGrow: Float = 1f,
@@ -109,50 +109,50 @@ internal class H1Set(
     /** Canvas y of the water surface per step 1..5 (layers manifest water_top_y_by_step). */
     val waterTop: FloatArray get() = if (w == 1600f) floatArrayOf(520f, 480f, 440f, 400f, 360f) else floatArrayOf(480f, 456f, 432f, 408f, 384f)
     companion object {
-        val Large = H1Set(H1Layers.L, 1600f, 40f, 1450f, 82f, // Pleos fit v3: sun higher (108 -> 82)
+        val Large = H1Set(H1Layers.L, 1600f, 40f, 1450f, 82f, // sun higher (108 -> 82)
             batX = 40f, batY = 569f, buoyX = 1466f, buoyY = 569f, buoyAnchor = 0.5f, keepX = 1172f, keepY = 569f, keepAnchor = 0.5f,
-            zoom = 1.08f, boxGrow = 1.08f) // POLISH v1.6: one scale per window size; the whole zoomed picture fits
-        // POLISH v1.8 / layers v1.12: Small rail line 1 = battery (start) + buoys (end at 932), line 2 = crates.
-        val Small = H1Set(H1Layers.S, 960f, 24f, 836f, 92f, // Pleos fit v3: 118 -> 92
+            zoom = 1.08f, boxGrow = 1.08f) // one scale per window size; the whole zoomed picture fits
+        // Small rail line 1 = battery (start) + buoys (end at 932), line 2 = crates.
+        val Small = H1Set(H1Layers.S, 960f, 24f, 836f, 92f, // sun 118 -> 92
             batX = 28f, batY = 503f, buoyX = 932f, buoyY = 503f, buoyAnchor = 1f, keepX = 28f, keepY = 551f, keepAnchor = 0f)
-        /** POLISH v1.8: the Small picture box fills the height left on screen, at least this tall. */
+        /** The Small picture box fills the height left on screen, at least this tall. */
         val SMALL_MIN_DP = 560f
-        /** Sky above a picture that is shorter than its box, and the sea under its lower 30 % (no seam, POLISH v1.6). */
-        val SKY_TOP = Color(0xFFF5F6F8) // Pleos fit v3: the sky top is the page colour (the picture melts into it)
-        val SEA_DEEP = Color(0xFF3B536E) // Pleos fit v3 water bottom
+        /** Sky above a picture that is shorter than its box, and the sea under its lower 30 % (no seam). */
+        val SKY_TOP = Color(0xFFF5F6F8) // The sky top is the page colour (the picture melts into it)
+        val SEA_DEEP = Color(0xFF3B536E) // water bottom
         /** Sun disc radius per size (S / M / L), for the "설정 °C" label next to it. */
-        val SUN_R = floatArrayOf(28f, 44f, 64f) // H1 v1.7 / v1.9
+        val SUN_R = floatArrayOf(28f, 44f, 64f)
     }
 }
 
-/** Sun radius change (POLISH v1.4 §0.10): 600 ms, cubic-bezier(0, 0, 0.2, 1), only across an S/M/L step. */
+/** Sun radius change: 600 ms, cubic-bezier(0, 0, 0.2, 1), only across an S/M/L step. */
 internal const val SUN_MS = 600
-/** Sun glow pulse (POLISH v1.6 (b), QA conditional PASS): 200 ms, glow only, within one step, at most once per 1.2 s. */
+/** Sun glow pulse: 200 ms, glow only, within one step, at most once per 1.2 s. */
 internal const val GLOW_MS = 200
 internal const val GLOW_GAP_MS = 1_200L
-internal const val GLOW_EXTRA = 0.6f // QA ROUND1B_GATE: glow 1 -> 1.6 PASS (glow only, colour unchanged)
+internal const val GLOW_EXTRA = 0.6f // glow 1 -> 1.6 (glow only, colour unchanged)
 
-/** What the picture shows; changes are batched and cross-faded (platform ISLAND_V2_SIGNALS, MOTION v3). */
+/** What the picture shows; changes are batched and cross-faded. */
 internal data class H1Pic(val sun: Int, val wind: Int, val level: Int, val buoys: Int, val k2: Boolean, val air: Boolean = false,
                           val rain: Boolean = false) {
     companion object {
-        // Director #5 (boat = car) is off for round 1 (panel PLEOS_FIT_REVIEW section 7, V-05): the cable read as
+        // Boat = car (trunk hatch, charge cable) is off: the cable read as
         // "charging" for a port that is only open, and the hatch is ~25 px and repeats the Pleos 3D car.
         fun of(i: IslandInfo) = H1Pic(i.sunLevel, i.wind, i.waterStep + 1, i.buoys, i.crateOutline, i.cloud,
             rain = app.chaseom.BuildConfig.KICK_RAIN && i.rain)
     }
 }
 
-/** Window-width rule (ISLAND_REDESIGN 3.1): below 1200 dp the Small set. */
+/** Window-width rule: below 1200 dp the Small set. */
 internal fun h1SetFor(widthDp: Float): H1Set = if (widthDp >= 1200f) H1Set.Large else H1Set.Small
 
 /** Picture batching after the last input (numbers and toast still change at once). */
 private const val BATCH_MS = 300L
-/** Water step change (MOTION v3); other changes use [Island.FADE_MS]. */
+/** Water step change; other changes use [Island.FADE_MS]. */
 private const val WATER_MS = 600
 
 /**
- * Information island, H1 art (04_design art_v3 layers_h1). Each element has one meaning (IslandInfo):
+ * Information island, H1 art. Each element has one meaning (IslandInfo):
  * sun size = set temperature, buoys = stay time, water = battery (5 steps), crate frame = tomorrow's share.
  * Labels are screen text (24 sp) laid on the picture, never baked into it. Bitmaps are decoded once and
  * drawn as they are; no frame loop: with no value change nothing is redrawn.
@@ -161,7 +161,7 @@ private const val WATER_MS = 600
 fun IslandPanel(
     ui: StayUi,
     modifier: Modifier = Modifier,
-    /** Drawn inside the top-left sky of the picture, never over the "설정 °C" label (HANDOFF 9.6 v7 Small toast). */
+    /** Drawn inside the top-left sky of the picture, never over the "설정 °C" label (Small toast). */
     pictureTop: @Composable () -> Unit = {},
     cards: @Composable () -> Unit = {},
 ) {
@@ -171,7 +171,7 @@ fun IslandPanel(
     val info = IslandInfo.of(ui, water[0].takeIf { it >= 0 }) ?: return
     water[0] = info.waterStep
     val ctx = LocalContext.current
-    // System animation scale 0 -> picture swaps without transitions (HANDOFF 8.6 stop condition 5).
+    // System animation scale 0 -> picture swaps without transitions.
     val animOff = remember {
         runCatching { Settings.Global.getFloat(ctx.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
             .getOrDefault(false)
@@ -197,8 +197,8 @@ fun IslandPanel(
         ""
     }
     val night = isSystemInDarkTheme()
-    // POLISH_PASS v1.2 §0.2: picture -> 16 -> cause line -> 32 -> cards.
-    // QA gate 4 D-1: with cards the whole block must fit the window, so the picture takes only the height
+    // Picture -> 16 -> cause line -> 32 -> cards.
+    // With cards the whole block must fit the window, so the picture takes only the height
     // left after what is under it (measured), never below 75 % of its natural height; the sky side gives.
     var belowH by remember { mutableFloatStateOf(0f) }
     Column(modifier) {
@@ -207,44 +207,44 @@ fun IslandPanel(
             // Large: card width, at most 1760 dp so a full-screen window keeps the picture under 660 dp tall.
             val picW: Dp = if (set === H1Set.Large) minOf(maxWidth, 1760.dp) else maxWidth
             val k = picW.value / set.w // dp per canvas px
-            // Pleos fit v3.2.1: no outline at night (it read as a 1 px seam); see the night light below.
+            // No outline at night (it read as a 1 px seam); see the night light below.
             val outline = Modifier
-            // POLISH v1.8: on Small without cards the picture box fills the height left on screen (min 560 dp, 24 dp
+            // On Small without cards the picture box fills the height left on screen (min 560 dp, 24 dp
             // bottom margin below the cause line); the picture stays 1.0x, bottom-aligned, with plain sky above.
             val natural = picW * (set.h / set.w) * set.boxGrow
             val density = LocalDensity.current
             val windowH = with(density) { LocalWindowInfo.current.containerSize.height.toDp() }
             var topInWindow by remember { mutableFloatStateOf(Float.NaN) }
-            // Panel §7-④: Large without cards fills the height left too (never below its natural height).
+            // Large without cards fills the height left too (never below its natural height).
             val fill = ui.exchange == null && ui.airMinutes == null && !ui.seatHeatLong
-            // Critique final 2 ②: the first-stay hint is one caption line under the cause line; the picture fills around it.
+            // The first-stay hint is one caption line under the cause line; the picture fills around it.
             val hintH = if (ui.firstStayHint) ChaseomUi.related + 32.dp else 0.dp
-            // Pleos fit v3 P7: on Small the caption row is two lines (legend, then the cause chip).
+            // On Small the caption row is two lines (legend, then the cause chip).
             val chipLineH = (if (set === H1Set.Small) ChaseomUi.line + 32.dp else 0.dp) +
                 (if (ui.recircMinutes != null) ChaseomUi.line + 32.dp else 0.dp) +
                 (if (app.chaseom.BuildConfig.KICK_RAIN && ui.rain) ChaseomUi.line + 32.dp else 0.dp)
             val minH = if (set === H1Set.Small) H1Set.SMALL_MIN_DP.dp else natural
             val filled = if (!fill || topInWindow.isNaN()) natural else
                 maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH - chipLineH)
-            // Panel APP_GAP_TO_85 §10-4: Small without cards fills the height left (sky side only; the picture
+            // Small without cards fills the height left (sky side only; the picture
             // stays at 1.0x across, so the buoy x 955/960 limit is untouched). Sun and wind lift, see skyLiftFor.
             val boxH = if (fill || topInWindow.isNaN() || belowH <= 0f) filled else {
                 val left = windowH - with(density) { topInWindow.toDp() } - with(density) { belowH.toDp() } - 24.dp
                 minOf(natural, maxOf(natural * 0.75f, left))
             }
-            // Director #1 (HQ revision): arriving in P, the whole picture block (sky, island, water, buoys together,
+            // Arriving in P, the whole picture block (sky, island, water, buoys together,
             // so the water never seems to drop) rises 24 dp -> 0 and fades in, 300 ms, cubic-bezier(0, 0, 0.2, 1),
             // once per arrival, the first time it is not covered (a night notice opening the stay is read first),
             // within 2 min of arriving; never with animations off. Leaving P still folds at once.
             val rise = rememberRise(ui.moorAtMs, covered = ui.notice != null || ui.receipt != null, enabled = !animOff)
             Box(
-                // POLISH v1.6: the whole picture is clipped once here (no per-layer clip).
+                // The whole picture is clipped once here (no per-layer clip).
                 Modifier.width(picW).height(boxH).onGloballyPositioned { topInWindow = it.positionInWindow().y }
                     .graphicsLayer { translationY = (1f - rise) * RISE_DP.dp.toPx(); alpha = rise }
                     .clip(ChaseomUi.rContainer).then(outline)
                     .semantics { contentDescription = cd; liveRegion = LiveRegionMode.Polite },
             ) {
-                // Critique final ①: in a taller Small box the sun (and its label) sit at 24 % and the wind at 36 % of
+                // In a taller Small box the sun (and its label) sit at 24 % and the wind at 36 % of
                 // the box height. The sun's position carries no meaning; only its size does.
                 val skyLift = if (boxH != natural) skyLiftFor(set, k * set.zoom, boxH.value) else SkyLift.NONE
                 val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize(), sunMotion = !animOff && s.animating,
@@ -258,15 +258,15 @@ fun IslandPanel(
             }
         }
         Column(Modifier.fillMaxWidth().onGloballyPositioned { belowH = it.size.height.toFloat() }) {
-        // Pleos fit v3 P7 (UXR option A): no text on the picture. One caption row under it = legend swatches
-        // (picture shapes, no numbers) + the cause chip (QA M-3 wording, always shown) at the right end.
+        // No text on the picture. One caption row under it = legend swatches
+        // (picture shapes, no numbers) + the cause chip (always shown) at the right end.
         // Small: the chip goes to a second line.
         Spacer(Modifier.height(ChaseomUi.related))
         val k = cui()
         val small = h1SetFor(with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value }) === H1Set.Small
         val chip: @Composable () -> Unit = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Pleos fit: legend and chip icons at 32 dp (48-grid icon, 2 dp line).
+                // Legend and chip icons at 32 dp (48-grid icon, 2 dp line).
                 androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_info), null,
                     tint = k.text2, modifier = Modifier.size(32.dp))
                 Spacer(Modifier.width(ChaseomUi.line))
@@ -281,8 +281,8 @@ fun IslandPanel(
                 LegendItem(Swatch.CRATE, stringResource(R.string.is_lg_keep))
             }
         }
-        // The cloud item exists only while the cloud is drawn (QA verdict 2); its own line under the legend.
-        // X-09: the far-rain item likewise, on its own line (QA verdict 12/15: "먼 비 = 와이퍼 AUTO 작동").
+        // The cloud item exists only while the cloud is drawn; its own line under the legend.
+        // The far-rain item likewise, on its own line ("먼 비 = 와이퍼 AUTO 작동").
         val showRain = app.chaseom.BuildConfig.KICK_RAIN && ui.rain
         val cloudLine: @Composable () -> Unit = {
             ui.recircMinutes?.let {
@@ -308,20 +308,20 @@ fun IslandPanel(
             cloudLine()
         }
         if (ui.firstStayHint) {
-            // Critique final 2 ②: no chip; one caption line like the cause line (28 dp fan, 24 Medium #4A4E57).
-            // Panel §10-5: the fan is ink #4A4E57, not amber (amber = a value the user changed).
+            // No chip; one caption line like the cause line (28 dp fan, 24 Medium #4A4E57).
+            // The fan is ink #4A4E57, not amber (amber = a value the user changed).
             Spacer(Modifier.height(ChaseomUi.related))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_fan), null,
                     tint = Color(0xFF4A4E57), modifier = Modifier.size(ChaseomUi.iconInline))
                 Spacer(Modifier.width(ChaseomUi.line))
-                // QA REVIEW_COPY_B 5 (UXR E-2): at the 3-hour cap the time cannot change, so only the island is promised.
+                // At the 3-hour cap the time cannot change, so only the island is promised.
                 val hint = if (ui.hero?.overCap == true) R.string.is_hint_first_cap else R.string.is_hint_first
                 Text(stringResource(hint), style = ChaseomUi.caption, color = Color(0xFF4A4E57))
             }
         }
         Column(Modifier.padding(top = ChaseomUi.block), verticalArrangement = Arrangement.spacedBy(ChaseomUi.related)) {
-            cards() // HANDOFF 9.2.1 v6: air / swap cards under the cause line
+            cards() // air / swap cards under the cause line
         }
         }
     }
@@ -340,15 +340,15 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: 
     if (ui.bar == null) return
     val c = ui.climate
     val temp = c?.takeIf { it.powerOn == true }?.setTempC
-    // Pleos fit v2.2 P7: the sun has no label at rest (the legend says "sun = set temperature"). Only when the set
+    // The sun has no label at rest (the legend says "sun = set temperature"). Only when the set
     // temperature changes does "22 -> 24°C" show next to it, for 2.5 s after the last change (the bottom climate
     // bar keeps the number at all times).
     val change = sunChange(temp) ?: run { sunLabelLeft(Float.NaN); return }
     val bare = ChaseomUi.pictureLabel.copy(color = Color(0xFF131417), shadow = Shadow(Color.White, Offset.Zero, 8f))
-    // QA verdict 2: with system animations off, no arrow: "설정 26°C" for the same 2.5 s.
+    // With system animations off, no arrow: "설정 26°C" for the same 2.5 s.
     val text = if (animOff) stringResource(R.string.hvac_temp, tempText(change.second))
     else stringResource(R.string.is_sun_change, tempText(change.first), tempText(change.second))
-    // The label keeps 22 px from the disc while the sun radius animates (POLISH v1.4 §0.10).
+    // The label keeps 22 px from the disc while the sun radius animates.
     PicText(AnnotatedString(text), bare, x(set.sunX - shown.sunR - 22f), y(set.sunY) + sunLiftDp, 1f, sunLabelLeft)
 }
 
@@ -414,7 +414,7 @@ private fun rememberBitmaps(): H1Bitmaps {
 /**
  * Draws the layer stack and returns the picture state now on screen (the labels follow it). A new
  * state waits [BATCH_MS] after the last input, then cross-fades; the boat, buoys and K2 frame move with
- * the water. Mooring slides the boat in from the right (HANDOFF 10.3 ① v5 distance rule).
+ * the water. Mooring slides the boat in from the right.
  */
 @Composable
 private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring: Boolean, motionOff: Boolean, modifier: Modifier,
@@ -438,7 +438,7 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         withFrameNanos { } // one frame of the end state, then drop the faded-out layers
         bmp.trim()
     }
-    // POLISH v1.4 §0.10 signature motion: the sun radius moves 600 ms when the set temperature crosses a step.
+    // Signature motion: the sun radius moves 600 ms when the set temperature crosses a step.
     // Once, never repeated; only right after a dial change (Island.state animating: not under a notice or the receipt),
     // never with animations off; leaving P removes the island, so the motion ends with it.
     val sunR = remember { Animatable(H1Set.SUN_R[shown.sun]) }
@@ -447,7 +447,7 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         if (!sunMotion || sunR.value == to) sunR.snapTo(to)
         else sunR.animateTo(to, tween(SUN_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0f, 0f, 0.2f, 1f)))
     }
-    // POLISH v1.6 (b) glow pulse: the set temperature changed but stayed in the same S/M/L step (the sun keeps its
+    // Glow pulse: the set temperature changed but stayed in the same S/M/L step (the sun keeps its
     // size), so only the glow brightens 1 -> 1.6 -> 1 in 200 ms. Same batching as the picture; at most once per
     // 1.2 s; never together with the 600 ms size change; same gate as the size motion (P, no notice / receipt, animator).
     val glow = remember { Animatable(0f) }
@@ -475,12 +475,12 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         // Start once our window is focused and has drawn a frame, so the whole arrival is visible.
         withTimeoutOrNull(400) { snapshotFlow { windowInfo.isWindowFocused }.first { it } }
         withFrameNanos { }
-        delay(Island.MOOR_START_DELAY_MS) // panel R14 / UXR E-3
+        delay(Island.MOOR_START_DELAY_MS)
         app.chaseom.Probe.log("moorFrame")
         moor.animateTo(0f, tween(Island.MOOR_SLIDE_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0.33f, 1f, 0.68f, 1f)))
         bob.animateTo(0f, keyframes { durationMillis = Island.MOOR_BOB_MS; Island.BOB_DP at Island.MOOR_BOB_MS / 2 })
     }
-    // Director #16: switching to outside air while the cloud is up, the cloud drifts off the picture once and is
+    // Switching to outside air while the cloud is up, the cloud drifts off the picture once and is
     // gone (no text, no other change). A window opening just fades it, like every other state change.
     val drift = remember { Animatable(-1f) } // -1 = none, 0..1 = drifting
     val hadAir = remember { booleanArrayOf(target.air) }
@@ -501,7 +501,7 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         val k = size.width / set.w * set.zoom
         val boat = set.layers.getValue("boat_l1")
         val boatRight = boat.x + bmp(boat.id).width
-        // v5: the boat starts inside the visible picture: min(360 dp, right edge - boat right - 8 dp).
+        // The boat starts inside the visible picture: min(360 dp, right edge - boat right - 8 dp).
         val slide = minOf(Island.MOOR_SLIDE_DP.dp.toPx(), (set.w - boatRight) * k - 8.dp.toPx()).coerceAtLeast(0f)
         // Zoom about the bottom-right corner: the canvas right and bottom edges stay at the box's edges.
         val ox = size.width - set.w * k; val oy = size.height - set.h * k
@@ -513,8 +513,8 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
             }
         }
         if (night) {
-            // Pleos fit v3.2.1 (QA I10, UXR): ONE navy light #121E38 over the whole picture block, 76 % under the
-            // current water line and 50 % above it; then the sun above it, brightness lowered only (HQ, #C98A2E).
+            // ONE navy light #121E38 over the whole picture block, 76 % under the
+            // current water line and 50 % above it; then the sun above it, brightness lowered only (#C98A2E).
             val waterTop = set.waterTop[(cur.value.level - 1).coerceIn(0, set.waterTop.size - 1)]
             val y = (oy + waterTop * k).coerceIn(0f, size.height)
             drawRect(NIGHT_LIGHT.copy(alpha = 0.5f), size = androidx.compose.ui.geometry.Size(size.width, y))
@@ -537,7 +537,7 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
 /** The picture state on screen and the sun radius now (canvas px), for the labels. */
 internal data class H1Shown(val pic: H1Pic, val sunR: Float)
 
-/** The 13-layer stack (ART_H.md section 8 order), in canvas px. [t] cross-fades [prev] -> [cur]. */
+/** The 13-layer stack (design layer order), in canvas px. [t] cross-fades [prev] -> [cur]. */
 internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, prev: H1Pic?, t: Float, boatDx: Float = 0f, boatDy: Float = 0f,
                               sunScale: Float = 1f, glow: Float = 0f, lift: SkyLift = SkyLift.NONE,
                               driftT: Float = -1f, withSun: Boolean = true) {
@@ -558,12 +558,12 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
         if (new != null) one(new, a, x, y)
     }
     one("base", 1f)
-    // X-09 far rain (04_design v3/rain v2.1): a still layer behind the island's right shoulder, faded once on change.
+    // Far rain: a still layer behind the island's right shoulder, faded once on change.
     if (withSun) slot(if (p.rain) "rain" else null, if (cur.rain) "rain" else null)
     slot("trees_w${p.wind}", "trees_w${cur.wind}")
     if (withSun) drawSun(set, bmp, cur, sunScale, glow, lift)
     slot(if (p.wind > 0) "wind_w${p.wind}" else null, if (cur.wind > 0) "wind_w${cur.wind}" else null, y = lift.wind)
-    // Pleos fit v3 P8: one fixed cloud layer after the wind, same lift as the sun (only in layer sets that have it).
+    // One fixed cloud layer after the wind, same lift as the sun (only in layer sets that have it).
     if (driftT >= 0f) {
         // Drifting out to the right edge, fading over the last half.
         val air = set.layers["air"]
@@ -581,12 +581,12 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
 }
 
 /**
- * The sun: one layer scaled about its centre (POLISH section 0.10), not a cross-fade; its glow is in the bitmap.
- * At night it is drawn above the night light with only its brightness lowered (HQ 2026-11-10, centre ~#C98A2E).
+ * The sun: one layer scaled about its centre, not a cross-fade; its glow is in the bitmap.
+ * At night it is drawn above the night light with only its brightness lowered (centre ~#C98A2E).
  */
 internal fun DrawScope.drawSun(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, sunScale: Float, glow: Float, lift: SkyLift,
                                night: Boolean = false) {
-    // Night: the design's own night sun layer (04_design v3/extra/night_sun, QA verdict 11, centre #C8892D),
+    // Night: the design's own night sun layer (night_sun, centre #C8892D),
     // same position and S/M/L rule; the colour filter is only a fallback for a layer set without it.
     val nightLayer = if (night) set.layers["sun_night_${"SML"[cur.sun]}"] else null
     val l = nightLayer ?: set.layers["sun_${"SML"[cur.sun]}"] ?: return
@@ -609,14 +609,14 @@ internal val NIGHT_SUN = androidx.compose.ui.graphics.ColorFilter.colorMatrix(an
     setToScale(0.80f, 0.70f, 0.46f, 1f)
 })
 
-/** Director #1 (HQ revision 2026-11-10): the whole picture block rises 24 dp -> 0 and fades in, 300 ms, once. */
+/** The whole picture block rises 24 dp -> 0 and fades in, 300 ms, once. */
 internal const val RISE_MS = 300
 internal const val RISE_DP = 24f
 /** The rise belongs to the arrival: not after this long in P. */
 internal const val RISE_WINDOW_MS = 120_000L
 
 /**
- * Receipt header (HANDOFF 10.4, POLISH_PASS v1.2 §0.6): the whole H1 island in its current state, scaled
+ * Receipt header: the whole H1 island in its current state, scaled
  * down (never cropped). Shown only with the receipt (door open after >= 1 min).
  */
 @Composable
@@ -625,7 +625,7 @@ fun ReceiptHeaderPicture(ui: StayUi) {
     StillIsland(H1Set.Large, H1Pic.of(info), Modifier.fillMaxWidth().clip(ChaseomUi.rInline))
 }
 
-/** First-use screen (POLISH_PASS v1.2 §0.5): the whole Small-set island, no labels, a calm mid state. */
+/** First-use screen: the whole Small-set island, no labels, a calm mid state. */
 @Composable
 fun OnboardingIsland(modifier: Modifier) {
     StillIsland(H1Set.Small, H1Pic(sun = 1, wind = 1, level = 3, buoys = 5, k2 = false), modifier.clip(ChaseomUi.rContainer))
@@ -651,11 +651,11 @@ internal data class SkyLift(val sun: Float, val wind: Float) {
     companion object { val NONE = SkyLift(0f, 0f) }
 }
 
-/** Sun centre at 24 % and wind lines at 36 % of the box height (critique final ①), never lower than drawn. */
+/** Sun centre at 24 % and wind lines at 36 % of the box height, never lower than drawn. */
 internal fun skyLiftFor(set: H1Set, k: Float, boxHdp: Float): SkyLift {
     val boxPx = boxHdp / k                       // box height in canvas px ([k] includes the set's zoom)
     val top = set.h - boxPx                      // canvas y of the box top (negative: taller box, positive: shorter)
-    // Taller box: lift up to 24 % / 36 % of the box, never lower than drawn. Shorter box (cards, QA D-1): move
+    // Taller box: lift up to 24 % / 36 % of the box, never lower than drawn. Shorter box (cards): move
     // down only as far as needed to keep the largest sun (and the wind lines) 16 px inside the box top.
     fun lift(canvasY: Float, frac: Float, reach: Float) =
         if (top < 0f) minOf(0f, top + frac * boxPx - canvasY) else maxOf(0f, top + 16f + reach - canvasY)
@@ -663,7 +663,7 @@ internal fun skyLiftFor(set: H1Set, k: Float, boxHdp: Float): SkyLift {
     return SkyLift(sun = lift(set.sunY, 0.24f, H1Set.SUN_R.last()), wind = lift(windY, 0.36f, 20f))
 }
 
-/** Legend swatches: the picture's own shapes at 24 dp (Pleos fit v3 §4: can buoy, water #4B627C). */
+/** Legend swatches: the picture's own shapes at 24 dp (can buoy, water #4B627C). */
 internal enum class Swatch { SUN, WATER, BUOY, CRATE, CLOUD, RAIN }
 
 @Composable
@@ -723,10 +723,10 @@ private fun LegendItem(sw: Swatch, label: String) {
     }
 }
 
-/** Pleos fit v3.2.1 night light colour (applied at 50 % / 76 %). */
+/** Night light colour (applied at 50 % / 76 %). */
 internal val NIGHT_LIGHT = Color(0xFF121E38)
 
-/** Director #16: the cloud's one drift out of the picture on outside air. */
+/** The cloud's one drift out of the picture on outside air. */
 internal const val DRIFT_MS = 1_400
 
 /** 0 -> 1 rise progress for the arrival (1 at rest). */
