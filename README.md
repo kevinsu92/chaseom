@@ -22,19 +22,19 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 | ![먼 비](docs/images/far_rain.png) |
 
 ## 검증 표
-제출 APK(`apk/Chaseom_Chaseom_release.apk`, sha256 `45ca7df9e01fad9507f5bcd22ebac5920bfd7aa722632a0df57acc6b96bd0334`)를 Pleos Connect Emulator 2.1.0에서 잰 값입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)이고, 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`을 실행합니다. 이 표의 해시가 지금 APK와 같은지는 `python tools/check_hash.py`로 확인합니다.
+제출 APK(`apk/Chaseom_Chaseom_release.apk`, sha256 `ca0269fe854dacf86a230be9e7250e2c7ed12fe8d0616b651bfd400768b60783`)를 Pleos Connect Emulator 2.1.0에서 잰 값입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)이고, 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`을 실행합니다. 이 표의 해시가 지금 APK와 같은지는 `python tools/check_hash.py`로 확인합니다.
 
 | 항목 | 값 |
 |---|---|
 | 단위 테스트 | **141개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
-| 테스트 커버리지 (Kover, 라인) | 도메인 **98.4%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 28.5% (화면·SDK 어댑터는 에뮬레이터 시나리오로 검증). `./gradlew koverXmlReportDebug`, 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
-| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **42 ms**, 최대 138 ms (첫 회만 138, 나머지 29–50 ms) |
-| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **39 ms** (중앙값 18 ms) |
-| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **37 ms**, 최대 107 ms |
-| 앱 시작 (`am start -W`, 콜드 스타트) | 1.5초 이내 (이번 측정 0.99–1.04초, 에뮬레이터 상태에 따라 0.8–1.5초) |
-| 정지 화면 CPU (30초) | 평균 **0.5%** |
-| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 2.4% (전환 순간 최대 46%) |
-| 메모리 (PSS) | 54 MB |
+| 테스트 커버리지 (Kover, 라인) | 도메인 **98.4%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 28.8% (화면·SDK 어댑터는 에뮬레이터 시나리오로 검증). `./gradlew koverXmlReportDebug`, 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
+| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **33 ms**, 최대 85 ms |
+| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **60 ms** (중앙값 19 ms) |
+| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **42 ms**, 최대 143 ms (첫 회만 143, 나머지 27–63 ms) |
+| 앱 시작 (`am start -W`, 콜드 스타트) | 2초 이내 (이번 측정 1.03–1.54초, 새로 설치한 뒤 첫 실행이 가장 느림) |
+| 정지 화면 CPU (30초) | 평균 **0.3%** |
+| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 1.9% (전환 순간 최대 31%) |
+| 메모리 (PSS) | 60 MB |
 | 런타임 권한 팝업 | **0** (요청하는 권한은 모두 normal) |
 | 차량 제어 | **0** (앱은 차를 읽기만 하고, 공조를 끄거나 바꾸지 않음) |
 
@@ -166,7 +166,7 @@ Android SDK 위치가 필요합니다. 환경 변수 `ANDROID_HOME`을 설정하
 
 ## 4. APK 위치
 
-- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `45ca7df9…0334`)
+- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `ca0269fe…0783`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4)
 
 ---
