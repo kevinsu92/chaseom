@@ -1,4 +1,4 @@
-"""Edge checks for the restored-stay, charging and connecting states (05_qa B_GATE 3, E4-1/E4-3/E4-5).
+"""Edge checks for the restored-stay, charging and connecting states (E4-1/E4-3/E4-5).
 
     python tools/edges.py <screenshot_dir> [--package app.chaseom]
 

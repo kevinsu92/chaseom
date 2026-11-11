@@ -6,11 +6,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** PLEOS_COMPLIANCE fixes that are values, pinned so they cannot drift back. */
+/** Pleos design-token values, pinned so they cannot drift back. */
 class PleosTokensTest {
-    @Test fun pressedTargetsShrinkTo95Percent() = assertEquals(0.95f, PRESSED_SCALE, 0f) // I-02
+    @Test fun pressedTargetsShrinkTo95Percent() = assertEquals(0.95f, PRESSED_SCALE, 0f) // pressed state scale
 
-    @Test fun heaviestWeightIsBold() { // T-03 / panel B2: no ExtraBold anywhere in the app's own roles
+    @Test fun heaviestWeightIsBold() { // no ExtraBold anywhere in the app's own roles
         val all = listOf(
             ChaseomUi.hero(ChaseomUi.Size.Large), ChaseomUi.hero(ChaseomUi.Size.Small),
             ChaseomUi.heroSentence(ChaseomUi.Size.Large), ChaseomUi.onboardingTitle(ChaseomUi.Size.Large),
@@ -22,7 +22,7 @@ class PleosTokensTest {
         rest.forEach { assertTrue((it.fontWeight ?: FontWeight.Normal) < FontWeight.Bold) }
     }
 
-    @Test fun sizesUnchangedByTheRoleGrouping() { // T-07: grouping changed weights only
+    @Test fun sizesUnchangedByTheRoleGrouping() { // grouping changed weights only
         assertEquals(72f, ChaseomUi.hero(ChaseomUi.Size.Large).fontSize.value, 0f)
         assertEquals(28f, ChaseomUi.title.fontSize.value, 0f)
         assertEquals(26f, ChaseomUi.body.fontSize.value, 0f)
@@ -31,7 +31,7 @@ class PleosTokensTest {
 
     @Test fun nightBackgroundIsNearBlack() = assertEquals(Color(0xFF0B0C0E), ChaseomUi.Night.bg)
 
-    // QA prejudge: the K1 card edge on the night page is at least 3:1.
+    // The K1 card edge on the night page is at least 3:1.
     @Test fun nightCardEdgeHasThreeToOne() {
         fun lum(c: Color): Double {
             fun ch(v: Float) = if (v <= 0.03928f) v / 12.92 else Math.pow((v + 0.055) / 1.055, 2.4)

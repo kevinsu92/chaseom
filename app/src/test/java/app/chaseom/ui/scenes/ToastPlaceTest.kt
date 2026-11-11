@@ -6,7 +6,7 @@ import app.chaseom.stay.StayUi
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
-/** HANDOFF 9.6 v7: the dial toast never covers a number or text line (Small window found 11-10). */
+/** The dial toast never covers a number or text line. */
 class ToastPlaceTest {
     private fun ui(hero: Hero?) = StayUi(parked = true, policy = ModePolicy.Full, hero = hero)
 
@@ -25,7 +25,7 @@ class ToastPlaceTest {
     }
 
     @Test fun islandScreenHasNoClimateStatusLine() {
-        // HQ 2026-11-11 / HANDOFF 8 round1b: three text lines on the island screen; the bar face keeps it.
+        // Three text lines on the island screen; the bar face keeps it.
         assertEquals(false, climateLineShown(islandFace = true))
         assertEquals(true, climateLineShown(islandFace = false))
     }
@@ -36,7 +36,7 @@ class ToastPlaceTest {
     }
 
     @Test fun safetyBannerStaysAboveEveryOverlay() {
-        // QA ROUND1B_GATE §10-①: the receipt or a notice scrim never dims the N0 banner.
+        // The receipt or a notice scrim never dims the N0 banner.
         val base = StayUi(parked = true, policy = ModePolicy.Full, banner = app.chaseom.stay.Banner(expanded = false))
         assertEquals(false, bannerAboveScrim(base))
         assertEquals(true, bannerAboveScrim(base.copy(receipt = app.chaseom.stay.Receipt(emptyList(), 0L))))

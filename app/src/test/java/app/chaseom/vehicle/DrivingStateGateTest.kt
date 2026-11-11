@@ -32,7 +32,7 @@ class DrivingStateGateTest {
             DrivingStateGate.restrictionFor(snap(GearPosition.PARK, ConnectionState.DISCONNECTED)),
         )
 
-    // AAOS GEAR_SELECTION values replace the undocumented Pleos getGear() (02_platform G2).
+    // AAOS GEAR_SELECTION values replace the undocumented Pleos getGear().
     @Test fun aaosGearValuesMapToPositions() {
         assertEquals(GearPosition.PARK, aaosGearToPosition(4))
         assertEquals(GearPosition.DRIVE, aaosGearToPosition(8))

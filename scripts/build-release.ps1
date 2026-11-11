@@ -1,7 +1,7 @@
 ﻿<#
 .SYNOPSIS
   Builds the signed release APK and copies it to apk/<appName>_<appName>_release.apk
-  (contest rule apk/팀명_앱이름_release.apk; HQ Q-2: app name in both slots). Name from gradle.properties.
+  (contest rule apk/팀명_앱이름_release.apk; the app name fills both slots). Name from gradle.properties.
 
 .NOTES
   - Requires keystore.properties (see keystore.properties.example). Fails if missing.
@@ -11,7 +11,7 @@
 #>
 param(
     [string]$JavaHome = "C:\Program Files\Android\Android Studio\jbr",
-    # Weather island face in release (QA conditional PASS 11-12). -Island false = OFF build.
+    # Weather island face in release. -Island false = island-off build.
     [ValidateSet("true", "false")][string]$Island = "true",
     # Optional different output path (e.g. the OFF comparison APK), so the deliverable is untouched.
     [string]$OutFile = ""
@@ -28,7 +28,7 @@ $props = @{}
 Get-Content (Join-Path $root "gradle.properties") -Encoding UTF8 | Where-Object { $_ -match '^\s*[^#].*=' } | ForEach-Object {
     $k, $v = $_ -split '=', 2; $props[$k.Trim()] = $v.Trim()
 }
-# HQ decision Q-2: no team name; the app name fills the team slot -> <appName>_<appName>_release.apk.
+# No team name: the app name fills the team slot -> <appName>_<appName>_release.apk.
 $app = $props["release.appName"]; $team = $app
 if (-not $app) { throw "release.appName missing in gradle.properties." }
 

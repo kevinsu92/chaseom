@@ -8,9 +8,9 @@ import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
 /**
- * QA wording rules (QA 조건(내부 문서) section 5, S1-a, S2-a/b, S4-a, S7-a, condition 3/4/13)
+ * Wording rules (banned words, estimate marks, notices, rear seat, exchange card)
  * enforced on the shipped string resources. Every user-facing sentence lives in
- * res/values/strings_stay.xml (04_design + 05_qa) or res/values/strings.xml (engineering).
+ * res/values/strings_stay.xml (stay screens) or res/values/strings.xml (engineering).
  */
 class WordingRulesTest {
 
@@ -26,7 +26,7 @@ class WordingRulesTest {
         }.toMap()
     }
 
-    /** Section 5 banned-word pattern, verbatim. */
+    /** Banned-word pattern, verbatim. */
     private val banned = Regex(
         "잠금|잠들|잠든|낮잠|수면|차박|밤샘|숙박|안전 보장|사고 방지|방치 예방|이상 없음|모두 확인|확인 완료|최초|유일|아무도|테슬라.*아이 감지|경고음 하나|숙면|이완|힐링|충전 필요 없|충분해요|이상 징후",
     )
@@ -40,7 +40,7 @@ class WordingRulesTest {
     }
 
     @Test fun designRuleWordsAbsent() {
-        // FLOWS W3/W8 add "보장", "안전", "완료", "좋음", "OK", "지켜 드려요" on top of the QA list.
+        // Design rules add "보장", "안전", "완료", "좋음", "OK", "지켜 드려요" on top of the banned list.
         val extra = Regex("보장|안전|완료|좋음|\\bOK\\b|지켜 드려요")
         val offenders = strings.filterValues { extra.containsMatchIn(it) }
         assertEquals("design-rule words: $offenders", emptyMap<String, String>(), offenders)
@@ -62,7 +62,7 @@ class WordingRulesTest {
         }
     }
 
-    // QA build-D verdict 1: the K2 banner names the risk and two real actions; it never tells the person to
+    // Safety rule: the K2 banner names the risk and two real actions; it never tells the person to
     // turn the climate off or down (a cold cabin can be the bigger danger).
     @Test fun k1AndK2NeverTellThePersonToCutTheClimate() {
         assertEquals("곧 내일 몫에 닿아요 · 계속 켜 두면 내일 몫을 쓰게 돼요 (앱은 공조를 끄지 않아요)", strings.getValue("k1"))
@@ -74,7 +74,7 @@ class WordingRulesTest {
         }
     }
 
-    // QA build-D verdict 2: an air-source switch toast shows the switch name only, never minutes.
+    // An air-source switch toast shows the switch name only, never minutes.
     @Test fun airSourceSwitchToastShowsNoMinutes() {
         val toastCode = java.io.File("src/main/java/app/chaseom/ui/scenes/StayScenes.kt").readText()
             .substringAfter("fun DialToast(").substringBefore("\n}\n")
@@ -96,7 +96,7 @@ class WordingRulesTest {
 
     @Test fun rearSeatWording() {
         assertEquals("탑승 감지됨", strings["e_rear_detected"])
-        assertEquals("감지 안 됨", strings["e_rear_not_detected"]) // QA v1.6 (c): sensor state only
+        assertEquals("감지 안 됨", strings["e_rear_not_detected"]) // sensor state only
         assertEquals("뒷좌석 직접 확인", strings["e_rear_always"])
         listOf("e_rear", "e_rear_detected", "e_rear_not_detected", "e_rear_always").forEach {
             assertFalse(it, Regex("비었|비어|없음|없어요").containsMatchIn(strings.getValue(it)))
@@ -105,7 +105,7 @@ class WordingRulesTest {
 
     @Test fun exchangeOnlyDriverSeatAndBurnLine() {
         assertTrue(strings.getValue("x1").contains("운전석 열선"))
-        // Small window two-line X1 (HANDOFF 8 round1b): same pair, the burn line still goes with it.
+        // Small window two-line X1: same pair, the burn line still goes with it.
         assertEquals("설정 21°C + 운전석 열선 2단", strings["x1_l1"])
         assertEquals("%1\$s · 비슷한 체감 (추정)", strings["x1_l2"])
         listOf("x1", "x2", "x3").forEach { assertFalse(Regex("뒷좌석|2열|조수석").containsMatchIn(strings.getValue(it))) }
@@ -125,37 +125,37 @@ class WordingRulesTest {
             assertFalse("$it has digits", s.any(Char::isDigit))
         }
     }
-    // QA 10.2 L-3 / L-6: island is always day, never a campsite, and always says it is decoration.
+    // The island is always day, never a campsite, and always says it is decoration.
     @Test fun islandWordingDaytimeAndDecoration() {
         val island = strings.filterKeys { it.startsWith("is_") }
         assertTrue(island.isNotEmpty())
         val night = Regex("모닥불|캠프|캠핑|텐트|달빛|별|밤|잠자")
         assertEquals(emptyMap<String, String>(), island.filterValues { night.containsMatchIn(it) })
-        // ISLAND_REDESIGN v2.5 / QA M-3: the cause chip says what draws the island and that nothing is measured inside.
+        // The cause chip says what draws the island and that nothing is measured inside.
         assertEquals("섬은 공조 설정·배터리로 그려요 · 실내 측정 아님", strings["is_legend"])
         assertTrue(strings.getValue("is_cd").contains("추정"))
     }
 
-    // Panel APP_GAP_TO_85 §10-2: the island chip already says what draws it, so onboarding item 2 has no bracket.
+    // The island chip already says what draws it, so onboarding item 2 has no bracket.
     @Test fun onboardingItemTwoHasNoBracketNote() {
         assertEquals("공조 설정을 바꾸면 섬과 머물 수 있는 시간이 바로 바뀌어요", strings["onb_p2_body"])
     }
 
-    // QA ROUND1B_GATE (H1 v1.5): the round-1 island draws no seat heat, so no rock or "follows the heat" wording.
+    // The round-1 island draws no seat heat, so no rock or "follows the heat" wording.
     @Test fun roundOneIslandSaysNothingAboutSeatHeat() {
         assertEquals(emptyMap<String, String>(), strings.filterValues { it.contains("바위") || it.contains("열선을 따라") || it.contains("장식") })
-        // Pleos fit v3 P7: no labels on the picture; the legend names what each shape stands for, with no numbers.
+        // No labels on the picture; the legend names what each shape stands for, with no numbers.
         assertEquals(emptyList<String>(), strings.keys.filter { it.startsWith("is_rail_") })
-        // QA AIR_SAFETY verdict 2: the confirmed strings, letter for letter.
+        // The confirmed legend strings, letter for letter.
         assertEquals("해 = 설정 온도", strings["is_lg_sun"])
         assertEquals("물 = 배터리", strings["is_lg_water"])
         assertEquals("부표 1개 = 30분", strings["is_lg_buoy"])
         assertEquals("짐 = 내일 몫", strings["is_lg_keep"])
         assertEquals("구름 = 내기순환 %1\$d분째 (공기 측정 아님)", strings["is_lg_air"])
-        assertEquals("먼 비 = 와이퍼 AUTO 작동", strings["is_lg_rain"]) // QA verdict 12 / 15
-        // QA condition 3 (gate 4): the toast's ± minutes carry "(추정)" -> "설정 26°C · 풍량 6 · −21분 (추정)".
+        assertEquals("먼 비 = 와이퍼 AUTO 작동", strings["is_lg_rain"]) // AUTO and actually wiping only
+        // The toast's ± minutes carry "(추정)" -> "설정 26°C · 풍량 6 · −21분 (추정)".
         assertEquals("%1\$s (추정)", strings["d_toast_delta"])
-        // QA gate 4 (condition 2): the toast's temperature always has "설정" in front, Large and Small alike.
+        // The toast's temperature always has "설정" in front, Large and Small alike.
         assertTrue(strings.getValue("hvac_temp").startsWith("설정 "))
         val toastCode = java.io.File("src/main/java/app/chaseom/ui/scenes/StayScenes.kt").readText()
             .substringAfter("fun DialToast(").substringBefore("\n}\n")
@@ -166,12 +166,12 @@ class WordingRulesTest {
         // The transient sun number always says "설정" (never a bare temperature that reads as the cabin's).
         assertEquals("설정 %1\$s → %2\$s°C", strings["is_sun_change"])
         assertTrue(strings.getValue("hvac_temp").startsWith("설정 "))
-        // Air wording: no "inside", no air-quality word, no reassurance, no sleep link (A1-1, A1-5, condition 2).
+        // Air wording: no "inside", no air-quality word, no reassurance, no sleep link.
         val air = strings.getValue("is_lg_air")
         assertFalse(Regex("실내|공기질|좋|나쁨|안전|괜찮|맑|자는|밤새").containsMatchIn(air.replace("공기 측정 아님", "")))
     }
 
-    // 05_qa REVIEW_COPY_B section 1: bundle B wording, letter for letter.
+    // Restored-stay and edge-state wording, letter for letter.
     @Test fun bundleBConfirmedWording() {
         val confirmed = mapOf(
             "is_hint_first" to "공조 다이얼을 바꾸면 섬과 남은 시간이 함께 바뀌어요",
@@ -190,13 +190,13 @@ class WordingRulesTest {
             "s_use_default_link" to "기본값(30km · 회사)으로 시작하기",
         )
         confirmed.forEach { (k, v) -> assertEquals(k, v, strings[k]) }
-        // E-10: the about text describes only what the code does (no "recent battery trend").
+        // The about text describes only what the code does (no "recent battery trend").
         assertFalse(strings.getValue("about_model").contains("추세"))
         assertTrue(strings.getValue("about_model").contains("영하 10°C"))
         assertTrue(strings.getValue("about_coeff").contains("영하 10°C"))
     }
 
-    // REVIEW_COPY_B: no imperative that invites playing with the climate while parked.
+    // No imperative that invites playing with the climate while parked.
     @Test fun noImperativeDialPrompt() {
         val offenders = strings.filterValues { Regex("돌려 보세요|켜 보세요|올려 보세요").containsMatchIn(it) }
         assertEquals(emptyMap<String, String>(), offenders)

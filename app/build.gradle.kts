@@ -13,7 +13,7 @@ val keystoreProps = Properties().apply {
 }
 val hasReleaseKeystore = keystoreProps.getProperty("storeFile") != null
 
-// App name (CEO 2026-11-09: 차섬 / Chaseom), read from gradle.properties as UTF-8 so the Korean label
+// App name (차섬 / Chaseom), read from gradle.properties as UTF-8 so the Korean label
 // survives (Gradle itself reads gradle.properties as ISO-8859-1). app.label = launcher label;
 // release.appName = APK file name <appName>_<appName>_release.apk via scripts/build-release.ps1.
 val identityProps = Properties().apply {
@@ -28,7 +28,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        // Package name carries no real name or school (HQ).
+        // Package name carries no personal name.
         applicationId = "app.chaseom"
         minSdk = 28
         targetSdk = 34
@@ -58,7 +58,7 @@ android {
             applicationIdSuffix = ".debug"
             // Debug builds may fall back to scripted fake vehicle data when no Pleos service is present.
             buildConfigField("boolean", "FAKE_DATA_ALLOWED", "true")
-            // Weather island face: on in debug for evaluation; release stays off until QA 11-12 PASS.
+            // Weather island face: on in debug.
             buildConfigField("boolean", "KICK_ISLAND", "true")
             buildConfigField("boolean", "KICK_RAIN", "true")
         }
@@ -68,10 +68,10 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // Review guideline: no dummy/temp data in release. Release always uses the real Pleos SDK.
             buildConfigField("boolean", "FAKE_DATA_ALLOWED", "false")
-            // QA 11-12 conditional PASS: island on in release. -Prelease.island=false builds the OFF
-            // comparison APK (QA release checks) or the fallback if a release check fails.
+            // Island on in release. -Prelease.island=false builds an island-off
+            // comparison or fallback APK.
             buildConfigField("boolean", "KICK_ISLAND", (findProperty("release.island") ?: "true").toString())
-            // X-09 far rain (candidate C, CEO 2026-11-11): on unless -Prelease.rain=false.
+            // Far rain: on unless -Prelease.rain=false.
             buildConfigField("boolean", "KICK_RAIN", (findProperty("release.rain") ?: "true").toString())
             if (hasReleaseKeystore) signingConfig = signingConfigs.getByName("release")
         }

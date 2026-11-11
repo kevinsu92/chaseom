@@ -8,7 +8,7 @@ import org.junit.Test
 
 class ModeAndEnergyTest {
 
-    // Condition 12 / C-12 / HANDOFF 3.2
+    // Full mode only for an EV whose SOC and battery capacity can be read
     @Test fun modeRules() {
         assertEquals(AppMode.FULL, ModeDetector.decide(listOf(10), false, true, 77.4f))
         assertEquals(AppMode.REDUCED, ModeDetector.decide(null, true, true, 77.4f)) // read failed
@@ -20,7 +20,7 @@ class ModeAndEnergyTest {
         assertEquals(AppMode.REDUCED, ModeDetector.decide(listOf(10), false, true, null)) // no capacity
     }
 
-    // Condition 10: reduced policy has no energy features
+    // Reduced policy has no energy features
     @Test fun reducedPolicyHasNoEnergyFeatures() {
         val p = ModePolicy.Reduced
         assertFalse(p.energyBudget); assertFalse(p.dialToast); assertFalse(p.exchangeCard); assertFalse(p.receiptEnergyRows)
@@ -62,9 +62,9 @@ class ModeAndEnergyTest {
     @Test fun exchangeRulesAndMinimumGain() {
         assertNull(EnergyModel.exchange(62, 77.4f, keep, ClimateSetting(false, 26f, 3, false, false, 0), emptySet()))
         assertNull(EnergyModel.exchange(62, 77.4f, keep, ClimateSetting(true, 21f, 3, false, false, 2), emptySet()))
-        assertNull(EnergyModel.exchange(62, 77.4f, keep, ClimateSetting(true, 26f, 3, false, false, 0), emptySet())) // M-11: above cap
+        assertNull(EnergyModel.exchange(62, 77.4f, keep, ClimateSetting(true, 26f, 3, false, false, 0), emptySet())) // above the 3 h cap
         // Sourced coefficients (ENERGY_MODEL 3.2): -5 C set point + seat heat 2 saves ~0.29 kW, so the
-        // gain clears MIN_GAIN only with enough battery (QA demo SOC 20 %); at 14 % it is ~8 min.
+        // gain clears MIN_GAIN only with enough battery (demo SOC 20 %); at 14 % it is ~8 min.
         assertNull(EnergyModel.exchange(14, 77.4f, keep, ClimateSetting(true, 26f, 3, false, false, 0), emptySet()))
         val x1 = EnergyModel.exchange(20, 77.4f, keep, ClimateSetting(true, 26f, 3, false, false, 0), emptySet())!!
         assertTrue(x1.gainMinutes <= EnergyModel.DISPLAY_CAP_MINUTES)
@@ -81,7 +81,7 @@ class ModeAndEnergyTest {
 
     @Test fun coveredKm() = assertEquals(22, EnergyModel.coveredKm(7, 77.4f, 5f))
 
-    // QA COEFF judgement / B_GATE 5: the coefficients are the sourced table (docs/ENERGY_MODEL.md 3.2).
+    // The coefficients are the sourced table (docs/ENERGY_MODEL.md 3.2).
     @Test fun coefficientsMatchSourcedTable() {
         assertEquals(0.30f, EnergyModel.BASE_KW, 0f)
         assertEquals(2.3f, EnergyModel.drawKw(ClimateSetting(true, 22f, 0, false, false, 0)) - EnergyModel.BASE_KW, 0.0001f)

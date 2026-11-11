@@ -9,7 +9,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 04_design/HANDOFF.md section 3 + QA 조건(내부 문서) test cases (C-xx). */
+/** Stay engine behaviour tests. */
 class StayEngineTest {
 
     private val min = 60_000L
@@ -28,7 +28,7 @@ class StayEngineTest {
     private fun StayEngine.at(t: Long, c: CabinState = ev, parked: Boolean? = true, hour: Int = noon) =
         update(parked, c, settings, t, hour)
 
-    // C-01 / N0
+    // N0
     @Test fun parkingStartsStayWithExpandedBannerThatCollapsesAfter10s() {
         val e = StayEngine()
         val ui = e.at(0)
@@ -44,7 +44,7 @@ class StayEngineTest {
         assertFalse(e.at(1000).banner!!.expanded)
     }
 
-    // C-G1 / FLOWS 1
+    // Leaving P
     @Test fun leavingParkEndsStayAndClosesEverything() {
         val e = StayEngine(); e.at(0)
         val ui = e.at(1000, parked = false)
@@ -59,7 +59,7 @@ class StayEngineTest {
         assertNotNull(e.session)
     }
 
-    // C-09 N1: at 60 min and every 60 min after
+    // N1: at 60 min and every 60 min after
     @Test fun hourNoticeEvery60Minutes() {
         val e = StayEngine(); e.at(0)
         assertNull(e.at(59 * min).notice)
@@ -84,7 +84,7 @@ class StayEngineTest {
         assertEquals(NoticeKind.NIGHT, e.at(20 * min, hour = 22).notice)
     }
 
-    // N3 (S4-b/c, HANDOFF 3.6)
+    // N3: backrest notice
     @Test fun backrestFirstThenAtMost30MinApartOnlyOnCrossing() {
         val e = StayEngine(); e.at(0)
         val reclined = ev.copy(driverBackrest = 30)
@@ -112,7 +112,7 @@ class StayEngineTest {
         assertNull(e.at(min, ev.copy(driverBackrest = 50)).notice) // 10 % < 15 %
     }
 
-    // S4-e
+    // No backrest capability
     @Test fun noBackrestCapabilityMeansNoN3() {
         val e = StayEngine()
         val noCap = ev.copy(backrestMin = null, backrestMax = null)
@@ -135,7 +135,7 @@ class StayEngineTest {
         assertNull(e.at(60 * min, ev.copy(driverBackrest = 20)).notice) // N1 due 2 min after N3 ack
     }
 
-    // S7 / C-04a / C-04b
+    // Receipt rows
     @Test fun receiptRowsOrderAndRearAlwaysCheck() {
         val e = StayEngine(); e.at(0)
         val ui = e.at(41 * min, ev.copy(driverDoorOpen = true, rearLeftOccupied = true, socPercent = 59, cabinLightOn = true,
@@ -154,7 +154,7 @@ class StayEngineTest {
         assertTrue(r.rearCheckAlways)
     }
 
-    // QA v1.6 (c): the rear row shows the sensor state only, and the "뒷좌석 직접 확인" line always closes the receipt.
+    // The rear row shows the sensor state only, and the "뒷좌석 직접 확인" line always closes the receipt.
     @Test fun rearCheckLineIsAlwaysTheLastLine() {
         listOf(null, true, false).forEach { occ ->
             val e = StayEngine(); e.at(0)
@@ -196,7 +196,7 @@ class StayEngineTest {
         assertNull("no known closed state yet: no receipt", fresh.at(2 * min, ev.copy(driverDoorOpen = true)).receipt)
     }
 
-    // D-1: the receipt takes the light as read at the door-open moment (the repository re-reads the switch
+    // The receipt takes the light as read at the door-open moment (the repository re-reads the switch
     // first), and an open receipt follows later changes, including "unknown" when the re-read fails.
     @Test fun receiptLightRowFollowsTheSwitchBothWays() {
         fun light(r: Receipt) = r.rows.filterIsInstance<ReceiptRow.Light>().single().on
@@ -223,7 +223,7 @@ class StayEngineTest {
         assertTrue(keep.dot)
     }
 
-    // Condition 10 / 12 / C-10 / C-12
+    // Reduced mode
     @Test fun reducedModeHasNoEnergyAnywhere() {
         val e = StayEngine(StayTiming(airAfterMs = 0))
         val g = gasoline.copy(recirculationOn = true, driverSetTempC = 27f, fanSpeed = 7)
@@ -275,7 +275,7 @@ class StayEngineTest {
         assertTrue(plain.at(1000, low.copy(driverSetTempC = 26f)).toast!!.showMinutes)
     }
 
-    // QA M-11 / FINDINGS E-01: never an hours-long delta
+    // Never an hours-long delta
     @Test fun toastDeltaUsesThreeHourCappedValues() {
         val e = StayEngine(); e.at(0) // 62 %: far above 3 h before and after
         val t = e.at(1000, ev.copy(driverSetTempC = 26f, fanSpeed = 7)).toast!!
@@ -308,7 +308,7 @@ class StayEngineTest {
     }
 
     @Test fun heroSaysThreeHoursOrMoreFromExactly180Minutes() {
-        // QA M-1 / M-11: the hero never shows "4시간 0분"; at or above 180 min it is "3시간 이상" (overCap).
+        // The hero never shows "4시간 0분"; at or above 180 min it is "3시간 이상" (overCap).
         var sawBelow = false
         var sawAbove = false
         for (soc in 0..100) {
@@ -348,7 +348,7 @@ class StayEngineTest {
         assertNull(ui.exchange)
     }
 
-    // Condition 2 / 11 + snooze
+    // Air card after 20 min, quiet exit and snooze
     @Test fun airCardAfter20MinQuietExitAndSnooze() {
         val e = StayEngine()
         val recirc = ev.copy(recirculationOn = true)
@@ -361,7 +361,7 @@ class StayEngineTest {
         assertNull(e.at(41 * min, recirc.copy(windows = ev.windows + ("driver" to 2))).airMinutes)
     }
 
-    // Pleos fit v3 P8 / QA AIR_SAFETY verdict 2: the circling cloud's minutes.
+    // The circling cloud's minutes.
     @Test fun recircCloudAfter20MinIgnoresSnoozeAndLeavesQuietly() {
         val e = StayEngine()
         val recirc = ev.copy(recirculationOn = true)
@@ -379,7 +379,7 @@ class StayEngineTest {
         assertEquals(20, e.at(54 * min, recirc).recircMinutes)
     }
 
-    // X-09 (QA I-2): far rain only while the lever is on AUTO and the wiper actually wipes; manual wiping,
+    // Far rain only while the lever is on AUTO and the wiper actually wipes; manual wiping,
     // AUTO without wiping and an unreadable wiper never count.
     @Test fun rainOnlyForAutoWiperActuallyWiping() {
         assertTrue(StayEngine().at(0, ev.copy(wiperAuto = true, wiperOn = true)).rain)
@@ -389,7 +389,7 @@ class StayEngineTest {
         assertFalse(StayEngine().at(0, ev.copy(wiperAuto = true, wiperOn = null)).rain)    // state unreadable
     }
 
-    // Director #5: the boat shows the car's trunk and charge port; unknown is drawn closed.
+    // The boat shows the car's trunk and charge port; unknown is drawn closed.
     @Test fun trunkAndChargePortReachTheIsland() {
         val e = StayEngine()
         val ui = e.at(0, ev.copy(doorsOpen = mapOf("trunk" to true), chargePortOpen = true))
@@ -416,18 +416,18 @@ class StayEngineTest {
         assertEquals(NoticeKind.HOUR, ui.notice)
     }
 
-    // ---- Bundle B (05_qa B_GATE 3, REVIEW_COPY_B) -------------------------------------------------
+    // ---- Restored stay, charging and edge states ---------------------------------------------------
 
     private fun saved() = StaySession(startMs = 0, socAtStart = 62, nextHourMs = 60 * min)
 
-    // E4-1b: back within 10 minutes of the last save -> the same stay continues.
+    // Back within 10 minutes of the last save -> the same stay continues.
     @Test fun restoreContinuesWithin10Min() {
         val e = StayEngine(restored = saved(), restoredSeenAtMs = 5 * min, restoredSocAtSave = 62)
         e.at(14 * min)
         assertEquals(0L, e.session!!.startMs)
     }
 
-    // E4-1b: more than 10 minutes since the last save -> a new stay.
+    // More than 10 minutes since the last save -> a new stay.
     @Test fun restoreStartsNewStayAfter10Min() {
         val e = StayEngine(restored = saved(), restoredSeenAtMs = 5 * min, restoredSocAtSave = 62)
         val ui = e.at(16 * min)
@@ -435,7 +435,7 @@ class StayEngineTest {
         assertEquals(0, ui.elapsedMinutes)
     }
 
-    // E4-1: charged while the app was away (SOC rose) -> a new stay, energy baseline = new SOC.
+    // Charged while the app was away (SOC rose) -> a new stay, energy baseline = new SOC.
     @Test fun restoreStartsNewStayWhenSocRose() {
         val e = StayEngine(restored = saved(), restoredSeenAtMs = 5 * min, restoredSocAtSave = 52)
         e.at(6 * min, ev.copy(socPercent = 62))
@@ -443,7 +443,7 @@ class StayEngineTest {
         assertEquals(62, e.session!!.socAtStart)
     }
 
-    // REVIEW_COPY_B: more than 5 %p below the last saved value -> a different stay.
+    // More than 5 %p below the last saved value -> a different stay.
     @Test fun restoreStartsNewStayWhenSocDifferentByMoreThan5Points() {
         val e = StayEngine(restored = saved(), restoredSeenAtMs = 5 * min, restoredSocAtSave = 70)
         e.at(6 * min, ev.copy(socPercent = 62))
@@ -460,7 +460,7 @@ class StayEngineTest {
         assertEquals(1 * min, e.session!!.startMs)
     }
 
-    // E4-2: below tomorrow's share the hero carries a status, never "약 0분".
+    // Below tomorrow's share the hero carries a status, never "약 0분".
     @Test fun heroNeverZeroMinutesBelowKeep() {
         val hero = StayEngine().at(0, ev.copy(socPercent = 7)).hero!!
         assertTrue(hero.belowKeep)
@@ -468,7 +468,7 @@ class StayEngineTest {
         assertFalse(StayEngine().at(0).hero!!.belowKeep)
     }
 
-    // E4-3: battery rose during the stay -> charging line, never "0.0kWh".
+    // Battery rose during the stay -> charging line, never "0.0kWh".
     @Test fun receiptShowsChargingInsteadOfZeroKwh() {
         val e = StayEngine(); e.at(0, ev.copy(socPercent = 40))
         val energy = e.at(2 * min, ev.copy(socPercent = 45, driverDoorOpen = true)).receipt!!.rows.filterIsInstance<ReceiptRow.Energy>().single()
@@ -484,7 +484,7 @@ class StayEngineTest {
         assertEquals(ReceiptRow.Energy("2.3", EnergyKind.VALUE), used)
     }
 
-    // Unknown windows are reported, never "닫힘" (W-Q3 table: unknown is never the safe-looking value).
+    // Unknown windows are reported, never "닫힘" (unknown is never the safe-looking value).
     @Test fun windowsUnknownIsReportedNotClosed() {
         val e = StayEngine(); e.at(0)
         val w = e.at(2 * min, ev.copy(driverDoorOpen = true, windows = mapOf("driver" to WINDOW_UNKNOWN, "passenger" to 0)))
@@ -503,7 +503,7 @@ class StayEngineTest {
         assertEquals(true, ev.copy(windows = mapOf("driver" to 3, "passenger" to WINDOW_UNKNOWN)).anyWindowOpen)
     }
 
-    // E4-4: stay timers run on the controller's monotonic clock; the engine only sees elapsed time,
+    // Stay timers run on the controller's monotonic clock; the engine only sees elapsed time,
     // so the 60-minute warning depends on elapsed minutes, not on the wall clock or hour of day.
     @Test fun hourNoticeDependsOnElapsedTimeOnly() {
         val e = StayEngine(); e.at(0, hour = 12)
@@ -520,7 +520,7 @@ class StayEngineTest {
         assertTrue(f.at(40 * min).restartedFromStale)
     }
 
-    // UXR E-1: 12 %p (9.3 kWh) gone in one minute is not climate use: no made-up kWh.
+    // 12 %p (9.3 kWh) gone in one minute is not climate use: no made-up kWh.
     @Test fun receiptEnergyImplausibleDropIsNotShownAsUsed() {
         val e = StayEngine(); e.at(0, ev.copy(socPercent = 20))
         val energy = e.at(min + 1000, ev.copy(socPercent = 8, driverDoorOpen = true)).receipt!!.rows.filterIsInstance<ReceiptRow.Energy>().single()

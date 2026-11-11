@@ -174,7 +174,7 @@ def shot(out_dir, name):
         f.write(adb("exec-out", "screencap", "-p", binary=True))
 
 
-# ---- window size (QA R-02b: Pleos splits the app area 1:1 when two apps are open, ~840 dp each) --------
+# ---- window size (Pleos splits the app area 1:1 when two apps are open, ~840 dp each) ----------------
 
 LARGE_BOUNDS = ("853", "90", "2535", "1300")  # Pleos Connect 2.1.0 app area, 1682 x 1210
 SMALL_BOUNDS = ("853", "90", "1694", "1300")  # 841 x 1210 = one half of a 1:1 split (density 160 -> 841 dp)

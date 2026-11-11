@@ -7,7 +7,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Weather island rules: CEO decision 2026-11-09, QA 10.2 L-1..L-6, M-1/M-11, condition 10, E-02. */
+/** Weather island rules: what the picture shows, what never drives it, and its motion limits. */
 class IslandTest {
 
     private val ev = CabinState(
@@ -30,7 +30,7 @@ class IslandTest {
         val u = ui(e, 10_000, ev.copy(driverSetTempC = 20f))
         assertTrue(Island.state(u, 10_100)!!.animating)
         assertFalse(Island.state(u, 10_000 + Island.EMPHASIS_MS + 1)!!.animating)
-        assertTrue(Island.MOTION_MS <= Island.EMPHASIS_MS && Island.EMPHASIS_MS <= 2_000L) // QA L-4, one-shot
+        assertTrue(Island.MOTION_MS <= Island.EMPHASIS_MS && Island.EMPHASIS_MS <= 2_000L) // one-shot
     }
 
     @Test fun frozenUnderNoticeOrReceipt() {
@@ -45,7 +45,7 @@ class IslandTest {
         assertFalse(Island.state(r, 60 * 60_000L + 2100)!!.animating)
     }
 
-    // HANDOFF 8.4 / 8.5 state table (S0..S5, S11), ported from island_state.js.
+    // Design state table (S0..S5, S11), ported from island_state.js.
     @Test fun climateInputsMapToDesignStates() {
         val s0 = st(ev.copy(driverSetTempC = 22f, fanSpeed = 3))
         assertEquals(IslandSun.M, s0.sun); assertEquals(1, s0.wind)
@@ -64,12 +64,12 @@ class IslandTest {
         assertEquals(0.7f, Island.layers(st(ev.copy(driverSeatHeat = 2))).first { it.id == "is_rock_l_warm" }.alpha, 0f)
         val s5 = Island.layers(st(ev.copy(acOn = true, recirculationOn = true))).map { it.id }
         assertTrue(s5.containsAll(listOf("is_cool", "is_cloud_recirc")))
-        // X-03: the boat is always there and is the only picture of tomorrow's share (no grey sun, HQ 1-A').
+        // The boat is always there and is the only picture of tomorrow's share (no grey sun).
         assertTrue(Island.layers(st(ev.copy(socPercent = 8))).any { it.id == "is_boat" })
     }
 
     // The old vector island has no rain, moving gull or lamp. Far rain lives only in the H1 picture and only for the
-    // AUTO wiper actually wiping (X-09: StayEngineTest.rainOnlyForAutoWiperActuallyWiping); manual wiping, turn
+    // AUTO wiper actually wiping (see StayEngineTest.rainOnlyForAutoWiperActuallyWiping); manual wiping, turn
     // signals and the cabin light never drive the picture.
     @Test fun noManualWiperTurnSignalOrLampInput() {
         val ids = Island.layers(st()).map { it.id }
@@ -98,13 +98,13 @@ class IslandTest {
         val below = st(ev.copy(socPercent = 8))
         assertTrue(below.alert); assertEquals(0f, below.dayLength, 0f)
         assertEquals(st().sun, below.sun) // sun follows the set temperature only
-        // QA I-6: same boat layer, same alpha, whatever the battery: no sinking or filling picture.
+        // Same boat layer, same alpha, whatever the battery: no sinking or filling picture.
         val boat = { c: CabinState -> Island.layers(st(c)).single { it.id == "is_boat" } }
         assertEquals(boat(ev), boat(ev.copy(socPercent = 8)))
         assertTrue("is_pier" in Island.STATIC_LAYERS)
     }
 
-    // HANDOFF 10.2: amber crate outline near (K1) and below (K2) tomorrow's share; the picture of the boat stays.
+    // Amber crate outline near (K1) and below (K2) tomorrow's share; the picture of the boat stays.
     @Test fun crateOutlineOnlyNearOrBelowKeep() {
         assertFalse(Island.layers(st()).any { it.id == "is_crate_mark" })
         val near = Island.state(ui(StayEngine(), 0, ev.copy(socPercent = 10)), 0)!!
@@ -113,15 +113,15 @@ class IslandTest {
         assertTrue(Island.layers(st(ev.copy(socPercent = 8))).any { it.id == "is_crate_mark" })
     }
 
-    // HANDOFF 10.2 v2 / platform 13.5: moor after D/R, or after >= 3 s away from P; never on P->N->P or app start.
+    // Moor after D/R, or after >= 3 s away from P; never on P->N->P or app start.
     @Test fun mooringOnlyWhenTheCarCameBack() {
         assertTrue(Island.shouldMoor(500L, wasDrivingOrReverse = true))
         assertTrue(Island.shouldMoor(3_000L, wasDrivingOrReverse = false))
         assertFalse(Island.shouldMoor(1_500L, wasDrivingOrReverse = false)) // P -> N -> P
         assertFalse(Island.shouldMoor(null, wasDrivingOrReverse = true)) // app (re)start: end picture
         assertTrue(Island.MOOR_MS <= 1_600L && Island.MOOR_SLIDE_MS + Island.MOOR_ROPE_MS + Island.MOOR_BOB_MS == 1_600)
-        assertTrue(Island.SWAY_DEBOUNCE_MS + Island.SWAY_MS <= 1_600L) // QA 12: inside the 1.6 s window
-        assertFalse(Island.SWAY_ENABLED) // HANDOFF 10.7 v3: the bob after climate changes is round 2
+        assertTrue(Island.SWAY_DEBOUNCE_MS + Island.SWAY_MS <= 1_600L) // inside the 1.6 s window
+        assertFalse(Island.SWAY_ENABLED) // the bob after climate changes is not in this release
     }
 
     @Test fun mooringWindowAndCoverRules() {
@@ -133,7 +133,7 @@ class IslandTest {
         assertFalse(Island.state(u.copy(notice = NoticeKind.HOUR), 10_100)!!.mooring) // notice on top: skip
     }
 
-    // QA L-1: rear occupancy, windows and doors never change the picture.
+    // Rear occupancy, windows and doors never change the picture.
     @Test fun rearSeatWindowsAndDoorsAreNotInputs() {
         val base = st()
         assertEquals(base, st(ev.copy(rearLeftOccupied = true, rearRightOccupied = true)))
@@ -147,7 +147,7 @@ class IslandTest {
         assertNull(Island.state(ui(StayEngine(), 0, parked = false), 0))
     }
 
-    // HANDOFF 10.3 ① v5 / QA B_GATE: the boat starts inside the visible picture on every window size,
+    // The boat starts inside the visible picture on every window size,
     // ends at the pier, never slides more than 360 dp, and the wake is gone in the end picture.
     @Test fun moorSlideStartsInsideThePicture() {
         assertEquals(360f, Island.moorSlideUnits(1900f, 520f), 0.5f) // Full

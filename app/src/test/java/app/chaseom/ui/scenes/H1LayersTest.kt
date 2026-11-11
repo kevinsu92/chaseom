@@ -4,12 +4,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** 04_design art_v3 layers_h1: every state the island can show has its layer in both window sets. */
+/** H1 art layers: every state the island can show has its layer in both window sets. */
 class H1LayersTest {
     private val expected = buildSet {
-        addAll(listOf("base", "boat_l1", "k2_l1", "air")) // v1.9: no sheen; Pleos fit v3: + air (the circling cloud)
-        listOf("S", "M", "L").forEach { add("sun_night_$it") } // night sun drawn above the night light (QA verdict 11)
-        addAll(listOf("rain", "rain_night"))                    // X-09 far rain v2.1 (day / over the night light)
+        addAll(listOf("base", "boat_l1", "k2_l1", "air")) // no sheen; + air (the circling cloud)
+        listOf("S", "M", "L").forEach { add("sun_night_$it") } // night sun drawn above the night light
+        addAll(listOf("rain", "rain_night"))                    // far rain (day / over the night light)
         (0..2).forEach { add("trees_w$it") }
         listOf("S", "M", "L").forEach { add("sun_$it") }
         (1..2).forEach { add("wind_w$it") }
@@ -23,7 +23,7 @@ class H1LayersTest {
         assertEquals(expected, H1Layers.S.keys)
     }
 
-    // The night light sits on the water line of the current step (Pleos fit v3.2.1): same values as the manifest.
+    // The night light sits on the water line of the current step: same values as the manifest.
     @Test fun waterTopMatchesTheWaterLayers() {
         for (set in listOf(H1Set.Large, H1Set.Small)) (1..5).forEach { l ->
             assertEquals(set.layers.getValue("water_l$l").y, set.waterTop[l - 1])
@@ -45,7 +45,7 @@ class H1LayersTest {
     }
 
     @Test fun tallSmallBoxPutsTheSunAt24AndTheWindAt36Percent() {
-        // Critique final ①: box 1.25x the picture; positions are fractions of the box, measured from its top.
+        // Box 1.25x the picture; positions are fractions of the box, measured from its top.
         val set = H1Set.Small
         val k = 0.8f
         val boxDp = set.h * k * 1.25f
@@ -57,7 +57,7 @@ class H1LayersTest {
         assertEquals(SkyLift.NONE, skyLiftFor(set, k, set.h * k).let { if (it.sun == 0f && it.wind == 0f) SkyLift.NONE else it })
     }
 
-    // QA gate 4 D-1: a box shorter than the picture (cards on screen) keeps the largest sun inside its top.
+    // A box shorter than the picture (cards on screen) keeps the largest sun inside its top.
     @Test fun shortLargeBoxKeepsTheSunInside() {
         val set = H1Set.Large
         val kz = 1f

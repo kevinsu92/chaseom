@@ -6,7 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** ISLAND_REDESIGN v2.1 + QA REVIEW_ISLAND_REDESIGN_v2 (H-1 buoys, L-2 hysteresis, one meaning per element). */
+/** Island info rules: buoys, water hysteresis, one meaning per picture element. */
 class IslandInfoTest {
     private val climate = ClimateSetting(powerOn = true, setTempC = 22f, fanSpeed = 3, acOn = false, recircOn = false, driverSeatHeat = 0)
 
@@ -29,12 +29,12 @@ class IslandInfoTest {
         val minutes = listOf(29, 30, 59, 60, 88, 146, 179, 180, 9_999)
         val buoys = minutes.map { IslandInfo.of(ui(it))!!.buoys }
         assertEquals(listOf(0, 1, 1, 2, 2, 4, 5, 6, 6), buoys)
-        // H-1: the picture never says more than the hero number.
+        // The picture never says more than the hero number.
         minutes.zip(buoys).forEach { (m, b) -> assertTrue(b * IslandInfo.MINUTES_PER_BUOY <= m) }
     }
 
     @Test fun threeHourCapIsOnePictureOnTheIsland() {
-        // M-11: at or above 180 min the hero says "3시간 이상" and the island draws the same picture.
+        // At or above 180 min the hero says "3시간 이상" and the island draws the same picture.
         val at180 = IslandInfo.of(ui(180))!!
         listOf(181, 240, 600, 9_999).forEach { assertEquals(at180, IslandInfo.of(ui(it))!!) }
         assertEquals(IslandInfo.MAX_BUOYS, at180.buoys)
@@ -50,7 +50,7 @@ class IslandInfoTest {
     }
 
     @Test fun waterFiveStepsFromAFreshReading() {
-        // v2.2 (QA M-4): 0-10 / 11-20 / 21-40 / 41-70 / 71-100, boundary values on both sides.
+        // Water steps: 0-10 / 11-20 / 21-40 / 41-70 / 71-100, boundary values on both sides.
         val socs = listOf(0, 10, 11, 20, 21, 40, 41, 70, 71, 100)
         assertEquals(listOf(0, 0, 1, 1, 2, 2, 3, 3, 4, 4), socs.map { IslandInfo.waterStepFresh(it) })
     }
@@ -72,7 +72,7 @@ class IslandInfoTest {
     }
 
     @Test fun pictureStepNeverAboveTheSocStep() {
-        // QA ROUND1B_GATE check 2: round trips 1 -> 100 -> 1 and a zig-zag around every boundary.
+        // Round trips 1 -> 100 -> 1 and a zig-zag around every boundary.
         val w = WaterStepper()
         val seq = (0..100) + (100 downTo 0) + listOf(9, 10, 11, 12, 11, 10, 19, 20, 21, 22, 21, 20, 39, 40, 41, 42, 41, 40, 69, 70, 71, 72, 71, 70)
         seq.forEach { soc ->
@@ -99,12 +99,12 @@ class IslandInfoTest {
         val i = IslandInfo.of(u)!!
         assertEquals(2, i.wind)
         assertTrue(i.cool)
-        // Pleos fit v3 P8: recirculation alone draws no cloud; only the 20-minute fact does, and it is one flag
-        // (no count, no strength), so it cannot read as an air-quality gauge (QA A1-2).
+        // Recirculation alone draws no cloud; only the 20-minute fact does, and it is one flag
+        // (no count, no strength), so it cannot read as an air-quality gauge.
         assertFalse(i.cloud)
         assertTrue(IslandInfo.of(u.copy(recircMinutes = 20))!!.cloud)
         assertEquals(IslandInfo.of(u.copy(recircMinutes = 20)), IslandInfo.of(u.copy(recircMinutes = 95)))
-        // Director #5 (QA PASS): trunk -> hatch, charge port -> cable; nothing else changes with them.
+        // Trunk -> hatch, charge port -> cable; nothing else changes with them.
         val both = IslandInfo.of(u.copy(trunkOpen = true, chargePortOpen = true))!!
         assertTrue(both.trunkOpen && both.chargePortOpen)
         assertEquals(i, both.copy(trunkOpen = false, chargePortOpen = false))

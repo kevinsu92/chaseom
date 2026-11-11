@@ -1,6 +1,6 @@
 # 플랫폼 노트 — 실제로 재 보고 알게 된 것
 
-Pleos Connect Emulator 2.1.0과 Virtual Console(VC)에서 차섬이 읽는 신호를 하나씩 조작했습니다. 그리고 앱이 언제, 어떤 값을 받는지 기록했습니다. 재현 도구는 `python tools/probe_signals.py`입니다.
+Pleos Connect Emulator 2.1.0과 Virtual Console(VC)에서 차섬이 읽는 신호를 하나씩 조작했습니다. 그리고 앱이 언제, 어떤 값을 받는지 기록했습니다. 시각은 앱의 `PROBE` 로그(측정할 때만 켬)로 쟀습니다.
 
 ## 1. 신호별 결과
 | 신호 | API | 결과 | 앱의 처리 |
