@@ -72,6 +72,17 @@ object EnergyModel {
         return (keepKm / kmPerKwh * KEEP_FACTOR / capacityKwh * 100f).coerceIn(0f, 100f)
     }
 
+    /**
+     * Change of the stay time, in whole percent, when the draw goes from [beforeKw] to [afterKw] on the same
+     * battery: before / after - 1. Independent of the battery level, so it is used above the 3-hour display cap.
+     * null when the change is under 1 % (or a draw is not positive).
+     */
+    fun stayRatePercent(beforeKw: Float, afterKw: Float): Int? {
+        if (beforeKw <= 0f || afterKw <= 0f) return null
+        val pct = kotlin.math.round((beforeKw / afterKw - 1f) * 100f).toInt()
+        return pct.takeIf { kotlin.math.abs(it) >= 1 }
+    }
+
     /** Minutes until SOC falls to the keep share at [drawKw]; 0 when already at/below it. */
     fun minutesToKeep(socPercent: Int, keepPercent: Float, capacityKwh: Float, drawKw: Float): Int {
         val availableKwh = (socPercent - keepPercent) / 100f * capacityKwh

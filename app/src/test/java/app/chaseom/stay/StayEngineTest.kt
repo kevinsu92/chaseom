@@ -281,6 +281,37 @@ class StayEngineTest {
         val t = e.at(1000, ev.copy(driverSetTempC = 26f, fanSpeed = 7)).toast!!
         assertTrue(t.heldAboveCap)
         assertEquals(0, t.deltaMinutes)
+        assertNotNull("above the cap the change is a percentage, not minutes", t.capRatePercent)
+    }
+
+    // Above the 3-hour cap the toast shows the stay-time change as a percentage of the same battery
+    // (power before / after - 1), with the sign in the same direction as the minutes would have.
+    @Test fun aboveCapToastShowsStayRatePercentBothDirections() {
+        val e = StayEngine(); val start = e.at(0) // 62 %, 22 C / fan 3
+        assertTrue(start.hero!!.overCap)
+        val up = e.at(1000, ev.copy(driverSetTempC = 26f, fanSpeed = 6))
+        assertEquals(-12, up.toast!!.capRatePercent) // 2.69 kW -> 3.07 kW
+        assertTrue("the hero stays at the cap", up.hero!!.overCap)
+        val down = e.at(10_000, ev).toast!! // back to 22 C / fan 3, a new batch
+        assertEquals(14, down.capRatePercent)
+        assertEquals(EnergyModel.stayRatePercent(3.07f, 2.69f), down.capRatePercent)
+    }
+
+    @Test fun stayRateIsNullUnderOnePercentAndBelowTheCap() {
+        assertNull(EnergyModel.stayRatePercent(2.69f, 2.70f))
+        assertNull(EnergyModel.stayRatePercent(0f, 2.70f))
+        val low = ev.copy(socPercent = 14)
+        val e = StayEngine(); e.at(0, low)
+        val t = e.at(1000, low.copy(driverSetTempC = 26f)).toast!!
+        assertFalse(t.heldAboveCap)
+        assertNull("below the cap the toast keeps its minutes", t.capRatePercent)
+        assertTrue(t.deltaMinutes < 0)
+    }
+
+    @Test fun aboveCapAirSourceSwitchStillShowsNoNumber() {
+        val e = StayEngine(); e.at(0)
+        val t = e.at(1000, ev.copy(driverSetTempC = 26f, recirculationOn = true)).toast!!
+        assertFalse(t.showMinutes) // the toast names the changes only, whatever the cap state
     }
 
     @Test fun toastDeltaCrossingTheCapIsBounded() {

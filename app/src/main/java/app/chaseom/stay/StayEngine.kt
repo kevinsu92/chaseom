@@ -65,6 +65,7 @@ class StayEngine(
     private var prevMinutes: Int? = null
     private var batchStartMs: Long? = null
     private var batchBaseMinutes: Int? = null
+    private var batchBaseDrawKw: Float? = null
     private var batchItems = mutableListOf<ClimateChange>()
     private var toast: Toast? = null
     private var lastClimateChangeMs: Long? = null
@@ -238,6 +239,7 @@ class StayEngine(
         prevMinutes = null
         batchStartMs = null
         batchBaseMinutes = null
+        batchBaseDrawKw = null
         batchItems.clear()
         toast = null
         lastClimateChangeMs = null
@@ -313,6 +315,7 @@ class StayEngine(
         if (start == null || nowMs - start > timing.toastBatchMs) {
             batchStartMs = nowMs
             batchBaseMinutes = prevMin
+            batchBaseDrawKw = EnergyModel.drawKw(prev)
             batchItems = mutableListOf()
         }
         changes.forEach { ch -> batchItems.removeAll { it::class == ch::class }; batchItems += ch }
@@ -326,10 +329,12 @@ class StayEngine(
         // bundled with it would carry the same message, so the whole toast drops them and keeps the switch named.
         val recirc = batchItems.lastOrNull { it is ClimateChange.Recirc }
         val shown = if (recirc == null) batchItems.takeLast(2) else batchItems.filter { it !is ClimateChange.Recirc }.takeLast(1) + recirc
+        val held = before >= cap && after >= cap
         toast = Toast(
             shown, after - before, nowMs + timing.toastShowMs,
-            heldAboveCap = before >= cap && after >= cap,
+            heldAboveCap = held,
             showMinutes = recirc == null,
+            capRatePercent = if (held) EnergyModel.stayRatePercent(batchBaseDrawKw!!, EnergyModel.drawKw(setting)) else null,
         )
     }
 

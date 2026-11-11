@@ -163,6 +163,10 @@ class WordingRulesTest {
         assertEquals("설정 26°C · 풍량 6 · −21분 (추정)",
             String.format(strings.getValue("d_toast_fmt"), "설정 26°C · 풍량 6", String.format(strings.getValue("d_toast_delta"), "−21분")))
         assertTrue(strings.getValue("d_toast_cap").contains("(추정)"))
+        // Above the cap: a percentage of the stay time, never minutes (no "분"), always "(추정)".
+        val rate = strings.getValue("d_toast_cap_rate")
+        assertTrue(rate.contains("(추정)") && rate.contains("%%"))
+        assertFalse(rate.contains("분"))
         // The transient sun number always says "설정" (never a bare temperature that reads as the cabin's).
         assertEquals("설정 %1\$s → %2\$s°C", strings["is_sun_change"])
         assertTrue(strings.getValue("hvac_temp").startsWith("설정 "))

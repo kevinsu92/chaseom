@@ -147,6 +147,7 @@
     <string name="is_cd">섬 그림: 공조 설정·배터리로 그려요. 지금 설정으로 %1$s 머물 수 있어요 (추정), 배터리 %2$d%%, 내일 몫 %3$dkm</string>
     <!-- Toast when both before/after are over the 3-hour cap -->
     <string name="d_toast_cap">3시간 이상 유지 (추정)</string>
+    <string name="d_toast_cap_rate">머물 시간 %1$s%2$d%% (추정)</string>
 
     <!-- ===== 묶음 B 확정 문구. 쓰지 않는 st_loading·st_disconnected·h_soc_unknown·is_unsupported·hg_*·is_key_rock은 뺐다. =====
          is_day / is_keep 은 지금 엔지니어링 res/values/strings.xml에 있다: 그쪽 두 줄을 지우고 이 파일 값을 쓴다(중복 리소스 방지). -->

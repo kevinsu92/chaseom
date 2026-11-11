@@ -228,7 +228,7 @@ fun StayFullScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
                 }
             }
             if (toastPlace == ToastPlace.BOTTOM) {
-                ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes, Modifier.align(Alignment.BottomCenter).padding(bottom = PleosDimens.space24)) }
+                ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes, t.capRatePercent, Modifier.align(Alignment.BottomCenter).padding(bottom = PleosDimens.space24)) }
             }
         }
     }
@@ -328,7 +328,7 @@ private fun MainColumnContent(
                         Text(stringResource(R.string.estimate), style = ChaseomUi.estimate(size), color = k.text3, modifier = Modifier.alignByBaseline())
                     }
                     if (toastPlace == ToastPlace.HERO_ROW) {
-                        ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes, Modifier.align(Alignment.CenterEnd)) }
+                        ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes, t.capRatePercent, Modifier.align(Alignment.CenterEnd)) }
                     }
                 }
                 // Bundle 5: say why the number stops at 3 hours.
@@ -349,7 +349,7 @@ private fun MainColumnContent(
                         if (toastPlace == ToastPlace.ISLAND_TOP) ui.toast?.let { t ->
                             // The one shadow in the app, day only (0 4 16 8 %).
                             val night = androidx.compose.foundation.isSystemInDarkTheme()
-                            DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes,
+                            DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes, t.capRatePercent,
                                 Modifier.padding(top = ChaseomUi.related), // the toast draws its own Level 2 shadow (day)
                                 short = true)
                         }
@@ -426,10 +426,12 @@ private fun ClimateLine(s: ClimateSetting) {
 }
 
 @Composable
-private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Boolean, showMinutes: Boolean, modifier: Modifier, short: Boolean = false) {
+private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Boolean, showMinutes: Boolean, capRate: Int?, modifier: Modifier, short: Boolean = false) {
     val none = heldAboveCap || abs(delta) < 1
     val deltaText = when {
-        heldAboveCap -> stringResource(R.string.d_toast_cap) // never an hours-long delta
+        // Above the cap the change is a percentage of the stay time, never minutes beyond the cap.
+        heldAboveCap && capRate != null -> stringResource(R.string.d_toast_cap_rate, if (capRate > 0) "+" else "−", abs(capRate))
+        heldAboveCap -> stringResource(R.string.d_toast_cap)
         none -> stringResource(R.string.d_toast_none)
         // A computed ± minutes always carries "(추정)" in the toast too.
         else -> stringResource(R.string.d_toast_delta, signedDuration(delta))
@@ -438,7 +440,7 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
     // cabin temperature. A long toast wraps to two lines instead of dropping the word.
     val label = items.map { changeLabel(it) }.joinToString(" · ")
     // Latency probe: first frame showing this toast content.
-    androidx.compose.runtime.LaunchedEffect(items, delta, heldAboveCap) {
+    androidx.compose.runtime.LaunchedEffect(items, delta, heldAboveCap, capRate) {
         androidx.compose.runtime.withFrameNanos { }
         app.chaseom.Probe.log("toastFrame")
     }

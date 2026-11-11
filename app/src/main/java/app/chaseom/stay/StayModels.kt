@@ -109,6 +109,11 @@ data class Toast(
      * change only and shows no minutes, in either direction. The hero still shows the new time at once.
      */
     val showMinutes: Boolean = true,
+    /**
+     * Only when [heldAboveCap]: the signed change of the stay time as a percentage (same battery, power
+     * before / after - 1). The minutes above the cap are never shown. null when |change| < 1 %.
+     */
+    val capRatePercent: Int? = null,
 )
 
 enum class ExchangeRule { X1_SEAT_HEAT, X2_FAN, X3_AC }
