@@ -29,9 +29,9 @@
    - 앞 와이퍼 AUTO → 섬 뒤 먼 비 (Low/High는 그리지 않음)
    - 운전석 문 열기 → 떠나기 전 영수증 (문을 닫으면 닫힘)
    - 기어 **D** → 섬과 숫자를 바로 접고, 주행 중에는 시스템이 앱 화면을 가림
-4. 또는 자동으로: `python tools/demo.py`. Virtual Console 조작을 재생하고 단계마다 화면 문구와 반영 시간을 출력한 뒤 `6/6 장면 확인`을 냅니다(영수증 단계에서 1분쯤 기다림). 앱 안에 데모 모드나 가짜 값은 없습니다. 도구 설명은 [tools/README.md](tools/README.md)에 있습니다.
+4. 또는 자동으로: `python tools/demo.py`. Virtual Console 조작을 재생하고 단계마다 화면 문구와 반영 시간을 출력한 뒤 `6/6 장면 확인`을 냅니다(영수증 단계에서 1분쯤 기다림). release APK에는 데모 모드나 가짜 값이 없습니다(가짜 데이터는 차량 서비스가 없을 때 쓰는 디버그 빌드에만 있음). 도구 설명은 [tools/README.md](tools/README.md)에 있습니다.
 
-**소스에서 빌드**: `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`이 필요합니다. `./gradlew assembleDebug`, `./gradlew testDebugUnitTest`. 릴리스 APK는 `keystore.properties`(예시 `keystore.properties.example`)를 준비한 뒤 `scripts/build-release.ps1`로 만듭니다. Windows에서 경로에 한글이 있으면 AGP가 빌드를 거부하므로 영문 경로에 클론하거나 이 스크립트(자동 `subst`)를 쓰세요. 디버그 빌드는 차량 서비스가 없을 때 테스트용 가짜 데이터로 동작하고, 릴리스 빌드는 항상 실제 Pleos SDK만 씁니다.
+**소스에서 빌드**: `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`이 필요합니다. `./gradlew assembleDebug`, `./gradlew testDebugUnitTest`. 릴리스 APK는 `keystore.properties`(예시 `keystore.properties.example`)를 준비한 뒤 `scripts/build-release.ps1`로 만듭니다. Windows에서 경로에 한글이 있으면 AGP가 빌드를 거부하므로 영문 경로에 클론하거나 이 스크립트(자동 `subst`)를 쓰세요.
 
 ## 3. 사용 기술·SDK와 테스트 환경
 - **SDK/API**: `ai.pleos.playground:Vehicle:2.3.2` (EvBattery, HVAC, Seat, Door, Window, Light, Wiper), AAOS `CarPropertyManager` (연료 종류, 배터리 용량, 충전구, 기어 `GEAR_SELECTION`). 공개 문서에 있는 API만 씁니다.
@@ -44,6 +44,7 @@
 | 빌드 | Android Studio (JBR), Gradle 9.9.0, AGP 9.5.1, Kotlin 2.4.21, compileSdk 37, minSdk 28, targetSdk 34 |
 | 패키지 | `app.chaseom` (디버그 `app.chaseom.debug`) |
 | 권한 (런타임 권한 요청 0, 차량 제어 권한 0) | Pleos `CAR_ENERGY`, `CAR_CLIMATE`, `CAR_SEATS`, `CAR_WINDOWS`, `CAR_DOORS`, `CAR_LIGHTS` / AAOS `CAR_INFO`, `CAR_ENERGY_PORTS`, `CAR_POWERTRAIN` / `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE` |
+| SDK·라이브러리가 빌드 때 자동으로 넣는 권한 | `ai.pleos.playground.service.vehicle.VEHICLE_BINDING` (Pleos Vehicle SDK), `app.chaseom.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (AndroidX, 앱 자신의 권한) |
 
 ## 4. APK 위치
 - **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `ca0269fe854dacf86a230be9e7250e2c7ed12fe8d0616b651bfd400768b60783`)
@@ -107,7 +108,7 @@ CPU는 코어 1개 기준(에뮬레이터 4코어)입니다. 시간은 Virtual C
 ## 한계 (에뮬레이터 검증, 실차 미검증)
 - 모든 화면과 수치는 Pleos Connect Emulator 2.1.0에서 확인했고, 실차에서는 확인하지 않았습니다. 1시간 재경고·야간 고지·축소 모드·등받이 고지는 위 단위 테스트로 검증합니다. Virtual Console의 등받이 각도는 에뮬레이터 차량 데이터에 반영되지 않아 등받이 고지는 지원 차량에서만 켜집니다. 출시 빌드에는 시간을 빠르게 돌리는 코드가 없습니다.
 - 2열 탑승 값은 앱이 뒤집어 읽습니다(`OCCUPANCY_SDK_INVERTED`). Pleos Connect Emulator 2.1.0에서 Virtual Console의 "Occupied"가 SDK에서 `false`로 왔기 때문입니다(2026-11-09 실측, 2열 두 좌석 모두). 차량 서비스가 보내는 원값은 AAOS 정의(1 = 빈 좌석, 2 = 탑승)와 맞으므로, 뒤집힘은 SDK의 정수→참·거짓 변환에서 생기는 것으로 보입니다(추정). 실차에서는 확인하지 않았습니다. 방향이 틀리면 탑승한 좌석이 "감지 안 됨"으로 보일 수 있습니다. 그래서 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증 마지막 줄 "뒷좌석 직접 확인"을 센서 값과 상관없이 항상 보여 줍니다.
-- 실내등·와이퍼 레버·등받이는 차가 변화를 알려 주지 않아 1초마다 읽습니다. 이 읽기는 P에서 체류가 열려 있는 동안에만 돌고, P를 벗어나거나 체류가 끝나면 멈췄다가 다시 P가 되면 시작합니다(`PollGateTest`).
+- 실내등·독서등·와이퍼 레버·등받이는 차가 변화를 알려 주지 않아 1초마다 읽습니다. 이 읽기는 P에서 체류가 열려 있는 동안에만 돌고, P를 벗어나거나 체류가 끝나면 멈췄다가 다시 P가 되면 시작합니다(`PollGateTest`).
 - 남은 시간은 차의 공조 상태에 공개 계수표를 곱한 추정입니다. 출처는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에 있습니다. 계수는 영하 10°C 정상상태 기준입니다. 더 추운 날, 처음 데우는 동안, 한여름 직사광선에서는 실제 소모가 더 클 수 있습니다(추정).
 - 계산에서는 내기순환이 난방 전력을 줄이는 것으로 보아, 내기순환을 켜면 남은 시간이 더 길게 나옵니다(추정). 그래도 앱은 내기순환을 권하지 않습니다. 내기순환과 외기를 바꿀 때 토스트에 분을 붙이지 않고, 공조를 켠 채 창문을 닫고 내기순환을 20분 넘게 쓰면 바깥 공기를 들이라는 카드를 띄웁니다.
 - 에뮬레이터에서 신호별로 확인한 사실은 [docs/PLATFORM_NOTES.md](docs/PLATFORM_NOTES.md)에 있습니다.
