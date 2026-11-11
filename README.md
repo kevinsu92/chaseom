@@ -47,7 +47,7 @@
 | SDK·라이브러리가 빌드 때 자동으로 넣는 권한 | `ai.pleos.playground.service.vehicle.VEHICLE_BINDING` (Pleos Vehicle SDK), `app.chaseom.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (AndroidX, 앱 자신의 권한) |
 
 ## 4. APK 위치
-- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `ca0269fe854dacf86a230be9e7250e2c7ed12fe8d0616b651bfd400768b60783`)
+- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `18ff6369c349d2befdc11b5316d5ac916e08623950f06c678141682b0174715e`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4)
 
 ## 검증 표
@@ -56,14 +56,14 @@
 | 항목 | 값 |
 |---|---|
 | 단위 테스트 | **148개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
-| 테스트 커버리지 (Kover, 라인) | 도메인 **98.4%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 28.8%. 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
-| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **33 ms**, 최대 85 ms |
-| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **60 ms** (중앙값 19 ms) |
-| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **42 ms**, 최대 143 ms (첫 회만 143, 나머지 27–63 ms) |
-| 앱 시작 (`am start -W`, 콜드 스타트) | Pleos 기준 10초 이내. 이번 측정 1.03–1.54초(에뮬레이터를 다시 켠 뒤), 오래 켜 둔 에뮬레이터에서는 1.6–2.3초, 새로 설치한 뒤 첫 실행 한 번 5.2초 |
-| 정지 화면 CPU (30초) | 평균 **0.25%** |
-| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 1.9% (전환 순간 최대 31%) |
-| 메모리 (PSS) | 60 MB |
+| 테스트 커버리지 (Kover, 라인) | 도메인 **98.7%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 29.1%. 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
+| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **36 ms**, 최대 87 ms |
+| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **31 ms** (중앙값 16 ms) |
+| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **37 ms**, 최대 106 ms (첫 회만 106, 나머지 21–65 ms) |
+| 앱 시작 (`am start -W`, 콜드 스타트) | Pleos 기준 10초 이내. 이번 측정 0.91–1.35초(에뮬레이터를 다시 켠 뒤), 오래 켜 둔 에뮬레이터에서는 1.5–2.3초, 새로 설치한 뒤 첫 실행 한 번 5.2초 |
+| 정지 화면 CPU (30초) | 평균 **0.13%** |
+| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 2.5% (전환 순간 최대 42%) |
+| 메모리 (PSS) | 58 MB |
 | 런타임 권한 팝업 | **0** (요청하는 권한은 모두 normal) |
 | 차량 제어 | **0** (앱은 차를 읽기만 하고, 공조를 끄거나 바꾸지 않음) |
 
