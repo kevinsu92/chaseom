@@ -228,7 +228,7 @@ fun StayFullScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
                 }
             }
             if (toastPlace == ToastPlace.BOTTOM) {
-                ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, Modifier.align(Alignment.BottomCenter).padding(bottom = PleosDimens.space24)) }
+                ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes, Modifier.align(Alignment.BottomCenter).padding(bottom = PleosDimens.space24)) }
             }
         }
     }
@@ -328,7 +328,7 @@ private fun MainColumnContent(
                         Text(stringResource(R.string.estimate), style = ChaseomUi.estimate(size), color = k.text3, modifier = Modifier.alignByBaseline())
                     }
                     if (toastPlace == ToastPlace.HERO_ROW) {
-                        ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, Modifier.align(Alignment.CenterEnd)) }
+                        ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes, Modifier.align(Alignment.CenterEnd)) }
                     }
                 }
                 // Bundle 5: say why the number stops at 3 hours.
@@ -349,7 +349,7 @@ private fun MainColumnContent(
                         if (toastPlace == ToastPlace.ISLAND_TOP) ui.toast?.let { t ->
                             // POLISH §0.2: the one shadow in the app, day only (0 4 16 8 %).
                             val night = androidx.compose.foundation.isSystemInDarkTheme()
-                            DialToast(t.items, t.deltaMinutes, t.heldAboveCap,
+                            DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes,
                                 Modifier.padding(top = ChaseomUi.related), // the toast draws its own Level 2 shadow (day)
                                 short = true)
                         }
@@ -426,7 +426,7 @@ private fun ClimateLine(s: ClimateSetting) {
 }
 
 @Composable
-private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Boolean, modifier: Modifier, short: Boolean = false) {
+private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Boolean, showMinutes: Boolean, modifier: Modifier, short: Boolean = false) {
     val none = heldAboveCap || abs(delta) < 1
     val deltaText = when {
         heldAboveCap -> stringResource(R.string.d_toast_cap) // QA M-11: never an hours-long delta
@@ -454,7 +454,8 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
             .padding(horizontal = 22.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(if (label.isEmpty()) deltaText else stringResource(R.string.d_toast_fmt, label, deltaText),
+        // An air-source switch shows its name only, no minutes (see Toast.showMinutes).
+        Text(when { !showMinutes -> label; label.isEmpty() -> deltaText; else -> stringResource(R.string.d_toast_fmt, label, deltaText) },
             style = ChaseomUi.banner, color = k.onToast, maxLines = 2)
     }
 }

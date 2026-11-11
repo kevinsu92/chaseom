@@ -322,7 +322,15 @@ class StayEngine(
         val cap = EnergyModel.DISPLAY_CAP_MINUTES
         val before = batchBaseMinutes!!.coerceAtMost(cap)
         val after = minutes.coerceAtMost(cap)
-        toast = Toast(batchItems.takeLast(2), after - before, nowMs + timing.toastShowMs, heldAboveCap = before >= cap && after >= cap)
+        // An air-source switch must not be rewarded or punished with minutes (either direction), and minutes
+        // bundled with it would carry the same message, so the whole toast drops them and keeps the switch named.
+        val recirc = batchItems.lastOrNull { it is ClimateChange.Recirc }
+        val shown = if (recirc == null) batchItems.takeLast(2) else batchItems.filter { it !is ClimateChange.Recirc }.takeLast(1) + recirc
+        toast = Toast(
+            shown, after - before, nowMs + timing.toastShowMs,
+            heldAboveCap = before >= cap && after >= cap,
+            showMinutes = recirc == null,
+        )
     }
 
     // ---- H·X seat heat 30 min, H·A air card -------------------------------------------------
@@ -369,7 +377,12 @@ class StayEngine(
         if (open != null) prevDriverDoorOpen = open
         if (open == false) receipt = null // closes when the door closes
         val s = session ?: return
-        if (opened && nowMs - s.startMs >= timing.receiptMinStayMs) receipt = buildReceipt(c, settings, policy, nowMs)
+        if (opened && nowMs - s.startMs >= timing.receiptMinStayMs) {
+            receipt = buildReceipt(c, settings, policy, nowMs)
+        } else {
+            // An open receipt follows the light switch (switched while the receipt is up, or a late read).
+            receipt = receipt?.let { r -> r.copy(rows = r.rows.map { if (it is ReceiptRow.Light) ReceiptRow.Light(c.cabinLightOn) else it }) }
+        }
     }
 
     fun buildReceipt(c: CabinState, settings: StaySettings, policy: ModePolicy, nowMs: Long): Receipt {

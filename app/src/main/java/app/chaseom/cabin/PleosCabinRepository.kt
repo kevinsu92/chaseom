@@ -421,7 +421,10 @@ class PleosCabinRepository(
         }
     }
 
-    /** Reads the cabin light switch once, then runs [then] (also when the read fails or never answers in time). */
+    /**
+     * Reads the cabin light switch once, then runs [then]. If the read fails or does not answer within
+     * [LIGHT_READ_TIMEOUT_MS], the light becomes unknown (the receipt says "확인 안 됨"), never the older value.
+     */
     private fun readLightThen(then: () -> Unit) {
         val v = vehicle
         if (v == null) { then(); return }
@@ -430,13 +433,21 @@ class PleosCabinRepository(
         try {
             v.getLight().getCabinLightSwitch(
                 { sw -> setIfChanged("cabinLight", sw == LightSwitch.ON) { st, on -> (st.cabinLightOn != on) to st.copy(cabinLightOn = on) }; once() },
-                { fail("cabinLight", it); once() },
+                { fail("cabinLight", it); lightUnknownThen(once) },
             )
         } catch (t: Throwable) {
             fail("cabinLight", t)
-            once()
+            lightUnknownThen(once)
         }
-        scope.launch { delay(LIGHT_READ_TIMEOUT_MS); once() }
+        scope.launch {
+            delay(LIGHT_READ_TIMEOUT_MS)
+            if (!done.get()) lightUnknownThen(once)
+        }
+    }
+
+    private fun lightUnknownThen(then: () -> Unit) {
+        _state.update { it.copy(cabinLightOn = null) }
+        then()
     }
 
     // ---- helpers ---------------------------------------------------------------------------

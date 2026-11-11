@@ -105,6 +105,11 @@ data class Toast(
     val untilMs: Long,
     /** Both before and after are at/above the display cap: show "3시간 이상 유지 (추정)" instead of a delta. */
     val heldAboveCap: Boolean = false,
+    /**
+     * False when the batch switched between recirculation and outside air: the toast then names the
+     * change only and shows no minutes, in either direction. The hero still shows the new time at once.
+     */
+    val showMinutes: Boolean = true,
 )
 
 enum class ExchangeRule { X1_SEAT_HEAT, X2_FAN, X3_AC }

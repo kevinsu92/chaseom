@@ -196,6 +196,20 @@ class StayEngineTest {
         assertNull("no known closed state yet: no receipt", fresh.at(2 * min, ev.copy(driverDoorOpen = true)).receipt)
     }
 
+    // D-1: the receipt takes the light as read at the door-open moment (the repository re-reads the switch
+    // first), and an open receipt follows later changes, including "unknown" when the re-read fails.
+    @Test fun receiptLightRowFollowsTheSwitchBothWays() {
+        fun light(r: Receipt) = r.rows.filterIsInstance<ReceiptRow.Light>().single().on
+        val off = StayEngine(); off.at(0, ev.copy(cabinLightOn = true))
+        assertEquals(false, light(off.at(2 * min, ev.copy(driverDoorOpen = true, cabinLightOn = false)).receipt!!))
+        val on = StayEngine(); on.at(0, ev.copy(cabinLightOn = false))
+        val r = on.at(2 * min, ev.copy(driverDoorOpen = true, cabinLightOn = true)).receipt!!
+        assertEquals(true, light(r))
+        assertEquals(false, light(on.at(2 * min + 500, ev.copy(driverDoorOpen = true, cabinLightOn = false)).receipt!!))
+        assertEquals(null, light(on.at(2 * min + 900, ev.copy(driverDoorOpen = true, cabinLightOn = null)).receipt!!))
+        assertEquals(r.createdAtMs, on.at(2 * min + 1000, ev.copy(driverDoorOpen = true)).receipt!!.createdAtMs) // same receipt
+    }
+
     @Test fun lightUnknownIsReportedNotDropped() {
         val e = StayEngine(); e.at(0)
         val rows = e.at(2 * min, ev.copy(driverDoorOpen = true, cabinLightOn = null)).receipt!!.rows
@@ -236,6 +250,29 @@ class StayEngineTest {
         assertEquals(listOf(ClimateChange.Temp(26f), ClimateChange.Fan(6)), t2.items)
         assertTrue(t2.deltaMinutes < t1.deltaMinutes) // measured from the batch start
         assertNull(e.at(1800 + 3_001, low.copy(driverSetTempC = 26f, fanSpeed = 6)).toast)
+    }
+
+    // Recirculation <-> outside air: the toast names the switch and shows no minutes, in both directions and
+    // when bundled with another change; the hero moves at once as for any other dial.
+    @Test fun airSourceSwitchToastHasNoMinutesButTheHeroMoves() {
+        val low = ev.copy(socPercent = 14)
+        val e = StayEngine(); val h0 = e.at(0, low).hero!!.minutes
+        val on = e.at(1000, low.copy(recirculationOn = true))
+        assertFalse(on.toast!!.showMinutes)
+        assertEquals(listOf(ClimateChange.Recirc(true)), on.toast!!.items)
+        assertTrue("hero updates with the switch", on.hero!!.minutes != h0)
+        val off = e.at(10_000, low).toast!! // back to outside air, a new batch
+        assertFalse(off.showMinutes)
+        assertEquals(listOf(ClimateChange.Recirc(false)), off.items)
+
+        val b = StayEngine(); b.at(0, low)
+        val bundled = b.at(1000, low.copy(driverSetTempC = 26f, fanSpeed = 6, recirculationOn = true)).toast!!
+        assertFalse("bundled minutes would carry the same message", bundled.showMinutes)
+        assertTrue(bundled.items.contains(ClimateChange.Recirc(true)))
+        assertTrue(bundled.items.size == 2)
+
+        val plain = StayEngine(); plain.at(0, low)
+        assertTrue(plain.at(1000, low.copy(driverSetTempC = 26f)).toast!!.showMinutes)
     }
 
     // QA M-11 / FINDINGS E-01: never an hours-long delta
