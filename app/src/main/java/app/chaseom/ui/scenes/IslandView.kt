@@ -180,10 +180,10 @@ fun IslandPanel(
     LaunchedEffect(ui.lastClimateChangeMs) {
         if (ui.lastClimateChangeMs != null) {
             withFrameNanos { }
-            android.util.Log.i("PROBE", "islandFrame wall=${System.currentTimeMillis()}")
+            app.chaseom.Probe.log("islandFrame")
         }
     }
-    DisposableEffect(Unit) { onDispose { android.util.Log.i("PROBE", "islandGone wall=${System.currentTimeMillis()}") } }
+    DisposableEffect(Unit) { onDispose { app.chaseom.Probe.log("islandGone") } }
     val hero = ui.hero
     val bar = ui.bar
     val cd = if (hero != null && bar != null) {
@@ -476,7 +476,7 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         withTimeoutOrNull(400) { snapshotFlow { windowInfo.isWindowFocused }.first { it } }
         withFrameNanos { }
         delay(Island.MOOR_START_DELAY_MS) // panel R14 / UXR E-3
-        android.util.Log.i("PROBE", "moorFrame wall=${System.currentTimeMillis()}")
+        app.chaseom.Probe.log("moorFrame")
         moor.animateTo(0f, tween(Island.MOOR_SLIDE_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0.33f, 1f, 0.68f, 1f)))
         bob.animateTo(0f, keyframes { durationMillis = Island.MOOR_BOB_MS; Island.BOB_DP at Island.MOOR_BOB_MS / 2 })
     }
@@ -743,7 +743,7 @@ private fun rememberRise(moorAtMs: Long?, covered: Boolean, enabled: Boolean): F
         a.snapTo(0f)
         withTimeoutOrNull(400) { snapshotFlow { windowInfo.isWindowFocused }.first { it } }
         withFrameNanos { }
-        android.util.Log.i("PROBE", "riseFrame wall=${System.currentTimeMillis()}")
+        app.chaseom.Probe.log("riseFrame")
         a.animateTo(1f, tween(RISE_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0f, 0f, 0.2f, 1f)))
     }
     // The frame the island is first uncovered must already be the start state (no one-frame flash of the full

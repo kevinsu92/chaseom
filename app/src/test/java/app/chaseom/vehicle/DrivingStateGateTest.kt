@@ -42,4 +42,15 @@ class DrivingStateGateTest {
         assertEquals(GearPosition.UNKNOWN, aaosGearToPosition(0))
         assertEquals(GearPosition.UNKNOWN, aaosGearToPosition(null))
     }
+
+    // Gear read errors: a value whose status is not AVAILABLE is UNKNOWN, and UNKNOWN is driving.
+    @Test fun gearWithUnavailableOrErrorStatusIsUnknownAndCountsAsDriving() {
+        assertEquals(GearPosition.PARK, gearFromProperty(CAR_STATUS_AVAILABLE, 4))
+        listOf(1, 2).forEach { status -> // STATUS_UNAVAILABLE, STATUS_ERROR
+            val g = gearFromProperty(status, 4)
+            assertEquals(GearPosition.UNKNOWN, g)
+            assertEquals(DrivingRestriction.DRIVING, DrivingStateGate.restrictionFor(snap(g)))
+        }
+        assertEquals(GearPosition.UNKNOWN, gearFromProperty(CAR_STATUS_AVAILABLE, null))
+    }
 }

@@ -92,6 +92,8 @@ def _heartbeat():
 def connect():
     """Forward the VC port and keep a session open. Call once at start."""
     require_device()
+    # The app's timing lines are off unless this log property is set (a normal install logs nothing).
+    adb("shell", "setprop", "log.tag.PROBE", "D")
     adb("forward", "tcp:8088", "tcp:8088")
     threading.Thread(target=_heartbeat, daemon=True).start()
     time.sleep(2.5)

@@ -8,6 +8,7 @@ import android.car.hardware.CarPropertyValue
 import android.car.hardware.property.CarPropertyManager
 import android.content.Context
 import android.util.Log
+import app.chaseom.Probe
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -37,10 +38,15 @@ class PleosVehicleRepository(context: Context) : VehicleRepository {
     private val gearCallback = object : CarPropertyManager.CarPropertyEventCallback {
         override fun onChangeEvent(value: CarPropertyValue<*>) {
             val g = value.value as? Int
-            Log.i("PROBE", "gear=$g wall=${System.currentTimeMillis()}")
-            _state.update { it.copy(gear = aaosGearToPosition(g)) }
+            Probe.log("gear=$g status=${value.status}")
+            _state.update { it.copy(gear = gearFromProperty(value.status, g)) }
         }
-        override fun onErrorEvent(propertyId: Int, areaId: Int) = recordError("gear", null)
+
+        // A gear we cannot read is treated as driving (UNKNOWN fails safe in DrivingStateGate).
+        override fun onErrorEvent(propertyId: Int, areaId: Int) {
+            _state.update { it.copy(gear = GearPosition.UNKNOWN) }
+            recordError("gear", null)
+        }
     }
     private val socListener = object : EvBatteryStateOfChargeListener {
         override fun onEvBatteryStateOfChargeUpdated(value: Int?) = _state.update { it.copy(evSocPercent = value) }
@@ -68,8 +74,8 @@ class PleosVehicleRepository(context: Context) : VehicleRepository {
             val cpm = c.getCarManager(Car.PROPERTY_SERVICE) as? CarPropertyManager ?: error("no CarPropertyManager")
             car = c
             propertyManager = cpm
-            val g = cpm.getProperty<Int>(VehiclePropertyIds.GEAR_SELECTION, 0)?.value
-            _state.update { it.copy(gear = aaosGearToPosition(g)) }
+            val p = cpm.getProperty<Int>(VehiclePropertyIds.GEAR_SELECTION, 0)
+            _state.update { it.copy(gear = if (p == null) GearPosition.UNKNOWN else gearFromProperty(p.status, p.value)) }
             cpm.registerCallback(gearCallback, VehiclePropertyIds.GEAR_SELECTION, CarPropertyManager.SENSOR_RATE_ONCHANGE)
         }
         guard("evSoc") {
@@ -100,6 +106,7 @@ class PleosVehicleRepository(context: Context) : VehicleRepository {
         try {
             block()
         } catch (t: Throwable) {
+            if (what == "gear") _state.update { it.copy(gear = GearPosition.UNKNOWN) }
             recordError(what, t)
         }
     }
@@ -113,6 +120,13 @@ class PleosVehicleRepository(context: Context) : VehicleRepository {
         const val TAG = "PleosVehicleRepo"
     }
 }
+
+/** `CarPropertyValue.STATUS_AVAILABLE`; kept as a constant so the mapping is testable without the car library. */
+internal const val CAR_STATUS_AVAILABLE = 0
+
+/** A gear value counts only when the property status is AVAILABLE; otherwise it is UNKNOWN (treated as driving). */
+internal fun gearFromProperty(status: Int, gear: Int?): GearPosition =
+    if (status != CAR_STATUS_AVAILABLE) GearPosition.UNKNOWN else aaosGearToPosition(gear)
 
 /** AAOS `VehicleGear` values (android.car.VehicleGear): 1 N, 2 R, 4 P, 8 D, 16.. manual gears. */
 internal fun aaosGearToPosition(gear: Int?): GearPosition = when (gear) {

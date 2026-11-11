@@ -39,7 +39,9 @@ data class CabinState(
     val rearLeftOccupied: Boolean? = null,
     val rearRightOccupied: Boolean? = null,
     // Body
+    /** null = not reported or unreadable: never treated as closed. */
     val driverDoorOpen: Boolean? = null,
+    /** Only doors with a known position; an unreadable door is left out (unknown, not closed). */
     val doorsOpen: Map<String, Boolean> = emptyMap(),
     /** Window position per window (0 = closed). */
     val windows: Map<String, Int> = emptyMap(),
@@ -60,7 +62,16 @@ data class CabinState(
         }
     val windowsKnown: Boolean get() = windows.isNotEmpty() && windows.values.none { it == WINDOW_UNKNOWN }
     val openWindowCount: Int get() = windows.values.count { it > 0 }
+
+    /** Records one door; [open] null (unreadable) removes it, so it reads as unknown rather than closed. */
+    fun withDoor(key: String, open: Boolean?): CabinState {
+        val doors = if (open == null) doorsOpen - key else doorsOpen + (key to open)
+        return copy(doorsOpen = doors, driverDoorOpen = doors["driver"])
+    }
 }
+
+/** Door position from the SDK: > 0 open, 0 closed, null unknown. */
+fun doorOpenFromPosition(position: Int?): Boolean? = position?.let { it > 0 }
 
 const val WINDOW_UNKNOWN = -1
 
@@ -69,4 +80,7 @@ interface CabinRepository {
     val state: StateFlow<CabinState>
     fun start()
     fun stop()
+
+    /** Polled signals (lights, wiper lever, backrest) are read only while [active] (a parked stay is open). */
+    fun setPolling(active: Boolean) = Unit
 }

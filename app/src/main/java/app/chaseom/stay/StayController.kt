@@ -136,6 +136,7 @@ class StayController(
         _ui.value = ui
         if (parked == false && _page.value != Page.ONBOARDING) _page.value = Page.NONE // P released: close pages
         val staying = _ui.value.parked
+        cabin.setPolling(staying) // lights, wiper lever and backrest are polled only during a parked stay
         if (staying && !serviceRunning) {
             StayService.start(appContext)
             serviceRunning = true

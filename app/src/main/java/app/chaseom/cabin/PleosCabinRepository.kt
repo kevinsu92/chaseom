@@ -27,6 +27,7 @@ import android.car.hardware.CarPropertyValue
 import android.car.hardware.property.CarPropertyManager
 import android.content.Context
 import android.util.Log
+import app.chaseom.Probe
 import app.chaseom.vehicle.DataSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -43,8 +44,8 @@ import kotlinx.coroutines.launch
  * AAOS standard properties that Pleos does not expose publicly (fuel type, battery capacity,
  * charge port). Signatures checked against Vehicle-2.3.2 public API on 2026-11-09.
  *
- * Every callback is also logged under tag [PROBE_TAG] with the wall clock, which is how the
- * day-1 latency probe (Virtual Console HTTP write -> app callback) is measured.
+ * With [Probe] switched on (measurement tools only), every callback is also logged with the wall
+ * clock; that is how the Virtual Console write -> app callback latency is measured.
  */
 class PleosCabinRepository(
     context: Context,
@@ -60,6 +61,7 @@ class PleosCabinRepository(
     private var car: Car? = null
     private var propertyManager: CarPropertyManager? = null
     private var pollJob: Job? = null
+    private val pollGate = PollGate(start = { vehicle?.let { startPolling(it) } }, stop = ::stopPolling)
     private var powerArea: SeatArea? = null
     private var acArea: SeatArea? = null
     private var fanArea: SeatArea? = null
@@ -144,9 +146,13 @@ class PleosCabinRepository(
     }
     private val doorListeners = doorAreas.keys.associateWith { key ->
         object : DoorPositionListener {
-            override fun onPositionUpdated(value: Int?) = set("door.$key", value) {
-                val doors = it.doorsOpen + (key to ((value ?: 0) > 0))
-                it.copy(doorsOpen = doors, driverDoorOpen = doors["driver"])
+            override fun onPositionUpdated(value: Int?) {
+                val open = doorOpenFromPosition(value)
+                val apply = { set("door.$key", value) { it.withDoor(key, open) } }
+                // The receipt is built the moment the driver door opens, from the state at that moment.
+                // The light switch is polled once a second, so read it again first (D-1: a light switched
+                // off just before the door opened must not show as "on").
+                if (key == "driver" && open == true && _state.value.driverDoorOpen != true) readLightThen(apply) else apply()
             }
             override fun onFailed(e: Exception) = fail("door.$key", e)
         }
@@ -268,13 +274,26 @@ class PleosCabinRepository(
         windowAreas.forEach { (key, area) -> guard("window.$key") { v.getWindow().registerWindowPosition(area, windowListeners.getValue(key)) } }
 
         startCarProperties()
-        startLightPolling(v)
+        pollGate.ready(true)
+    }
+
+    /**
+     * Switch / lever / backrest polling runs only while a parked stay is open; nothing reads those
+     * values outside a stay. The values are cleared when polling stops, so an old reading is never
+     * used when the next stay starts (the first poll runs at once).
+     */
+    @Synchronized
+    override fun setPolling(active: Boolean) = pollGate.want(active)
+
+    private fun stopPolling() {
+        pollJob?.cancel()
+        pollJob = null
+        _state.update { it.copy(cabinLightOn = null, readingLightOn = null, wiperAuto = null, wiperOn = null) }
     }
 
     @Synchronized
     override fun stop() {
-        pollJob?.cancel()
-        pollJob = null
+        pollGate.ready(false)
         val v = vehicle ?: return
         guard("unregister") {
             v.getEvBattery().unregisterEvBatteryStateOfCharge(socListener)
@@ -348,8 +367,11 @@ class PleosCabinRepository(
         }
     }
 
-    /** Light switches have no listener the Virtual Console drives reliably -> 1 s polling. */
-    private fun startLightPolling(v: Vehicle) {
+    /**
+     * Light switches, the wiper lever and the backrest have no listener the Virtual Console drives
+     * reliably, so they are read once a second, only during a parked stay (see [setPolling]).
+     */
+    private fun startPolling(v: Vehicle) {
         pollJob?.cancel()
         pollJob = scope.launch {
             while (isActive) {
@@ -381,7 +403,7 @@ class PleosCabinRepository(
                     )
                 }
                 // Backrest: the emulator's position write does not always raise ON_CHANGE events,
-                // so the current value is also polled (cheap, 1 Hz, parked only).
+                // so the current value is also polled.
                 guard("backrestPoll") {
                     v.getSeat().getCurrentSeatBackrestAnglePosition(
                         driver,
@@ -394,9 +416,27 @@ class PleosCabinRepository(
                         { fail("backrestPassengerPoll", it) },
                     )
                 }
-                delay(LIGHT_POLL_MS)
+                delay(POLL_MS)
             }
         }
+    }
+
+    /** Reads the cabin light switch once, then runs [then] (also when the read fails or never answers in time). */
+    private fun readLightThen(then: () -> Unit) {
+        val v = vehicle
+        if (v == null) { then(); return }
+        val done = java.util.concurrent.atomic.AtomicBoolean(false)
+        val once = { if (done.compareAndSet(false, true)) then() }
+        try {
+            v.getLight().getCabinLightSwitch(
+                { sw -> setIfChanged("cabinLight", sw == LightSwitch.ON) { st, on -> (st.cabinLightOn != on) to st.copy(cabinLightOn = on) }; once() },
+                { fail("cabinLight", it); once() },
+            )
+        } catch (t: Throwable) {
+            fail("cabinLight", t)
+            once()
+        }
+        scope.launch { delay(LIGHT_READ_TIMEOUT_MS); once() }
     }
 
     // ---- helpers ---------------------------------------------------------------------------
@@ -423,12 +463,10 @@ class PleosCabinRepository(
 
     private fun areaName(a: SeatArea) = a.values.joinToString("|")
 
-    private fun probe(name: String, value: Any?) {
-        Log.i(PROBE_TAG, "$name=$value wall=${System.currentTimeMillis()}")
-    }
+    private fun probe(name: String, value: Any?) = Probe.log("$name=$value")
 
     private fun fail(name: String, e: Throwable) {
-        Log.w(PROBE_TAG, "$name FAILED ${e.javaClass.simpleName}: ${e.message} wall=${System.currentTimeMillis()}")
+        Log.w(TAG, "$name failed: ${e.javaClass.simpleName}")
         _state.update { it.copy(lastError = "$name: ${e.message}") }
     }
 
@@ -441,14 +479,9 @@ class PleosCabinRepository(
     }
 
     companion object {
-        /**
-         * Timing-probe tag, kept in release (QA approved 2026-11-09). Lines may carry only the wall
-         * clock and vehicle signal values. Never log user input (keep km, place label, settings)
-         * or location under this tag.
-         */
-        const val PROBE_TAG = "PROBE"
         private const val TAG = "PleosCabinRepo"
-        private const val LIGHT_POLL_MS = 1000L
+        private const val POLL_MS = 1000L
+        private const val LIGHT_READ_TIMEOUT_MS = 300L
 
         /**
          * D1 probe 2026-11-09: on the Pleos Connect 2.1.0 emulator the SDK reports `false` when the

@@ -185,6 +185,17 @@ class StayEngineTest {
         assertNull(e.at(2 * min + 1000, ev).receipt) // door closed
     }
 
+    // An unreadable driver door neither opens nor closes the receipt; only a known closed -> open edge opens it.
+    @Test fun unknownDoorNeverOpensOrClosesTheReceipt() {
+        val e = StayEngine(); e.at(0)
+        assertNull(e.at(2 * min, ev.copy(driverDoorOpen = null)).receipt)
+        assertNotNull(e.at(2 * min + 1000, ev.copy(driverDoorOpen = true)).receipt) // last known was closed
+        assertNotNull("unknown does not close an open receipt", e.at(2 * min + 2000, ev.copy(driverDoorOpen = null)).receipt)
+        assertNull(e.at(2 * min + 3000, ev).receipt) // known closed
+        val fresh = StayEngine(); fresh.at(0, ev.copy(driverDoorOpen = null))
+        assertNull("no known closed state yet: no receipt", fresh.at(2 * min, ev.copy(driverDoorOpen = true)).receipt)
+    }
+
     @Test fun lightUnknownIsReportedNotDropped() {
         val e = StayEngine(); e.at(0)
         val rows = e.at(2 * min, ev.copy(driverDoorOpen = true, cabinLightOn = null)).receipt!!.rows

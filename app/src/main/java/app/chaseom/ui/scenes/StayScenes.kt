@@ -440,7 +440,7 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
     // Latency probe (QA IP-5): first frame showing this toast content.
     androidx.compose.runtime.LaunchedEffect(items, delta, heldAboveCap) {
         androidx.compose.runtime.withFrameNanos { }
-        android.util.Log.i("PROBE", "toastFrame wall=${System.currentTimeMillis()}")
+        app.chaseom.Probe.log("toastFrame")
     }
     // HANDOFF 9.6 v1.1: neutral pill (red is for K2 only). Direction circle (HANDOFF 8, round1b): amber down,
     // ink up with a white symbol, grey dot for no change. The symbol always goes with the colour.
