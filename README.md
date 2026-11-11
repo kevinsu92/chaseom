@@ -26,7 +26,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 
 | 항목 | 값 |
 |---|---|
-| 단위 테스트 | **131개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
+| 단위 테스트 | **141개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
 | 테스트 커버리지 (Kover, 라인) | 도메인 **98.4%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 28.5% (화면·SDK 어댑터는 에뮬레이터 시나리오로 검증). `./gradlew koverXmlReportDebug`, 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
 | 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **42 ms**, 최대 138 ms (첫 회만 138, 나머지 29–50 ms) |
 | 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **39 ms** (중앙값 18 ms) |
@@ -39,7 +39,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 | 차량 제어 | **0** (앱은 차를 읽기만 하고, 공조를 끄거나 바꾸지 않음) |
 
 - CPU는 코어 1개 기준 %입니다(에뮬레이터는 4코어).
-- 시간은 Virtual Console에 값을 쓴 시각부터, 앱이 남긴 로그 시각까지입니다. 토스트는 화면에 그린 첫 프레임까지, P→D는 섬이 화면 구성에서 빠지는 시각까지입니다. 호스트와 에뮬레이터 시계 차를 보정하므로 약 ±20 ms 오차가 있습니다.
+- 시간은 Virtual Console에 값을 쓴 시각부터, 앱이 남긴 로그 시각까지입니다. 이 시간 로그(`PROBE`)는 평소에는 꺼져 있고, 측정 도구가 `adb shell setprop log.tag.PROBE D`로 켭니다. 토스트는 화면에 그린 첫 프레임까지, P→D는 섬이 화면 구성에서 빠지는 시각까지입니다. 호스트와 에뮬레이터 시계 차를 보정하므로 약 ±20 ms 오차가 있습니다.
 
 ## 30초 체험
 1. 먼저 배터리 19%: Pleos Connect Emulator를 켜고 Virtual Console에서 배터리를 **19%**로 둡니다(약 20% 이상이면 남은 시간이 "3시간 이상"으로 묶여 변화가 보이지 않습니다). 그다음 APK를 설치합니다: `adb install -r apk/Chaseom_Chaseom_release.apk`
@@ -66,6 +66,8 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 | 고지가 떠 있으면 섬은 멈추고 고지가 맨 위다 | `IslandTest.frozenUnderNoticeOrReceipt` |
 | 섬은 2열 탑승·문에 반응하지 않습니다. 창문은 구름(내기순환 시간)을 띄울지 정할 때만 씁니다 (그림이 "아무도 없다"를 말하지 않게) | `IslandTest.rearSeatWindowsAndDoorsAreNotInputs`, `StayEngineTest.recircCloudNeedsClimateOnAndKnownClosedWindows` |
 | 섬은 '공조 설정·배터리로 그려요 · 실내 측정 아님'이라고 말하고, 밤에도 달·별·모닥불을 그리지 않습니다 | `WordingRulesTest.islandWordingDaytimeAndDecoration` |
+| 내일 몫 경고(K1·K2)는 공조를 끄거나 줄이라고 하지 않는다. K1은 "계속 켜 두면 내일 몫을 쓰게 돼요", K2는 "충전하거나 출발을 고려하세요"라고 말한다 | `WordingRulesTest.k1AndK2NeverTellThePersonToCutTheClimate` |
+| 내기순환·외기 전환 토스트는 두 방향 모두 분을 붙이지 않는다(다른 변경과 묶여도). 남은 시간은 큰 숫자에 바로 반영 | `StayEngineTest.airSourceSwitchToastHasNoMinutesButTheHeroMoves`, `WordingRulesTest.airSourceSwitchToastShowsNoMinutes` |
 | 범례·해 옆 숫자·구름·먼 비 문구는 확정 문구 그대로이고 "설정"을 빼지 않는다. 공기 상태를 판정하는 말이 없다 | `WordingRulesTest.roundOneIslandSaysNothingAboutSeatHeat` |
 | 구름은 내기순환 20분(창문 닫힘) 뒤에만, 하나로 고정(늘거나 진해지지 않음), 창문을 열면 조용히 사라지고 외기로 바꾸면 한 번 흘러 나가며 사라짐(보상 표시·문구 없음) | `StayEngineTest.recircCloudAfter20MinIgnoresSnoozeAndLeavesQuietly`, `StayEngineTest.recircCloudNeedsClimateOnAndKnownClosedWindows`, `IslandInfoTest.weatherFollowsClimateAndOffIsTheSmallSun` |
 | 내일 배(= 내일 몫)는 배터리가 줄어도 기울거나 가라앉지 않는다. 바뀌는 것은 짐 상자 윤곽선과 문구뿐 | `IslandTest.belowKeepEmptiesTheDayBandButNeverChangesTheBoatOrSun`, `IslandTest.crateOutlineOnlyNearOrBelowKeep` |
@@ -81,6 +83,7 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 |---|---|---|---|
 | 기어 (앱 시작 직후, 아직 한 번도 못 읽음) | "차와 연결하는 중이에요"만 표시 (숫자·버튼 없음) | 주행 중 화면으로 오해하지 않게 | 화면 확인 `tools/edges.py` (E4-5) |
 | 기어 (읽은 뒤 끊김·모름) | 주행 중으로 보고 화면을 접음 | 주행 중에 숫자·버튼을 보이지 않기 위해 | `DrivingStateGateTest.unknownGearFailsSafeToDriving` |
+| 기어 (오류 이벤트, 값의 상태가 '사용 가능'이 아님) | 기어를 "모름"으로 두고 주행 중으로 봄 | 오류 값을 P로 읽지 않기 위해 | `DrivingStateGateTest.gearWithUnavailableOrErrorStatusIsUnknownAndCountsAsDriving` |
 | 차량 연결 | 마지막 값이 P였어도 주행 중으로 봄 | 끊긴 동안 차가 움직였을 수 있음 | `DrivingStateGateTest.disconnectedFailsSafeToDrivingEvenIfLastGearWasPark` |
 | 시스템 주행 제한 | P여도 화면을 접음 | 시스템 판단이 앱보다 우선 | `DrivingStateGateTest.systemUxRestrictionOverridesParkGear` |
 | 연료 종류 | 축소 모드 (남은 시간 없음, "시동" 고지) | 내연차에 공조를 계속 켜도 된다는 신호를 주지 않기 위해 | `StayEngineTest.fuelReadFailureStartsReduced`, `ModeAndEnergyTest.modeRules` |
@@ -88,12 +91,17 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 | 전비 | 기본값 5 km/kWh (차가 준 값이 더 작으면 그 값) | 내일 몫을 크게 잡는 쪽 | `ModeAndEnergyTest.efficiencyUsesTheSmallerOfVehicleAndDefault` |
 | 등받이 각도 | 등받이 고지를 끔 (시간 고지·야간 고지는 그대로) | 값이 안 움직이면 판단하지 않음 | `StayEngineTest.noBackrestCapabilityMeansNoN3` |
 | 2열 탑승 | 감지 안 되면 회색 '감지 안 됨'(마지막 줄 '뒷좌석 직접 확인'은 늘 있습니다) | 감지 실패가 "비었음"으로 읽히지 않게 | `StayEngineTest.rearRowNeverHasADotForAnyOccupancy` |
-| 실내등 · 충전 포트 | 영수증에서 빼지 않고 "확인 안 됨" | 모르는 것을 "꺼짐"으로 말하지 않음 | `StayEngineTest.lightUnknownIsReportedNotDropped` |
+| 실내등 · 충전 포트 | 영수증에서 빼지 않고 "확인 안 됨". 운전석 문이 열리는 순간 실내등 스위치를 다시 읽고, 다시 읽기가 실패하거나 늦으면 직전 값이 아니라 "확인 안 됨". 열린 영수증의 실내등 줄은 스위치를 따라 바뀜 | 모르는 것을 "꺼짐"으로 말하지 않고, 문 열기 직전에 바꾼 실내등도 맞게 보이기 위해 | `StayEngineTest.lightUnknownIsReportedNotDropped`, `StayEngineTest.receiptLightRowFollowsTheSwitchBothWays` |
+| 문 | 값을 못 읽은 문은 "모름"으로 두고 "닫힘"으로 치지 않음. 영수증은 확인된 닫힘 → 열림에서만 뜨고, 모름으로는 열리지도 닫히지도 않음 | 모르는 것을 "닫힘"으로 말하지 않음 | `PollGateTest.unreadableDoorIsUnknownNotClosed`, `StayEngineTest.unknownDoorNeverOpensOrClosesTheReceipt` |
 | 창문 | 영수증에 "확인 안 됨" (어느 창이든 값이 없으면 "닫힘"이라고 하지 않음). 공기 카드도 "모두 닫힘"으로 치지 않음 | 모르는 것을 "닫힘"으로 말하지 않음 | `StayEngineTest.windowsUnknownIsReportedNotClosed`, `StayEngineTest.unknownWindowDoesNotCountAsClosed` |
 | 앱이 꺼진 사이의 시간·배터리 | 10분 넘게 지났거나, 충전됐거나, 배터리가 5%p 넘게 다르면 이전 체류를 잇지 않고 새로 시작 | 오래된 체류 시간("1440분째")을 말하지 않음 | `StayEngineTest.restoreStartsNewStayAfter10Min` 외 4개 |
 | 체류 중 충전 | 영수증 "충전 중이라 계산하지 않았어요" (0.0kWh라고 하지 않음) | 쓴 전력을 지어내지 않음 | `StayEngineTest.receiptShowsChargingInsteadOfZeroKwh` |
 | 와이퍼 (섬 입력) | 레버가 AUTO이고 실제로 닦을 때만 먼 비. 수동 작동·AUTO 대기·읽기 실패는 비 없음 | 사람이 와이퍼를 놀이처럼 조작하게 만들지 않고, 모르는 것을 '비'라고 하지 않음 | `StayEngineTest.rainOnlyForAutoWiperActuallyWiping` |
 | 방향지시등 · 실내등 (섬 입력) | 섬 입력으로 쓰지 않음 | 정차 중 놀이 조작을 만들지 않음 | `IslandTest.noManualWiperTurnSignalOrLampInput` |
+
+2열 탑승 값은 앱이 뒤집어 읽습니다(`OCCUPANCY_SDK_INVERTED`). Pleos Connect Emulator 2.1.0에서 Virtual Console의 "Occupied"가 SDK에서 `false`로 왔기 때문입니다(2026-11-09 실측, 2열 두 좌석 모두). 차량 서비스가 보내는 원값은 AAOS 정의(1 = 빈 좌석, 2 = 탑승)와 맞으므로, 뒤집힘은 SDK의 정수→참·거짓 변환에서 생기는 것으로 보입니다(추정). 실차에서는 확인하지 않았습니다. 방향이 틀리면 탑승한 좌석이 "감지 안 됨"으로 보일 수 있습니다. 그래서 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증 마지막 줄 "뒷좌석 직접 확인"을 센서 값과 상관없이 항상 보여 줍니다.
+
+실내등·와이퍼 레버·등받이는 차가 변화를 알려 주지 않아 1초마다 읽습니다. 이 읽기는 P에서 체류가 열려 있는 동안에만 돌고, P를 벗어나거나 체류가 끝나면 멈췄다가 다시 P가 되면 시작합니다(`PollGateTest`).
 
 ---
 
@@ -123,7 +131,8 @@ Pleos Connect(Android Automotive OS)용이며, Pleos Playground **Vehicle SDK**�
 3. 에뮬레이터 앱 목록에서 **차섬**을 실행합니다. 처음 실행하면 내일 탈 거리 설정 화면이 나옵니다.
 4. Virtual Console에서 아래 순서로 조작합니다.
    - 기어 **P**, 공조 전원 켬, 배터리(SOC) 19% → 머무는 화면과 섬
-   - 운전석 설정온도·풍량·A/C·내기순환·열선 변경 → 시간 토스트, 섬 날씨 변화
+   - 운전석 설정온도·풍량·A/C·열선 변경 → 시간 토스트, 섬 날씨 변화
+   - 내기순환·외기 전환 → 토스트에는 "내기순환"·"외기유입"만 나오고 분은 붙지 않음(남은 시간은 큰 숫자에 바로 반영)
    - 앞 와이퍼 AUTO → 섬 뒤 먼 비와 범례 한 줄 (Low/High는 그리지 않음)
    - 운전석 문 열기 → 떠나기 전 영수증 (문을 닫으면 닫힘)
    - 기어 **D** → 차섬은 섬과 숫자를 바로 접고, 주행 중에는 시스템이 앱 화면을 가립니다

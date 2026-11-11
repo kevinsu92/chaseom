@@ -64,9 +64,14 @@ class WordingRulesTest {
 
     // QA build-D verdict 1: the K2 banner names the risk and two real actions; it never tells the person to
     // turn the climate off or down (a cold cabin can be the bigger danger).
-    @Test fun k2NeverTellsThePersonToCutTheClimate() {
+    @Test fun k1AndK2NeverTellThePersonToCutTheClimate() {
+        assertEquals("곧 내일 몫에 닿아요 · 계속 켜 두면 내일 몫을 쓰게 돼요 (앱은 공조를 끄지 않아요)", strings.getValue("k1"))
         assertEquals("내일 몫 아래로 내려갔어요 · 충전하거나 출발을 고려하세요", strings.getValue("k2"))
-        assertFalse(Regex("끄|꺼|줄이|낮추").containsMatchIn(strings.getValue("k2")))
+        listOf("k1", "k2").forEach {
+            // The only allowed mention is the statement that the app itself never turns the climate off.
+            val text = strings.getValue(it).replace("(앱은 공조를 끄지 않아요)", "")
+            assertFalse(it, Regex("끄|꺼|줄이|낮추").containsMatchIn(text))
+        }
     }
 
     // QA build-D verdict 2: an air-source switch toast shows the switch name only, never minutes.
@@ -77,7 +82,6 @@ class WordingRulesTest {
     }
 
     @Test fun keepShareNeverLockedAndAppDoesNotControlClimate() {
-        assertTrue(strings.getValue("k1").contains("공조를 꺼야 지켜집니다"))
         assertTrue(strings.getValue("k1").contains("앱은 공조를 끄지 않아요"))
     }
 
