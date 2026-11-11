@@ -334,7 +334,13 @@ class StayEngine(
             shown, after - before, nowMs + timing.toastShowMs,
             heldAboveCap = held,
             showMinutes = recirc == null,
-            capRatePercent = if (held) EnergyModel.stayRatePercent(batchBaseDrawKw!!, EnergyModel.drawKw(setting)) else null,
+            // No percentage when the batch switched the climate on or off: off drops to the base load and
+            // would read as a large reward for switching off. The air-source rule (no number) wins anyway.
+            capRatePercent = if (held && batchItems.none { it is ClimateChange.Power }) {
+                EnergyModel.stayRatePercent(batchBaseDrawKw!!, EnergyModel.drawKw(setting))
+            } else {
+                null
+            },
         )
     }
 

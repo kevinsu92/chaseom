@@ -148,6 +148,7 @@
     <!-- Toast when both before/after are over the 3-hour cap -->
     <string name="d_toast_cap">3시간 이상 유지 (추정)</string>
     <string name="d_toast_cap_rate">머물 시간 %1$s%2$d%% (추정)</string>
+    <string name="d_toast_cap_rate_over">머물 시간 %1$s50%% 이상 (추정)</string>
 
     <!-- ===== 묶음 B 확정 문구. 쓰지 않는 st_loading·st_disconnected·h_soc_unknown·is_unsupported·hg_*·is_key_rock은 뺐다. =====
          is_day / is_keep 은 지금 엔지니어링 res/values/strings.xml에 있다: 그쪽 두 줄을 지우고 이 파일 값을 쓴다(중복 리소스 방지). -->

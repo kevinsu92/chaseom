@@ -308,6 +308,45 @@ class StayEngineTest {
         assertTrue(t.deltaMinutes < 0)
     }
 
+    // (a) capped on both sides: no minutes, only the percentage path
+    @Test fun aboveCapToastNeverCarriesMinutes() {
+        val e = StayEngine(); e.at(0)
+        val t = e.at(1000, ev.copy(driverSetTempC = 26f, fanSpeed = 6)).toast!!
+        assertTrue(t.heldAboveCap && t.deltaMinutes == 0 && t.capRatePercent != null)
+    }
+
+    // (b) the sign of the percentage matches the minutes toast for the same change below the cap
+    @Test fun stayRateSignMatchesTheMinutesToast() {
+        listOf(ev.copy(driverSetTempC = 26f, fanSpeed = 6), ev.copy(driverSetTempC = 18f, fanSpeed = 1), ev.copy(driverSeatHeat = 3)).forEach { change ->
+            val high = StayEngine(); high.at(0)
+            val rate = high.at(1000, change).toast!!.capRatePercent!!
+            val low = StayEngine(); low.at(0, ev.copy(socPercent = 14))
+            val minutes = low.at(1000, change.copy(socPercent = 14)).toast!!.deltaMinutes
+            assertEquals(Integer.signum(minutes), Integer.signum(rate))
+        }
+    }
+
+    // (c) a climate power on/off in the batch: no percentage (off would read as a reward)
+    @Test fun noStayRateWhenTheBatchSwitchesTheClimateOnOrOff() {
+        val e = StayEngine(); e.at(0)
+        val off = e.at(1000, ev.copy(hvacPowerOn = false)).toast!!
+        assertTrue(off.heldAboveCap)
+        assertNull(off.capRatePercent)
+        val on = e.at(10_000, ev.copy(driverSetTempC = 26f)).toast!! // power back on with a temperature change
+        assertNull(on.capRatePercent)
+    }
+
+    // (e) edges: under 1 % is "held", over 50 % is written as "±50% 이상"
+    @Test fun stayRateEdges() {
+        assertNull(EnergyModel.stayRatePercent(3.00f, 3.01f)) // -0.3 % rounds to 0
+        assertNull(EnergyModel.stayRatePercent(2.69f, 2.70f))
+        assertEquals(-1, EnergyModel.stayRatePercent(3.00f, 3.03f))
+        assertEquals(100, EnergyModel.stayRatePercent(3.0f, 1.5f))
+        assertTrue(100 > EnergyModel.STAY_RATE_SHOWN_MAX)
+        assertEquals(50, EnergyModel.STAY_RATE_SHOWN_MAX)
+    }
+
+    // (d) an air-source switch in the batch: no number at all (minutes or percent)
     @Test fun aboveCapAirSourceSwitchStillShowsNoNumber() {
         val e = StayEngine(); e.at(0)
         val t = e.at(1000, ev.copy(driverSetTempC = 26f, recirculationOn = true)).toast!!

@@ -164,9 +164,18 @@ class WordingRulesTest {
             String.format(strings.getValue("d_toast_fmt"), "설정 26°C · 풍량 6", String.format(strings.getValue("d_toast_delta"), "−21분")))
         assertTrue(strings.getValue("d_toast_cap").contains("(추정)"))
         // Above the cap: a percentage of the stay time, never minutes (no "분"), always "(추정)".
-        val rate = strings.getValue("d_toast_cap_rate")
-        assertTrue(rate.contains("(추정)") && rate.contains("%%"))
-        assertFalse(rate.contains("분"))
+        assertEquals("머물 시간 %1\$s%2\$d%% (추정)", strings.getValue("d_toast_cap_rate"))
+        assertEquals("머물 시간 %1\$s50%% 이상 (추정)", strings.getValue("d_toast_cap_rate_over"))
+        listOf("d_toast_cap_rate", "d_toast_cap_rate_over").forEach {
+            val text = strings.getValue(it)
+            assertTrue(it, text.startsWith("머물 시간 ") && text.contains("(추정)"))
+            assertFalse(it, Regex("분|\\d+시간|괜찮|충분|넉넉|좋아요").containsMatchIn(text.removePrefix("머물 시간 ")))
+        }
+        // The minus sign is U+2212, as in the minutes toast; the over-cap string is used beyond the shown maximum.
+        val capToastCode = java.io.File("src/main/java/app/chaseom/ui/scenes/StayScenes.kt").readText()
+            .substringAfter("fun DialToast(").substringBefore("\n}\n")
+        assertTrue(capToastCode.contains("abs(capRate) > app.chaseom.stay.EnergyModel.STAY_RATE_SHOWN_MAX"))
+        assertTrue(capToastCode.contains("if (capRate > 0) \"+\" else \"−\""))
         // The transient sun number always says "설정" (never a bare temperature that reads as the cabin's).
         assertEquals("설정 %1\$s → %2\$s°C", strings["is_sun_change"])
         assertTrue(strings.getValue("hvac_temp").startsWith("설정 "))

@@ -430,6 +430,8 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
     val none = heldAboveCap || abs(delta) < 1
     val deltaText = when {
         // Above the cap the change is a percentage of the stay time, never minutes beyond the cap.
+        heldAboveCap && capRate != null && abs(capRate) > app.chaseom.stay.EnergyModel.STAY_RATE_SHOWN_MAX ->
+            stringResource(R.string.d_toast_cap_rate_over, if (capRate > 0) "+" else "−")
         heldAboveCap && capRate != null -> stringResource(R.string.d_toast_cap_rate, if (capRate > 0) "+" else "−", abs(capRate))
         heldAboveCap -> stringResource(R.string.d_toast_cap)
         none -> stringResource(R.string.d_toast_none)

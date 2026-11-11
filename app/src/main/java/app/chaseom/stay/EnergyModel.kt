@@ -79,9 +79,12 @@ object EnergyModel {
      */
     fun stayRatePercent(beforeKw: Float, afterKw: Float): Int? {
         if (beforeKw <= 0f || afterKw <= 0f) return null
-        val pct = kotlin.math.round((beforeKw / afterKw - 1f) * 100f).toInt()
+        val pct = ((beforeKw / afterKw - 1f) * 100f).roundToInt()
         return pct.takeIf { kotlin.math.abs(it) >= 1 }
     }
+
+    /** Largest stay-rate change written as a number; beyond it the toast says "±50% 이상". */
+    const val STAY_RATE_SHOWN_MAX = 50
 
     /** Minutes until SOC falls to the keep share at [drawKw]; 0 when already at/below it. */
     fun minutesToKeep(socPercent: Int, keepPercent: Float, capacityKwh: Float, drawKw: Float): Int {

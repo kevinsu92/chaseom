@@ -1,6 +1,6 @@
 # 차섬 — 오늘 머물 시간을 보여 주는 작은 섬
 
-![tests](https://img.shields.io/badge/unit%20tests-141%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-4.0%20MB-informational)
+![tests](https://img.shields.io/badge/unit%20tests-148%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-4.0%20MB-informational)
 
 | 히터를 올리면 해가 커지고 남은 시간이 줄어듦 | 내일 몫 아래로 내려가면 경고 | 운전석 문을 열면 떠나기 전 영수증 |
 |---|---|---|
@@ -11,7 +11,7 @@
 - **한 줄 소개**: 전기차를 세워 두고 공조를 켠 채 머물 때, 내일 탈 거리만큼 배터리를 남긴 기준으로 **지금 설정으로 얼마나 더 머물 수 있는지(추정)**를 보여 주는 Pleos 차량 앱
 - **핵심 기능**
   - **작은 날씨 섬**: 해 크기 = 공조 설정온도, 바람 = 풍량, 물 높이 = 배터리, 부표 1개 = 머물 수 있는 30분(최대 6개), 배의 짐 = 내일 몫. 그림 아래 범례와 캡션 "섬은 공조 설정·배터리로 그려요 · 실내 측정 아님"이 늘 보입니다. 기어 P에서만 표시합니다.
-  - **따뜻함 환율**: 다이얼을 바꾸는 순간 토스트로 남은 시간 변화(예: "설정 26°C · 풍량 6 · −21분 (추정)")를 보여 주고, 비슷한 체감을 더 적은 전력으로 얻는 조합(운전석 열선, 저온 화상 주의)을 제안합니다.
+  - **따뜻함 환율**: 다이얼을 바꾸는 순간 토스트로 남은 시간 변화(예: "설정 26°C · 풍량 6 · −21분 (추정)", 3시간 이상일 때는 "머물 시간 −12% (추정)")를 보여 주고, 비슷한 체감을 더 적은 전력으로 얻는 조합(운전석 열선, 저온 화상 주의)을 제안합니다.
   - **내일 지킬 몫**: 내일 처음 갈 거리(여유분 20% 포함)를 배터리에서 따로 표시합니다. 남은 시간은 "(추정)", 3시간 넘으면 "3시간 이상"입니다.
   - **맴도는 구름·먼 비**: 공조를 켠 채 창문을 모두 닫고 내기순환을 20분 넘게 쓰면 구름 하나가 뜹니다(공기 측정 아님). 앞 와이퍼가 AUTO로 실제로 닦을 때만 섬 뒤에 먼 비가 보입니다(바깥 날씨 측정 아님).
   - **안전 고지와 떠나기 전 영수증**: P 진입·1시간·야간에 공조 사용 경고. 운전석 문을 열면 머문 시간·쓴 전력·내일 몫·창문·실내등·충전 포트와 "뒷좌석 직접 확인" 줄을 보여 줍니다. 앱은 공조를 끄지 않습니다.
@@ -55,7 +55,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 단위 테스트 | **141개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
+| 단위 테스트 | **148개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
 | 테스트 커버리지 (Kover, 라인) | 도메인 **98.4%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 28.8%. 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
 | 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **33 ms**, 최대 85 ms |
 | 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **60 ms** (중앙값 19 ms) |
@@ -75,7 +75,7 @@ CPU는 코어 1개 기준(에뮬레이터 4코어)입니다. 시간은 Virtual C
 | 지키는 규칙 | 실패하는 테스트 |
 |---|---|
 | 뒷좌석을 "비었음"이나 초록으로 표시하지 않고, 영수증에는 늘 "뒷좌석 직접 확인" 줄이 있다 | `WordingRulesTest.rearSeatWording`, `StayEngineTest.rearRowNeverHasADotForAnyOccupancy`, `StayEngineTest.receiptRowsOrderAndRearAlwaysCheck` |
-| 남은 시간은 3시간 위로 늘지 않고, 토스트·환율 카드도 3시간으로 자른 값끼리 비교한다 | `StayEngineTest.toastDeltaUsesThreeHourCappedValues`, `StayEngineTest.toastDeltaCrossingTheCapIsBounded`, `StayEngineTest.noExchangeCardWhenAboveCap` |
+| 남은 시간은 3시간 위로 늘지 않는다. 바꾸기 전후가 모두 3시간 이상이면 토스트는 분 대신 "머물 시간 ±N% (추정)"을 보인다(±50%를 넘으면 "±50% 이상", 1% 미만이면 "3시간 이상 유지", 공조 켬·끔이나 내기·외기 전환이 섞이면 % 없음). 상한에서는 환율 카드를 띄우지 않는다 | `StayEngineTest.aboveCapToastNeverCarriesMinutes`, `StayEngineTest.stayRateSignMatchesTheMinutesToast`, `StayEngineTest.noStayRateWhenTheBatchSwitchesTheClimateOnOrOff`, `StayEngineTest.stayRateEdges`, `StayEngineTest.toastDeltaCrossingTheCapIsBounded`, `StayEngineTest.noExchangeCardWhenAboveCap` |
 | 계산된 숫자에는 늘 "(추정)"이, 토스트와 해 옆 숫자의 온도 앞에는 늘 "설정"이 붙는다 | `WordingRulesTest.computedValuesMarkedEstimate`, `WordingRulesTest.roundOneIslandSaysNothingAboutSeatHeat` |
 | 수면·차박·보장·"최초" 같은 금칙어가 없다 (취급설명서 경고 인용만 예외) | `WordingRulesTest.noBannedWordsOutsideTheWarnings`, `WordingRulesTest.designRuleWordsAbsent`, `WordingRulesTest.manualQuoteVerbatimWithSource` |
 | 주행 중 화면은 숫자 없이 짧은 안내뿐이다 | `WordingRulesTest.drivingGlanceShortAndNumberFree` |
