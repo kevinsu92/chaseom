@@ -85,4 +85,34 @@ class WaitFlagTest {
         assertTrue(isNightHour(22) && isNightHour(3) && isNightHour(5))
         assertTrue(!isNightHour(6) && !isNightHour(16) && !isNightHour(21))
     }
+
+    // After an air-source switch, a shortfall line does not newly appear for 10 minutes (the flag time stays).
+    @Test fun noNewShortLineForTenMinutesAfterAnAirSwitch() {
+        val f = WaitFlags.plant(180, mono, wall)
+        val short = WaitFlags.forecast(f, mono, hero(146), null, false)!!
+        assertEquals(WaitOutcome.SHORT, short.outcome)
+        val switchAt = mono - 60_000L
+        val quiet = WaitFlags.quietAfterAirSwitch(short, mono, switchAt, null, shortOnScreen = false)!!
+        assertTrue("no new 'short' right after the switch", quiet.airQuiet)
+        assertTrue("after 10 minutes the comparison returns",
+            !WaitFlags.quietAfterAirSwitch(short, switchAt + WaitFlags.AIR_QUIET_MS, switchAt, null, false)!!.airQuiet)
+    }
+
+    // Another dial change after the switch, or a shortfall already on screen, keeps the comparison.
+    @Test fun anotherDialChangeOrAShownShortKeepsTheComparison() {
+        val f = WaitFlags.plant(180, mono, wall)
+        val short = WaitFlags.forecast(f, mono, hero(146), null, false)!!
+        val switchAt = mono - 60_000L
+        assertTrue(!WaitFlags.quietAfterAirSwitch(short, mono, switchAt, otherChangeMs = switchAt + 1, shortOnScreen = false)!!.airQuiet)
+        assertTrue(!WaitFlags.quietAfterAirSwitch(short, mono, switchAt, null, shortOnScreen = true)!!.airQuiet)
+        val reaches = WaitFlags.forecast(f, mono, hero(400), null, false)!!
+        assertTrue("a reached flag is never marked", !WaitFlags.quietAfterAirSwitch(reaches, mono, switchAt, null, false)!!.airQuiet)
+    }
+
+    // The comparison uses the 3-hour-capped time, the same as the hero.
+    @Test fun comparesTheCappedTime() {
+        val f = WaitFlags.plant(180, mono, wall)
+        assertEquals(WaitOutcome.REACHES, WaitFlags.forecast(f, mono, hero(900), null, false)!!.outcome)
+        assertEquals(0, WaitFlags.forecast(f, mono, hero(900), null, false)!!.shortMinutes)
+    }
 }

@@ -142,6 +142,7 @@
     <string name="is_lg_air">구름 = 내기순환 %1$d분째 (공기 측정 아님)</string>
     <!-- Far rain legend: only while the AUTO wiper is wiping. -->
     <string name="is_lg_rain">먼 비 = 와이퍼 AUTO 작동</string>
+    <string name="is_lg_flag">깃발 = 고른 시각</string>
     <!-- Next to the sun for 2.5 s after the set temperature changes; "설정" always. -->
     <string name="is_sun_change">설정 %1$s → %2$s°C</string>
     <string name="is_cd">섬 그림: 공조 설정·배터리로 그려요. 지금 설정으로 %1$s 머물 수 있어요 (추정), 배터리 %2$d%%, 내일 몫 %3$dkm</string>

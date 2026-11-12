@@ -71,6 +71,11 @@ class StayController(
     /** Wait flag for this stay only, in memory; never saved. */
     private var waitFlag: WaitFlag? = null
     private var waitFlagStayStart: Long? = null
+    private var prevRecirc: Boolean? = null
+    private var prevOtherClimate: List<Any?>? = null
+    private var airSwitchMs: Long? = null
+    private var otherChangeMs: Long? = null
+    private var flagShortOnScreen = false
 
     private val ticker = flow {
         while (true) {
@@ -135,9 +140,17 @@ class StayController(
         // The flag belongs to one stay: leaving P or a new stay removes it.
         if (!ui.parked || engine.session?.startMs != waitFlagStayStart) waitFlag = null
         val night = isNightHour(hour)
+        // Air-source switches and other climate changes, for the quiet time after a switch.
+        if (prevRecirc != null && c.recirculationOn != null && c.recirculationOn != prevRecirc) airSwitchMs = now
+        if (c.recirculationOn != null) prevRecirc = c.recirculationOn
+        val other = listOf(c.hvacPowerOn, c.driverSetTempC, c.fanSpeed, c.acOn, c.driverSeatHeat)
+        if (prevOtherClimate != null && other != prevOtherClimate) otherChangeMs = now
+        prevOtherClimate = other
         val flagAllowed = ui.parked && !night && ui.hero != null && ui.policy.energyBudget
         ui = ui.copy(
-            waitForecast = WaitFlags.forecast(waitFlag, now, ui.hero, ui.exchange, night),
+            waitForecast = WaitFlags.quietAfterAirSwitch(
+                WaitFlags.forecast(waitFlag, now, ui.hero, ui.exchange, night), now, airSwitchMs, otherChangeMs, flagShortOnScreen,
+            ).also { f -> flagShortOnScreen = f != null && f.outcome == WaitOutcome.SHORT && !f.airQuiet },
             waitFlagAvailable = flagAllowed,
             connecting = parked == null && !gearEverRead,
             firstStayHint = !hintDone && ui.parked && ui.policy.energyBudget,

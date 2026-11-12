@@ -31,6 +31,11 @@ data class WaitForecast(
     val shortMinutes: Int = 0,
     /** Outcome SHORT with an exchange card on screen: its gain (the card is the action, not this line). */
     val swapGainMinutes: Int? = null,
+    /**
+     * Right after an air-source switch the line keeps the flag time only (no new "짧아요"), so switching to
+     * outside air is never followed by a shortfall message. The hero still shows the new time at once.
+     */
+    val airQuiet: Boolean = false,
 )
 
 enum class WaitOutcome {
@@ -65,6 +70,22 @@ object WaitFlags {
         return WaitFlag(atMs = nowMs + (wall - nowWallMs), wallMs = wall)
     }
 
+    /** How long a shortfall line stays away after an air-source switch. */
+    const val AIR_QUIET_MS = 10 * 60_000L
+
+    /**
+     * After a recirculation / outside-air switch, a SHORT line does not newly appear for [AIR_QUIET_MS]; the line
+     * keeps the flag time. Another dial change since the switch, or a SHORT already on screen, lifts this.
+     */
+    fun quietAfterAirSwitch(
+        f: WaitForecast?, nowMs: Long, airSwitchMs: Long?, otherChangeMs: Long?, shortOnScreen: Boolean,
+    ): WaitForecast? {
+        if (f == null || f.outcome != WaitOutcome.SHORT || shortOnScreen || airSwitchMs == null) return f
+        if (nowMs - airSwitchMs >= AIR_QUIET_MS) return f
+        if (otherChangeMs != null && otherChangeMs > airSwitchMs) return f
+        return f.copy(airQuiet = true)
+    }
+
     /** Null when there is nothing to show: no flag, the flag time has passed, night, or no hero. */
     fun forecast(flag: WaitFlag?, nowMs: Long, hero: Hero?, exchange: Exchange?, night: Boolean): WaitForecast? {
         if (flag == null || night || hero == null) return null
@@ -73,7 +94,8 @@ object WaitFlags {
         val remaining = ((remainingMs + 59_999L) / 60_000L).toInt().coerceIn(1, MAX_MINUTES)
         val fraction = remaining / MAX_MINUTES.toFloat()
         if (hero.belowKeep) return WaitForecast(flag, remaining, fraction, WaitOutcome.BELOW_KEEP)
-        val minutes = hero.minutes
+        // Compared on the 3-hour-capped time, the same as the hero shows.
+        val minutes = hero.minutes?.coerceAtMost(EnergyModel.DISPLAY_CAP_MINUTES)
         // Climate off: base load only, and the hero shows no number either.
         if (hero.hvacOff || (minutes != null && minutes >= remaining)) {
             return WaitForecast(flag, remaining, fraction, WaitOutcome.REACHES)

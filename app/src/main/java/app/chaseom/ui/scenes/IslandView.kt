@@ -225,7 +225,8 @@ fun IslandPanel(
             // On Small the caption row is two lines (legend, then the cause chip).
             val chipLineH = (if (set === H1Set.Small) ChaseomUi.line + 32.dp else 0.dp) +
                 (if (ui.recircMinutes != null) ChaseomUi.line + 32.dp else 0.dp) +
-                (if (app.chaseom.BuildConfig.KICK_RAIN && ui.rain) ChaseomUi.line + 32.dp else 0.dp)
+                (if (app.chaseom.BuildConfig.KICK_RAIN && ui.rain) ChaseomUi.line + 32.dp else 0.dp) +
+                (if (ui.waitForecast != null) ChaseomUi.line + 32.dp else 0.dp)
             val minH = if (set === H1Set.Small) H1Set.SMALL_MIN_DP.dp else natural
             val filled = if (!fill || topInWindow.isNaN()) natural else
                 maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH - chipLineH -
@@ -255,11 +256,14 @@ fun IslandPanel(
                     outsideAir = ui.climate?.recircOn == false, night = night,
                     setTemp = ui.climate?.takeIf { it.powerOn == true }?.setTempC, lift = skyLift)
                 // Wait flag on the island's left hill (picture only; the time is in the line under the picture).
-                if (ui.waitForecast != null) {
+                ui.waitForecast?.let { wf ->
+                    // The flag fades in once over 400 ms when it is planted (no motion after that).
+                    val flagAlpha = remember(wf.flag.atMs) { androidx.compose.animation.core.Animatable(if (animOff) 1f else 0f) }
+                    LaunchedEffect(wf.flag.atMs) { flagAlpha.animateTo(1f, androidx.compose.animation.core.tween(400)) }
                     val z = k * set.zoom
                     val baseX = if (set === H1Set.Large) 440f else 250f
                     val baseY = if (set === H1Set.Large) 236f else 262f
-                    androidx.compose.foundation.Canvas(Modifier.matchParentSize()) {
+                    androidx.compose.foundation.Canvas(Modifier.matchParentSize().graphicsLayer { alpha = flagAlpha.value }) {
                         val px = density.density
                         val x = (picW.value - (set.w - baseX) * z) * px
                         val bottom = (boxH.value - (set.h - baseY) * z) * px
@@ -308,6 +312,10 @@ fun IslandPanel(
             if (showRain) {
                 Spacer(Modifier.height(ChaseomUi.line))
                 LegendItem(Swatch.RAIN, stringResource(R.string.is_lg_rain))
+            }
+            if (ui.waitForecast != null) {
+                Spacer(Modifier.height(ChaseomUi.line))
+                LegendItem(Swatch.FLAG, stringResource(R.string.is_lg_flag))
             }
         }
         if (small) {
@@ -681,7 +689,7 @@ internal fun skyLiftFor(set: H1Set, k: Float, boxHdp: Float): SkyLift {
 }
 
 /** Legend swatches: the picture's own shapes at 24 dp (can buoy, water #4B627C). */
-internal enum class Swatch { SUN, WATER, BUOY, CRATE, CLOUD, RAIN }
+internal enum class Swatch { SUN, WATER, BUOY, CRATE, CLOUD, RAIN, FLAG }
 
 @Composable
 private fun LegendItem(sw: Swatch, label: String) {
@@ -711,6 +719,7 @@ private fun LegendItem(sw: Swatch, label: String) {
                         style = androidx.compose.ui.graphics.drawscope.Stroke(1.3f * u))
                     drawLine(edge, Offset(5f * u, 13f * u), Offset(19f * u, 13f * u), strokeWidth = 1.2f * u)
                 }
+                Swatch.FLAG -> waitFlagMark(9f * u, 3f * u, 21f * u, Color(0xFF5A4632), Color(0xFFFFB020))
                 Swatch.RAIN -> {
                     // a flat far cloud with a soft veil under it (the layer's own shapes, small)
                     drawRoundRect(Color(0xFFA7B1BE), Offset(3f * u, 6f * u), androidx.compose.ui.geometry.Size(18f * u, 5f * u),

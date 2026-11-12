@@ -72,15 +72,18 @@ fun WaitFlagRow(ui: StayUi, actions: StayActions) {
             return@Column
         }
         val t = clock(f.flag.wallMs)
-        val line = when (f.outcome) {
+        val line = when {
+            f.airQuiet -> stringResource(R.string.wf_reaches, t)
+            else -> when (f.outcome) {
             WaitOutcome.REACHES -> stringResource(R.string.wf_reaches, t)
             WaitOutcome.SHORT -> stringResource(R.string.wf_short, t, duration(f.shortMinutes))
             WaitOutcome.BELOW_KEEP -> stringResource(R.string.wf_below, t)
+            }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite }) {
                 Text(line, style = ChaseomUi.body.copy(fontWeight = FontWeight.SemiBold), color = k.text1)
-                if (f.outcome == WaitOutcome.SHORT && f.swapGainMinutes != null) {
+                if (!f.airQuiet && f.outcome == WaitOutcome.SHORT && f.swapGainMinutes != null) {
                     Text(stringResource(R.string.wf_short_swap, signedDuration(f.swapGainMinutes)), style = ChaseomUi.body, color = k.text1)
                 }
                 Text(stringResource(R.string.wf_note), style = ChaseomUi.caption, color = k.text2)
