@@ -33,11 +33,26 @@ class StayService : Service() {
             } else {
                 startForeground(NOTIFICATION_ID, notification()) // minSdk 28; Pleos Connect is API 34
             }
+            foreground = true
         } catch (t: Throwable) {
             Log.w(TAG, "startForeground failed: ${t.message}")
+            requested = false; pendingStop = false
+            stopSelf()
+            return START_NOT_STICKY
+        }
+        // A stop that came before startForeground (P -> D right after P) is done only now.
+        if (pendingStop) {
+            pendingStop = false; requested = false; foreground = false
             stopSelf()
         }
         return START_NOT_STICKY
+    }
+
+    override fun onDestroy() {
+        // Only foreground: requested / pendingStop may already belong to a newer start() (D -> P while this
+        // instance's destroy is still queued). The system delivers this destroy before the next create/start.
+        foreground = false
+        super.onDestroy()
     }
 
     private fun notification(): Notification {
@@ -63,18 +78,33 @@ class StayService : Service() {
         private const val CHANNEL = "stay"
         private const val NOTIFICATION_ID = 1
 
-        fun start(context: Context) {
-            try {
-                context.startForegroundService(Intent(context, StayService::class.java))
-            } catch (t: Throwable) {
-                // Background start not allowed (API 31+): the app process still runs the stay while
-                // it lives; the service is retried when the screen is next in front.
-                Log.w(TAG, "start refused: ${t.message}")
-            }
+        // Main-thread state. A service started with startForegroundService must reach startForeground before it
+        // stops; stopping it earlier (gear D within a moment of P, e.g. right after a cold start) makes the system
+        // crash the app with ForegroundServiceDidNotStartInTimeException. So a stop before that point is deferred.
+        @Volatile private var requested = false
+        @Volatile private var foreground = false
+        @Volatile private var pendingStop = false
+
+        /** true when the start was accepted; false (background start not allowed, API 31+) lets the caller retry. */
+        fun start(context: Context): Boolean = try {
+            context.startForegroundService(Intent(context, StayService::class.java))
+            requested = true
+            pendingStop = false
+            true
+        } catch (t: Throwable) {
+            // The app process still runs the stay while it lives; StayController tries again on its next update.
+            Log.w(TAG, "start refused: ${t.message}")
+            false
         }
 
         fun stop(context: Context) {
-            context.stopService(Intent(context, StayService::class.java))
+            if (!requested) return
+            if (foreground) {
+                requested = false; foreground = false
+                context.stopService(Intent(context, StayService::class.java))
+            } else {
+                pendingStop = true // onStartCommand stops it right after startForeground
+            }
         }
     }
 }

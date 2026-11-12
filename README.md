@@ -13,7 +13,7 @@
   - 앱은 차를 **읽기만 하고 표시만** 합니다. 공조를 켜거나 끄거나 바꾸지 않으며, 차량 제어 권한도 런타임 권한 요청도 없습니다.
 
 ## 2. 실행 방법
-1. 아래 3번 환경의 Pleos Connect Emulator를 Cold Boot로 켭니다. Virtual Console에서 배터리를 **19%**로 둡니다. 약 20% 이상이면 남은 시간이 "3시간 이상"으로 묶여 변화가 보이지 않습니다.
+1. 아래 3번 환경의 Pleos Connect Emulator를 Cold Boot로 켭니다. Virtual Console에서 배터리를 **19%**로 둡니다. 20% 이상이면 남은 시간은 "3시간 이상"으로 표시되고, 다이얼을 바꾸면 변화율(예: "머물 시간 −12% (추정)")이 뜹니다.
 2. APK를 설치하고 앱 목록에서 **차섬**을 실행합니다. 처음 실행하면 내일 탈 거리 설정 화면이 나옵니다.
    ```bash
    adb install -r apk/Chaseom_Chaseom_release.apk
@@ -29,7 +29,7 @@
 
 **소스에서 빌드**
 - `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`이 필요합니다.
-- 디버그 빌드와 단위 테스트: `./gradlew assembleDebug`, `./gradlew testDebugUnitTest` (테스트 175개).
+- 디버그 빌드와 단위 테스트: `./gradlew assembleDebug`, `./gradlew testDebugUnitTest` (테스트 176개).
 - 릴리스 APK: `keystore.properties`를 `keystore.properties.example`처럼 준비한 뒤 `scripts/build-release.ps1`로 만듭니다.
 - Windows에서 경로에 한글이 있으면 AGP가 빌드를 거부합니다. 영문 경로에 클론하거나, 드라이브 문자를 자동으로 연결(`subst`)하는 위 스크립트를 쓰세요.
 
@@ -46,24 +46,32 @@
 | 권한 | Pleos `CAR_ENERGY`, `CAR_CLIMATE`, `CAR_SEATS`, `CAR_WINDOWS`, `CAR_DOORS`, `CAR_LIGHTS` / AAOS `CAR_INFO`, `CAR_ENERGY_PORTS`, `CAR_POWERTRAIN` / `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE`. 모두 normal 권한이라 런타임 팝업이 없습니다. 빌드 때 SDK와 AndroidX가 `VEHICLE_BINDING`과 앱 자신의 권한을 더 넣습니다. |
 
 - 모든 화면과 수치는 에뮬레이터에서 확인했고, 실차에서는 확인하지 않았습니다.
-- 남은 시간은 차의 공조 상태에 공개 계수표를 곱해 낸 추정입니다. 계수와 출처(공개 실측 대조)는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에 있습니다. 아주 추운 날, 처음 데우는 동안, 직사광선 아래에서는 실제 소모가 더 클 수 있습니다.
-- Pleos Connect Emulator 2.1.0에서는 Virtual Console의 2열 "Occupied"가 SDK에 `false`로 들어옵니다. 그래서 앱은 이 값을 뒤집어 읽습니다. 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증의 "뒷좌석 직접 확인" 줄을 늘 보여 줍니다. 에뮬레이터에서 신호별로 확인한 사실은 [docs/PLATFORM_NOTES.md](docs/PLATFORM_NOTES.md)에 있습니다.
+- 남은 시간은 차의 공조 상태에 공개 계수표를 곱해 낸 추정입니다. 계수와 출처는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에, 공개 실측 9건(기관 시험 3건 포함)과의 대조는 같은 문서 §6에 있습니다. 아주 추운 날, 처음 데우는 동안, 직사광선 아래에서는 실제 소모가 더 클 수 있습니다.
+- 에뮬레이터에서 신호별로 확인한 사실은 [docs/PLATFORM_NOTES.md](docs/PLATFORM_NOTES.md)에 있습니다. 알려진 한계는 아래 '한계' 절에 있습니다.
 
 ## 4. APK 위치
-- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `c2f1d1b86925162e754015be06bd2dd0a93916f552636169c4a6ae0bcdb6d589`)
+- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `4e9e09fe9ce6e8403b7226b19350c85e4be67b3cc570d753d4ddcf66e53616de`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4)
 
 ## 검증 표
-위 APK를 에뮬레이터에서 잰 값입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)입니다. 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`, 해시 대조는 `python tools/check_hash.py`를 씁니다.
+위 APK를 에뮬레이터에서 두 번 잰 값의 범위입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)과 [docs/evidence/measure_run2.json](docs/evidence/measure_run2.json)입니다. 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`, 해시 대조는 `python tools/check_hash.py`를 씁니다.
 
 | 항목 | 값 |
 |---|---|
-| 단위 테스트 | 175개 통과 |
-| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 36 ms, 최대 64 ms |
-| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 36 ms |
-| 앱 시작 (콜드 스타트) | 1.2–1.5초 |
-| 정지 화면 CPU (30초) | 평균 0.25% |
-| 메모리 (PSS) | 58 MB |
+| 단위 테스트 | 176개 통과 |
+| 다이얼 → 토스트가 화면에 뜨기까지 (10회씩) | 중앙값 27–33 ms, 최대 58 ms |
+| 기어 P → D, 섬과 숫자가 사라지기까지 (10회씩) | 중앙값 8–10 ms, 최대 39 ms |
+| 앱 시작 (콜드 스타트, 3회씩) | 0.9–1.4초 |
+| 정지 화면 CPU (30초) | 평균 0–0.25% |
+| 10초마다 다이얼 1회, 60초 평균 CPU | 1.6–1.8% (전환 순간 최대 31%) |
+| 메모리 (PSS) | 57 MB |
+
+다른 세션이 함께 돌아 호스트 부하가 큰 때에는 앱 시작 최대 1.6초, 접힘 최대 63 ms까지 관찰했습니다(같은 앱 코드의 이전 빌드). 모두 Pleos 기준(시작 10초 이내) 안입니다.
+
+## 한계 (2차에서 고칠 것)
+- **2열 탑승 값을 뒤집어 읽습니다.** Pleos Connect Emulator 2.1.0에서는 Virtual Console의 2열 "Occupied"가 SDK에 `false`로 들어오고(차량 서비스의 AAOS 원값은 정의대로 옴), 앱은 release에서도 이 값을 뒤집어 읽습니다(`OCCUPANCY_SDK_INVERTED`). 실차에서 SDK 값이 바르게 오면 탑승한 좌석이 "감지 안 됨"으로 보일 수 있습니다. 그래서 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증의 "뒷좌석 직접 확인" 줄을 늘 보여 줍니다. 2차에서 AAOS 원값을 직접 읽도록 바꿀 예정입니다.
+- **차량 연결을 하나로 묶지 않았습니다.** 차 상태를 읽는 부분과 기어를 읽는 부분이 Vehicle SDK를 각자 초기화하고(2회), AAOS `Car` 연결은 세 곳에서 따로 엽니다. 초기화 직후 바로 '연결됨'으로 보고, 차량 서비스가 끊긴 뒤 다시 연결하지 않습니다. 기어를 모르거나 연결이 끊기면 주행 중으로 보고 화면을 접습니다(`DrivingStateGateTest`). 2차에서 연결 하나로 합치고 재연결을 넣을 예정입니다.
+- **외기온을 쓰지 않습니다.** 바깥 온도 신호 대신 영하 10°C를 가정해 계산하고, 이 가정을 앱 정보 화면에 적어 둡니다. 2차에서 외기온 신호를 반영할 예정입니다.
 
 ## 안전 규칙 = 테스트
 아래 규칙을 어기는 코드나 문구를 넣으면 단위 테스트(`./gradlew testDebugUnitTest`)가 실패합니다. 문구 테스트는 화면 문자열 파일을 직접 읽어 검사합니다.
@@ -72,7 +80,7 @@
 |---|---|
 | 계산한 숫자에는 늘 "(추정)"이 붙는다 | `WordingRulesTest.computedValuesMarkedEstimate` |
 | 앱은 공조를 끄지 않는다고 말하고, 경고(K1·K2)도 공조를 끄거나 줄이라고 하지 않는다 | `WordingRulesTest.keepShareNeverLockedAndAppDoesNotControlClimate`, `WordingRulesTest.k1AndK2NeverTellThePersonToCutTheClimate` |
-| 뒷좌석을 "비었음"으로 표시하지 않고, 영수증에는 늘 "뒷좌석 직접 확인" 줄이 있다 | `WordingRulesTest.rearSeatWording`, `StayEngineTest.receiptRowsOrderAndRearAlwaysCheck` |
+| 뒷좌석을 "비었음"으로 표시하지 않고, 영수증에는 늘 "뒷좌석 직접 확인" 줄이 있다. 뒷좌석 센서를 읽지 못하면 "감지 안 됨"이 아니라 "확인 안 됨"이라고 쓴다 | `WordingRulesTest.rearSeatWording`, `StayEngineTest.receiptRowsOrderAndRearAlwaysCheck`, `StayEngineTest.rearReadFailureIsUnknownNotNotDetected` |
 | 수면·차박·보장 같은 금칙어가 없다(취급설명서 경고 인용만 예외) | `WordingRulesTest.noBannedWordsOutsideTheWarnings` |
 | 머무는 동안 60분마다, 야간에는 시작과 매시 고지가 다시 뜬다 | `StayEngineTest.hourNoticeEvery60Minutes`, `StayEngineTest.nightNoticeAtStartAndHourly` |
 | 주행 중 화면은 숫자 없이 짧은 안내뿐이고, 기어를 모르거나 연결이 끊기면 주행 중으로 보고 화면을 접는다 | `WordingRulesTest.drivingGlanceShortAndNumberFree`, `DrivingStateGateTest.unknownGearFailsSafeToDriving` |

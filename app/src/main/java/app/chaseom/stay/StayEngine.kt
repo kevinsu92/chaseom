@@ -428,7 +428,7 @@ class StayEngine(
         rows += ReceiptRow.Windows(c.windows.filterValues { it > 0 }.keys.sortedBy { WINDOW_ORDER.indexOf(it) }, c.windowsKnown)
         rows += ReceiptRow.Light(c.cabinLightOn)
         if (policy.receiptEnergyRows) rows += ReceiptRow.ChargePort(c.chargePortOpen)
-        rows += ReceiptRow.Rear(c.rearLeftOccupied == true || c.rearRightOccupied == true)
+        rows += ReceiptRow.Rear(rearDetected(c.rearLeftOccupied, c.rearRightOccupied))
         return Receipt(rows, nowMs)
     }
 
@@ -439,4 +439,11 @@ class StayEngine(
         const val MAX_PLAUSIBLE_KW = 10f
         val WINDOW_ORDER = listOf("driver", "passenger", "rearLeft", "rearRight")
     }
+}
+
+/** Rear row value: someone on either seat = true; otherwise a seat that could not be read = null; both read empty = false. */
+internal fun rearDetected(left: Boolean?, right: Boolean?): Boolean? = when {
+    left == true || right == true -> true
+    left == null || right == null -> null
+    else -> false
 }

@@ -171,10 +171,24 @@ class StayEngineTest {
                 val rec = e.at(2 * min, ev.copy(driverDoorOpen = true, rearLeftOccupied = l, rearRightOccupied = rr)).receipt!!
                 val rear = rec.rows.filterIsInstance<ReceiptRow.Rear>().single()
                 assertFalse(rear.dot)
-                assertEquals(l == true || rr == true, rear.detected)
+                val expected = if (l == true || rr == true) true else if (l == null || rr == null) null else false
+                assertEquals(expected, rear.detected)
                 assertTrue(rec.rearCheckAlways)
             }
         }
+    }
+
+    // A rear sensor read failure is "확인 안 됨" (null), never "감지 안 됨" (false); someone on either seat wins.
+    @Test fun rearReadFailureIsUnknownNotNotDetected() {
+        assertNull(rearDetected(null, null))
+        assertNull(rearDetected(null, false))
+        assertNull(rearDetected(false, null))
+        assertEquals(false, rearDetected(false, false))
+        assertEquals(true, rearDetected(true, null))
+        assertEquals(true, rearDetected(null, true))
+        val e = StayEngine(); e.at(0)
+        val rec = e.at(2 * min, ev.copy(driverDoorOpen = true, rearLeftOccupied = null, rearRightOccupied = null)).receipt!!
+        assertNull(rec.rows.filterIsInstance<ReceiptRow.Rear>().single().detected)
     }
 
     @Test fun receiptNeedsOneMinuteAndOpeningEdgeAndClosesWithDoor() {

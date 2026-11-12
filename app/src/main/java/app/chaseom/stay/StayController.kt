@@ -164,8 +164,7 @@ class StayController(
         val staying = _ui.value.parked
         cabin.setPolling(staying) // lights, wiper lever and backrest are polled only during a parked stay
         if (staying && !serviceRunning) {
-            StayService.start(appContext)
-            serviceRunning = true
+            serviceRunning = StayService.start(appContext) // refused (background) -> tried again on the next update
         } else if (parked == false && serviceRunning) {
             StayService.stop(appContext)
             serviceRunning = false

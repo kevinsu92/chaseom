@@ -131,8 +131,11 @@ sealed class ReceiptRow(val dot: Boolean) {
     data class Windows(val open: List<String>, val known: Boolean = true) : ReceiptRow(open.isNotEmpty())
     data class Light(val on: Boolean?) : ReceiptRow(on == true)
     data class ChargePort(val open: Boolean?) : ReceiptRow(open == true)
-    /** Always grey, never a dot, never green. */
-    data class Rear(val detected: Boolean) : ReceiptRow(false)
+    /**
+     * Always grey, never a dot, never green. [detected] null = a rear seat sensor could not be read and no seat
+     * reported someone: "확인 안 됨" (like the light and the charge port), never "감지 안 됨".
+     */
+    data class Rear(val detected: Boolean?) : ReceiptRow(false)
 }
 
 /**

@@ -163,7 +163,7 @@ private fun ReceiptLine(row: ReceiptRow, size: ChaseomUi.Size, last: Boolean = f
             when (row.open) { true -> R.string.e_port_open; false -> R.string.e_port_closed; null -> R.string.e_unknown },
         )
         is ReceiptRow.Rear -> stringResource(R.string.e_rear) to
-            stringResource(if (row.detected) R.string.e_rear_detected else R.string.e_rear_not_detected)
+            stringResource(when (row.detected) { true -> R.string.e_rear_detected; false -> R.string.e_rear_not_detected; null -> R.string.e_unknown })
     }
     val grey = row is ReceiptRow.Rear // neutral grey either way, never green
     // Rows 56 dp with a 1 dp line, label Regular / value Medium 26, label column 224 (Small 168).
