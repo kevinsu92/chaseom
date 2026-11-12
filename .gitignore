@@ -32,6 +32,6 @@ keystore/
 # Survey raw data must never enter the submission repo (07_uxr request)
 data/
 
-# Python caches (tools/)
+# Python caches
 __pycache__/
 *.pyc

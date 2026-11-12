@@ -20,7 +20,7 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 
 if (-not (Test-Path (Join-Path $root "keystore.properties"))) {
-    throw "keystore.properties not found. Copy keystore.properties.example and fill it (see SETUP_FOR_CEO.md)."
+    throw "keystore.properties not found. Copy keystore.properties.example to keystore.properties and fill it."
 }
 if (-not $env:JAVA_HOME) { $env:JAVA_HOME = $JavaHome }
 
