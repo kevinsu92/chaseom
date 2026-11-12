@@ -25,6 +25,7 @@
    - 배터리 8%: 내일 몫 아래 경고가 나옵니다.
    - 운전석 문 열기: 떠나기 전 영수증이 나옵니다.
    - 기어 **D**: 섬과 숫자를 바로 접습니다. 주행 중에는 시스템이 앱 화면을 가립니다.
+4. 같은 조작을 자동으로 재생하려면 `python tools/demo.py`를 실행합니다. 단계마다 화면 문구를 출력하고 끝에 `6/6 장면 확인`을 냅니다. 도구 설명은 [tools/README.md](tools/README.md)에 있습니다.
 
 **소스에서 빌드**
 - `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`이 필요합니다.
@@ -45,13 +46,24 @@
 | 권한 | Pleos `CAR_ENERGY`, `CAR_CLIMATE`, `CAR_SEATS`, `CAR_WINDOWS`, `CAR_DOORS`, `CAR_LIGHTS` / AAOS `CAR_INFO`, `CAR_ENERGY_PORTS`, `CAR_POWERTRAIN` / `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE`. 모두 normal 권한이라 런타임 팝업이 없습니다. 빌드 때 SDK와 AndroidX가 `VEHICLE_BINDING`과 앱 자신의 권한을 더 넣습니다. |
 
 - 모든 화면과 수치는 에뮬레이터에서 확인했고, 실차에서는 확인하지 않았습니다.
-- 남은 시간은 차의 공조 상태에 공개 계수표를 곱해 낸 추정입니다. 아주 추운 날, 처음 데우는 동안, 직사광선 아래에서는 실제 소모가 더 클 수 있습니다.
-- Pleos Connect Emulator 2.1.0에서는 Virtual Console의 2열 "Occupied"가 SDK에 `false`로 들어옵니다. 그래서 앱은 이 값을 뒤집어 읽습니다. 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증의 "뒷좌석 직접 확인" 줄을 늘 보여 줍니다.
+- 남은 시간은 차의 공조 상태에 공개 계수표를 곱해 낸 추정입니다. 계수와 출처(공개 실측 대조)는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에 있습니다. 아주 추운 날, 처음 데우는 동안, 직사광선 아래에서는 실제 소모가 더 클 수 있습니다.
+- Pleos Connect Emulator 2.1.0에서는 Virtual Console의 2열 "Occupied"가 SDK에 `false`로 들어옵니다. 그래서 앱은 이 값을 뒤집어 읽습니다. 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증의 "뒷좌석 직접 확인" 줄을 늘 보여 줍니다. 에뮬레이터에서 신호별로 확인한 사실은 [docs/PLATFORM_NOTES.md](docs/PLATFORM_NOTES.md)에 있습니다.
 
 ## 4. APK 위치
 - **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `c2f1d1b86925162e754015be06bd2dd0a93916f552636169c4a6ae0bcdb6d589`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4)
-- 위 APK를 에뮬레이터에서 잰 값: [docs/evidence/measure_release.json](docs/evidence/measure_release.json). 다이얼에서 토스트까지 중앙값 36 ms, 기어 P→D 접힘 최대 36 ms, 앱 시작 1.2–1.5초, 정지 화면 CPU 0.25%, 메모리 58 MB입니다.
+
+## 검증 표
+위 APK를 에뮬레이터에서 잰 값입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)입니다. 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`, 해시 대조는 `python tools/check_hash.py`를 씁니다.
+
+| 항목 | 값 |
+|---|---|
+| 단위 테스트 | 175개 통과 |
+| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 36 ms, 최대 64 ms |
+| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 36 ms |
+| 앱 시작 (콜드 스타트) | 1.2–1.5초 |
+| 정지 화면 CPU (30초) | 평균 0.25% |
+| 메모리 (PSS) | 58 MB |
 
 ## 안전 규칙 = 테스트
 아래 규칙을 어기는 코드나 문구를 넣으면 단위 테스트(`./gradlew testDebugUnitTest`)가 실패합니다. 문구 테스트는 화면 문자열 파일을 직접 읽어 검사합니다.
