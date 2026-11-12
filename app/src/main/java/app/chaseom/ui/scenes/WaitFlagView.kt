@@ -58,8 +58,10 @@ fun WaitFlagRow(ui: StayUi, actions: StayActions) {
             }
             Text(stringResource(R.string.wf_ask), style = ChaseomUi.body, color = k.text2)
             val now = System.currentTimeMillis()
+            val cal = java.util.Calendar.getInstance().apply { timeInMillis = now }
+            val choices = WaitFlags.choicesAt(cal.get(java.util.Calendar.HOUR_OF_DAY) * 60 + cal.get(java.util.Calendar.MINUTE))
             FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                WaitFlags.CHOICES.forEach { m ->
+                choices.forEach { m ->
                     // Same rounding as the flag itself, so the choice shows the time the flag will carry.
                     val wall = WaitFlags.plant(m, 0L, now).wallMs
                     LightPillButton(stringResource(R.string.wf_choice, clock(wall), choiceSpan(m)), {

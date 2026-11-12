@@ -124,7 +124,9 @@ class StayController(
             null -> Unit
         }
         if (parked == false) moorAtMs = null
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val cal = Calendar.getInstance()
+        val hour = cal.get(Calendar.HOUR_OF_DAY)
+        val minuteOfDay = hour * 60 + cal.get(Calendar.MINUTE)
         var ui = engine.update(parked, c, s, now, hour)
         if (engine.session != before) saveSession(engine.session)
         if (engine.session != null && now - lastSeenSaveMs >= SEEN_SAVE_MS) {
@@ -146,7 +148,8 @@ class StayController(
         val other = listOf(c.hvacPowerOn, c.driverSetTempC, c.fanSpeed, c.acOn, c.driverSeatHeat)
         if (prevOtherClimate != null && other != prevOtherClimate) otherChangeMs = now
         prevOtherClimate = other
-        val flagAllowed = ui.parked && !night && ui.hero != null && ui.policy.energyBudget
+        val flagAllowed = ui.parked && !night && ui.hero != null && ui.policy.energyBudget &&
+            WaitFlags.choicesAt(minuteOfDay).isNotEmpty()
         ui = ui.copy(
             waitForecast = WaitFlags.quietAfterAirSwitch(
                 WaitFlags.forecast(waitFlag, now, ui.hero, ui.exchange, night), now, airSwitchMs, otherChangeMs, flagShortOnScreen,
@@ -182,6 +185,8 @@ class StayController(
     /** Plants the wait flag [offsetMinutes] from now (P only; never saved). */
     fun plantWaitFlag(offsetMinutes: Int) {
         if (!_ui.value.waitFlagAvailable) return
+        val cal = Calendar.getInstance()
+        if (offsetMinutes !in WaitFlags.choicesAt(cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE))) return
         waitFlag = WaitFlags.plant(offsetMinutes, clock(), System.currentTimeMillis())
         waitFlagStayStart = engine.session?.startMs
         rerun()

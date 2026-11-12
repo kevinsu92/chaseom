@@ -116,36 +116,81 @@ class WaitFlagTest {
         assertEquals(0, WaitFlags.forecast(f, mono, hero(900), null, false)!!.shortMinutes)
     }
 
-    // F-1: the picture follows the line's own comparison, never the rounded buoys.
-    @Test fun reachedFlagTouchesTheLastBuoyAndAShortFlagLeavesAGap() {
-        val f = WaitFlags.plant(150, mono, (14 * 60 + 5) * min) // exactly 150 min away
-        // 162 min reaches 150: buoys = 5, flag right behind the fifth buoy (touching)
-        val reach = WaitFlags.forecast(f, mono, hero(162), null, false)!!
-        assertEquals(WaitOutcome.REACHES, reach.outcome)
-        assertEquals(5.5f, WaitFlags.rowSlot(reach, buoys = 5)!!, 0f)
-        // 146 min is 4 min short of 150: buoys = 4, slot ceil(150/30) = 5 would touch, so it moves one gap further
-        val short = WaitFlags.forecast(f, mono, hero(146), null, false)!!
-        assertEquals(WaitOutcome.SHORT, short.outcome)
-        val slot = WaitFlags.rowSlot(short, buoys = 4)!!
-        assertTrue("a short flag never touches the last buoy", slot - 4 >= 1.5f)
-        // far short: 60 min for a 3-hour flag -> slot 6, plenty of gap
-        val far = WaitFlags.forecast(WaitFlags.plant(180, mono, (14 * 60 + 5) * min), mono, hero(60), null, false)!!
-        assertEquals(6f, WaitFlags.rowSlot(far, buoys = 2)!!, 0f)
+    private val at1405 = (14 * 60 + 5) * min
+    private fun fc(flagMin: Int, stay: Int) = WaitFlags.forecast(WaitFlags.plant(flagMin, mono, at1405), mono, hero(stay), null, false)!!
+    private fun buoysFor(stay: Int) = (minOf(stay, 180) / 30)
+
+    // QA ruling 11 (a): a reached flag stands at or before the last buoy, for every flag and stay time.
+    @Test fun ruling11aReachedFlagIsInsideTheRow() {
+        for (flag in WaitFlags.CHOICES) for (stay in flag..400) {
+            val f = fc(flag, stay)
+            assertEquals(WaitOutcome.REACHES, f.outcome)
+            assertTrue("flag $flag stay $stay", WaitFlags.rowSlot(f, buoysFor(stay))!! <= buoysFor(stay).toFloat())
+        }
     }
 
-    @Test fun rowSlotStaysOnTheRow() {
-        val f = WaitFlags.plant(30, mono, wall) // under 30 min after rounding
+    // QA ruling 11 (b): a short flag stands past the last buoy (outside the row), for every flag and stay time.
+    @Test fun ruling11bShortFlagIsPastTheLastBuoy() {
+        for (flag in WaitFlags.CHOICES) for (stay in 0 until flag) {
+            val f = fc(flag, stay)
+            assertEquals(WaitOutcome.SHORT, f.outcome)
+            assertTrue("flag $flag stay $stay", WaitFlags.rowSlot(f, buoysFor(stay))!! > buoysFor(stay).toFloat())
+        }
+        // the gap grows with the shortfall: 146 min for a 150-min flag stands right past buoy 4, 60 min far past buoy 2
+        assertEquals(5f, WaitFlags.rowSlot(fc(150, 146), 4)!!, 0f)
+        assertEquals(6f, WaitFlags.rowSlot(fc(180, 60), 2)!!, 0f)
+    }
+
+    // QA ruling 11 (c): reached in the same 30-min slot (stay 140 = 4 buoys, flag 130 min = slot 4.33) is pulled onto buoy 4.
+    @Test fun ruling11cSameSlotReachIsPulledToTheLastBuoy() {
+        val f = WaitFlags.forecast(WaitFlags.plant(130, mono, at1405), mono, hero(140), null, false)!!
+        assertEquals(WaitOutcome.REACHES, f.outcome)
+        assertEquals(130, f.remainingMinutes)
+        assertEquals(4f, WaitFlags.rowSlot(f, buoys = 4)!!, 0f)
+        // a reach well inside the row keeps its own place (the buoys pass it): 60-min flag, 162 min = 5 buoys -> slot 2
+        assertEquals(2f, WaitFlags.rowSlot(fc(60, 162), 5)!!, 0f)
+    }
+
+    // QA ruling 11 (d): at the cap (six buoys) the flag is never past the sixth buoy.
+    @Test fun ruling11dAtTheCapTheFlagIsWithinTheSixthBuoy() {
+        for (flag in WaitFlags.CHOICES) {
+            val slot = WaitFlags.rowSlot(fc(flag, 900), buoys = 6)!!
+            assertTrue("flag $flag", slot <= 6f)
+            assertEquals(flag / 30f, slot, 0f)
+        }
+    }
+
+    // F-1: under 30 minutes to the flag (time passed, or a 5-minute round-down) the flag is pinned to the first slot.
+    @Test fun f1UnderThirtyMinutesIsPinnedToTheFirstSlot() {
+        val f = WaitFlags.plant(30, mono, wall) // 14:07:30 + 30 min -> 14:35, 27.5 min away
         val reach = WaitFlags.forecast(f, mono, hero(400), null, false)!!
-        assertEquals(1f, WaitFlags.rowSlot(reach, buoys = 6)!!, 0f) // at the cap: inside the six buoys, at its own slot
-        val cap3h = WaitFlags.forecast(WaitFlags.plant(180, mono, (14 * 60 + 5) * min), mono, hero(400), null, false)!!
-        assertEquals(6f, WaitFlags.rowSlot(cap3h, buoys = 6)!!, 0f)
-        // five buoys and a short 3-hour flag: the sixth slot (where the missing buoy would be), never off the row
-        val shortAt5 = WaitFlags.forecast(WaitFlags.plant(180, mono, (14 * 60 + 5) * min), mono, hero(160), null, false)!!
-        assertEquals(6f, WaitFlags.rowSlot(shortAt5, buoys = 5)!!, 0f)
-        val reachNoBuoy = WaitFlags.forecast(f, mono, hero(29), null, false)!!
-        assertEquals(1f, WaitFlags.rowSlot(reachNoBuoy, buoys = 0)!!, 0f) // pinned to the first slot
+        assertTrue(reach.remainingMinutes < 30)
+        assertEquals(1f, WaitFlags.rowSlot(reach, buoys = 6)!!, 0f)
         val shortTiny = WaitFlags.forecast(f, mono, hero(5), null, false)!!
-        assertTrue(WaitFlags.rowSlot(shortTiny, buoys = 0)!! in 1f..WaitFlags.MAX_SLOT)
+        assertEquals(WaitOutcome.SHORT, shortTiny.outcome)
+        assertEquals(1f, WaitFlags.rowSlot(shortTiny, buoys = 0)!!, 0f)
+        val reachNoBuoy = WaitFlags.forecast(f, mono, hero(29), null, false)!!
+        assertEquals(1f, WaitFlags.rowSlot(reachNoBuoy, buoys = 0)!!, 0f)
+    }
+
+    // F-8 (a): before 22:00 only flags at or before 22:00 are offered; at 21:00 the latest choice is 22:00.
+    @Test fun f8ChoicesEndAtTwentyTwo() {
+        assertEquals(listOf(30, 60), WaitFlags.choicesAt(21 * 60))
+        assertTrue(WaitFlags.choicesAt(21 * 60).all { 21 * 60 + it <= 22 * 60 })
+        assertEquals(WaitFlags.CHOICES, WaitFlags.choicesAt(16 * 60 + 30))
+        assertEquals(listOf(30, 60, 90), WaitFlags.choicesAt(20 * 60 + 5))
+        assertTrue(WaitFlags.choicesAt(21 * 60 + 31).isEmpty())
+        // no choices in the night window, nor before 06:00
+        assertTrue(WaitFlags.choicesAt(22 * 60).isEmpty())
+        assertTrue(WaitFlags.choicesAt(5 * 60 + 59).isEmpty())
+        assertEquals(WaitFlags.CHOICES, WaitFlags.choicesAt(6 * 60))
+    }
+
+    // F-8 (b): a flag planted before 22:00 hides at the 22:00 boundary (the night notice takes over).
+    @Test fun f8FlagHidesAtTwentyTwo() {
+        val f = WaitFlags.plant(60, mono, wall)
+        assertTrue(WaitFlags.forecast(f, mono, hero(400), null, night = isNightHour(21)) != null)
+        assertNull(WaitFlags.forecast(f, mono, hero(400), null, night = isNightHour(22)))
     }
 
     // F-2: under tomorrow's share there is no flag picture (the line says it does not compare).

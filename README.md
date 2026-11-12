@@ -1,6 +1,6 @@
 # 차섬 — 오늘 머물 시간을 보여 주는 작은 섬
 
-![tests](https://img.shields.io/badge/unit%20tests-164%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-4.0%20MB-informational)
+![tests](https://img.shields.io/badge/unit%20tests-169%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-4.0%20MB-informational)
 
 | 히터를 올리면 해가 커지고 남은 시간이 줄어듦 | 내일 몫 아래로 내려가면 경고 | 운전석 문을 열면 떠나기 전 영수증 |
 |---|---|---|
@@ -12,7 +12,7 @@
 - **핵심 기능**
   - **작은 날씨 섬**: 해 크기 = 공조 설정온도, 바람 = 풍량, 물 높이 = 배터리, 부표 1개 = 머물 수 있는 30분(최대 6개), 배의 짐 = 내일 몫. 그림 아래 범례와 캡션 "섬은 공조 설정·배터리로 그려요 · 실내 측정 아님"이 늘 보입니다. 기어 P에서만 표시합니다.
   - **따뜻함 환율**: 다이얼을 바꾸는 순간 토스트로 남은 시간 변화(예: "설정 26°C · 풍량 6 · −21분 (추정)", 3시간 이상일 때는 "머물 시간 −12% (추정)")를 보여 주고, 비슷한 체감을 더 적은 전력으로 얻는 조합(운전석 열선, 저온 화상 주의)을 제안합니다.
-  - **기다림 예보**: "몇 시까지 기다려요? (선택)"에서 30분~3시간 중 시각을 고르면 부표 줄(1개 = 30분)의 그 시각 자리에 남색 깃발이 서고(닿으면 마지막 부표 바로 뒤, 못 닿으면 부표와 깃발 사이에 빈칸), 그림 아래 한 줄이 오늘 머물 시간이 그 시각에 닿는지 보여 줍니다(예: "오후 10:15 깃발 · 오늘 머물 시간이 깃발보다 약 32분 짧아요 (추정)"). 표시만 하고 공조는 바꾸지 않습니다.
+  - **기다림 예보**: "몇 시까지 기다려요? (선택)"에서 30분~3시간 중 시각을 고르면 부표 줄(1개 = 30분)의 그 시각 자리에 남색 깃발이 서고(닿으면 깃발이 부표 줄 안에 서고, 못 닿으면 마지막 부표 뒤 줄 밖에 서서 그 간격이 모자란 만큼을 보여 줌), 그림 아래 한 줄이 오늘 머물 시간이 그 시각에 닿는지 보여 줍니다(예: "오후 10:15 깃발 · 오늘 머물 시간이 깃발보다 약 32분 짧아요 (추정)"). 표시만 하고 공조는 바꾸지 않습니다.
   - **내일 지킬 몫**: 내일 처음 갈 거리(여유분 20% 포함)를 배터리에서 따로 표시합니다. 남은 시간은 "(추정)", 3시간 넘으면 "3시간 이상"입니다.
   - **맴도는 구름·먼 비**: 공조를 켠 채 창문을 모두 닫고 내기순환을 20분 넘게 쓰면 구름 하나가 뜹니다(공기 측정 아님). 앞 와이퍼가 AUTO로 실제로 닦을 때만 섬 뒤에 먼 비가 보입니다(바깥 날씨 측정 아님).
   - **안전 고지와 떠나기 전 영수증**: P 진입·1시간·야간에 공조 사용 경고. 운전석 문을 열면 머문 시간·쓴 전력·내일 몫·창문·실내등·충전 포트와 "뒷좌석 직접 확인" 줄을 보여 줍니다. 앱은 공조를 끄지 않습니다.
@@ -49,7 +49,7 @@
 | SDK·라이브러리가 빌드 때 자동으로 넣는 권한 | `ai.pleos.playground.service.vehicle.VEHICLE_BINDING` (Pleos Vehicle SDK), `app.chaseom.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (AndroidX, 앱 자신의 권한) |
 
 ## 4. APK 위치
-- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `18ff6369c349d2befdc11b5316d5ac916e08623950f06c678141682b0174715e`)
+- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `f4bda3853227daa0c861ed917e3bb08ed8b0ee3fb3acb8e5a21842f92d7a42d0`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4)
 
 ## 검증 표
@@ -57,14 +57,14 @@
 
 | 항목 | 값 |
 |---|---|
-| 단위 테스트 | **164개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
-| 테스트 커버리지 (Kover, 라인) | 도메인 **98.7%** (`stay/`의 엔진·계수·섬, Android 접착층 제외) · 전체 29.1%. 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
-| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **36 ms**, 최대 87 ms |
-| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **31 ms** (중앙값 16 ms) |
-| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **37 ms**, 최대 106 ms (첫 회만 106, 나머지 21–65 ms). 12시간 넘게 켠 에뮬레이터에서는 첫 회 최대 207 ms |
-| 앱 시작 (`am start -W`, 콜드 스타트) | Pleos 기준 10초 이내. 이번 측정 0.91–1.35초(에뮬레이터를 다시 켠 뒤, [docs/evidence/measure_release.json](docs/evidence/measure_release.json)), 오래 켠 에뮬레이터 1.5초 안팎(이전 빌드 측정에서는 최대 2.3초·새로 설치한 첫 실행 한 번 5.2초) |
-| 정지 화면 CPU (30초) | 평균 **0.13%** |
-| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 2.5% (전환 순간 최대 42%) |
+| 단위 테스트 | **169개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
+| 테스트 커버리지 (Kover, 라인) | 도메인 **99.0%** (`stay/`의 엔진·계수·섬·깃발, Android 접착층 제외) · 전체 29.2%. 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
+| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **28 ms**, 최대 79 ms |
+| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **75 ms** (중앙값 6 ms, 10회 중 9회는 24 ms 이하) |
+| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **37 ms**, 최대 90 ms (첫 회만 90, 나머지 16–53 ms). 이전 빌드를 12시간 넘게 켠 에뮬레이터에서는 첫 회 최대 207 ms |
+| 앱 시작 (`am start -W`, 콜드 스타트) | Pleos 기준 10초 이내. 이번 측정 0.97–1.49초(에뮬레이터를 다시 켠 뒤, [docs/evidence/measure_release.json](docs/evidence/measure_release.json)), 오래 켠 에뮬레이터 1.5초 안팎(이전 빌드 측정에서는 최대 2.3초·새로 설치한 첫 실행 한 번 5.2초) |
+| 정지 화면 CPU (30초) | 평균 **0.38%** |
+| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 1.1% (전환 순간 최대 27%) |
 | 메모리 (PSS) | 58 MB |
 | 런타임 권한 팝업 | **0** (요청하는 권한은 모두 normal) |
 | 차량 제어 | **0** (앱은 차를 읽기만 하고, 공조를 끄거나 바꾸지 않음) |
@@ -90,7 +90,7 @@ CPU는 코어 1개 기준(에뮬레이터 4코어)입니다. 시간은 Virtual C
 | 배는 배터리가 줄어도 기울거나 가라앉지 않고, 정박은 차가 다녀왔을 때만 한 번 움직인다 | `IslandTest.belowKeepEmptiesTheDayBandButNeverChangesTheBoatOrSun`, `IslandTest.crateOutlineOnlyNearOrBelowKeep`, `IslandTest.mooringOnlyWhenTheCarCameBack` |
 | 정차 중 공조를 놀이처럼 조작하게 하는 명령형 문구가 없고, 수동 와이퍼·방향지시등·실내등은 섬 입력이 아니다 | `WordingRulesTest.noImperativeDialPrompt`, `IslandTest.noManualWiperTurnSignalOrLampInput` |
 | 전기차로 확인되지 않으면 남은 시간·토스트·환율 카드를 모두 숨기고 "시동" 고지를 한다 | `ModeAndEnergyTest.modeRules`, `StayEngineTest.reducedModeHasNoEnergyAnywhere`, `WordingRulesTest.reducedModeIdlingNotice` |
-| 기다림 깃발은 P에서만 고르고(키보드 없음) 지금부터 3시간을 넘지 않는다. 밤(22~06시)에는 보이지 않고, 그 체류 동안만 메모리에 두며 저장하지 않는다. 닿을 때는 시각만 말하고("오후 8:15 깃발") 안심 문구를 쓰지 않는다 | `WaitFlagTest.plantRoundsDownToFiveMinutesAndNeverPastThreeHours`, `WaitFlagTest.reachedFlagTouchesTheLastBuoyAndAShortFlagLeavesAGap`, `WaitFlagTest.noFlagPictureBelowTomorrowsShare`, `WaitFlagTest.noNewShortLineForTenMinutesAfterAnAirSwitch`, `WaitFlagTest.noFlagAtNightAfterTheTimeOrWithoutHero`, `WaitFlagTest.nightWindowMatchesTheNightNotice`, `WordingRulesTest.waitFlagWordingIsDisplayOnlyAndNeverReassures` |
+| 기다림 깃발은 P에서만 고르고(키보드 없음) 지금부터 3시간을 넘지 않는다. 고를 수 있는 시각은 22시까지이고 밤(22~06시)에는 깃발과 칩이 보이지 않으며, 그 체류 동안만 메모리에 두며 저장하지 않는다. 닿을 때는 시각만 말하고("오후 8:15 깃발") 안심 문구를 쓰지 않는다 | `WaitFlagTest.plantRoundsDownToFiveMinutesAndNeverPastThreeHours`, `WaitFlagTest.ruling11aReachedFlagIsInsideTheRow`, `WaitFlagTest.ruling11bShortFlagIsPastTheLastBuoy`, `WaitFlagTest.ruling11cSameSlotReachIsPulledToTheLastBuoy`, `WaitFlagTest.ruling11dAtTheCapTheFlagIsWithinTheSixthBuoy`, `WaitFlagTest.f1UnderThirtyMinutesIsPinnedToTheFirstSlot`, `WaitFlagTest.f8ChoicesEndAtTwentyTwo`, `WaitFlagTest.f8FlagHidesAtTwentyTwo`, `WaitFlagTest.noFlagPictureBelowTomorrowsShare`, `WaitFlagTest.noNewShortLineForTenMinutesAfterAnAirSwitch`, `WaitFlagTest.noFlagAtNightAfterTheTimeOrWithoutHero`, `WaitFlagTest.nightWindowMatchesTheNightNotice`, `WordingRulesTest.waitFlagWordingIsDisplayOnlyAndNeverReassures` |
 | 기어 P를 벗어나면 체류가 끝나고 모든 카드가 닫힌다 | `StayEngineTest.leavingParkEndsStayAndClosesEverything` |
 
 ### 신호를 못 읽을 때 (모르면 안전한 쪽으로)

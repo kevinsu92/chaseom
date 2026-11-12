@@ -71,22 +71,34 @@ object WaitFlags {
     }
 
     /**
-     * Where the flag stands on the buoy row, in buoy slots (slot 1 = the first buoy = 30 min, 0.5 = half a gap).
-     * Whether it is reached comes from the line's own comparison (stay time >= time to the flag), never from
-     * the rounded buoys, so the picture can never look "reached" when the line is short:
-     * - reached: right behind the last buoy (touching), at least on slot 1; with all six buoys out (the cap) it
-     *   stands at its own time slot inside the row;
-     * - short: at ceil(minutes to flag / 30), at least one and a half slots after the last buoy, so a gap shows;
-     * - below tomorrow's share: no flag picture (null).
-     * The row ends at the sixth slot, so the flag never leaves the picture.
+     * Where the flag stands on the buoy row, in buoy slots (slot 1 = the first buoy = 30 min; QA ruling 11).
+     * Its own place is the chosen time: minutes to the flag / 30 (F-1: under 30 min it is pinned to slot 1).
+     * Whether it is reached comes from the line's own comparison (capped stay time >= time to the flag):
+     * - reached: min(own place, last buoy), so a reached flag always stands inside the buoy row (at the cap,
+     *   inside the six buoys); when the chosen time falls just past the last buoy in the same 30-min slot,
+     *   the flag is pulled onto that buoy and drawn in front of it;
+     * - short: its own place, which is always past the last buoy (the gap shows how short; the line gives the number);
+     * - below tomorrow's share: no flag picture (null, F-2).
      */
     fun rowSlot(f: WaitForecast, buoys: Int): Float? {
-        val own = ((f.remainingMinutes + 29) / 30).coerceIn(1, 6).toFloat()
+        val own = (f.remainingMinutes / 30f).coerceIn(1f, MAX_SLOT)
         return when (f.outcome) {
             WaitOutcome.BELOW_KEEP -> null
-            WaitOutcome.REACHES -> if (buoys >= 6) own else maxOf(buoys + 0.5f, 1f)
-            WaitOutcome.SHORT -> maxOf(own, buoys + 1.5f).coerceAtMost(MAX_SLOT)
+            WaitOutcome.REACHES -> minOf(own, buoys.coerceIn(1, 6).toFloat())
+            WaitOutcome.SHORT -> own
         }
+    }
+
+    /** The latest wall time a flag may carry: the night notice starts at 22:00 (QA F-8). */
+    const val LAST_FLAG_MINUTE_OF_DAY = 22 * 60
+
+    /**
+     * The choices offered at local time [nowMinuteOfDay] (0..1439): only flags at or before 22:00, and none
+     * in the night window (22:00-06:00), so a wait is never planned into the sleep-risk hours.
+     */
+    fun choicesAt(nowMinuteOfDay: Int): List<Int> {
+        if (isNightHour(nowMinuteOfDay / 60)) return emptyList()
+        return CHOICES.filter { nowMinuteOfDay + it <= LAST_FLAG_MINUTE_OF_DAY }
     }
 
     /** Last slot of the row (the sixth buoy). */
