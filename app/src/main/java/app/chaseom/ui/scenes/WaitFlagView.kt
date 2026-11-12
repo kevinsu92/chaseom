@@ -62,7 +62,7 @@ fun WaitFlagRow(ui: StayUi, actions: StayActions) {
                 WaitFlags.CHOICES.forEach { m ->
                     // Same rounding as the flag itself, so the choice shows the time the flag will carry.
                     val wall = WaitFlags.plant(m, 0L, now).wallMs
-                    LightPillButton(stringResource(R.string.wf_choice, clock(wall), duration(m)), {
+                    LightPillButton(stringResource(R.string.wf_choice, clock(wall), choiceSpan(m)), {
                         choosing = false
                         actions.plantWaitFlag(m)
                     })
@@ -105,3 +105,7 @@ fun DrawScope.waitFlagMark(x: Float, top: Float, bottom: Float, pole: Color, pen
     }
     drawPath(p, pennant)
 }
+
+/** "+30분", "+1시간", "+1시간 30분": whole hours without a trailing "0분". */
+@Composable
+internal fun choiceSpan(minutes: Int): String = if (minutes >= 60 && minutes % 60 == 0) "${minutes / 60}시간" else duration(minutes)
