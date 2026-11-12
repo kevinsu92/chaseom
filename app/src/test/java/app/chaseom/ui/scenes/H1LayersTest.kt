@@ -10,6 +10,7 @@ class H1LayersTest {
         addAll(listOf("base", "boat_l1", "k2_l1", "air")) // no sheen; + air (the circling cloud)
         listOf("S", "M", "L").forEach { add("sun_night_$it") } // night sun drawn above the night light
         addAll(listOf("rain", "rain_night"))                    // far rain (day / over the night light)
+        addAll(listOf("flag_row_l1", "flag_row_l1_night"))      // wait flag on the buoy row (day / over the night light)
         (0..2).forEach { add("trees_w$it") }
         listOf("S", "M", "L").forEach { add("sun_$it") }
         (1..2).forEach { add("wind_w$it") }
@@ -18,7 +19,7 @@ class H1LayersTest {
     }
 
     @Test fun bothSetsHaveEveryLayer() {
-        assertEquals(49, expected.size)
+        assertEquals(51, expected.size)
         assertEquals(expected, H1Layers.L.keys)
         assertEquals(expected, H1Layers.S.keys)
     }

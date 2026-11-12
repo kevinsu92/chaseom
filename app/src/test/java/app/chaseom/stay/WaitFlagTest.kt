@@ -115,4 +115,39 @@ class WaitFlagTest {
         assertEquals(WaitOutcome.REACHES, WaitFlags.forecast(f, mono, hero(900), null, false)!!.outcome)
         assertEquals(0, WaitFlags.forecast(f, mono, hero(900), null, false)!!.shortMinutes)
     }
+
+    // F-1: the picture follows the line's own comparison, never the rounded buoys.
+    @Test fun reachedFlagTouchesTheLastBuoyAndAShortFlagLeavesAGap() {
+        val f = WaitFlags.plant(150, mono, (14 * 60 + 5) * min) // exactly 150 min away
+        // 162 min reaches 150: buoys = 5, flag right behind the fifth buoy (touching)
+        val reach = WaitFlags.forecast(f, mono, hero(162), null, false)!!
+        assertEquals(WaitOutcome.REACHES, reach.outcome)
+        assertEquals(5.5f, WaitFlags.rowSlot(reach, buoys = 5)!!, 0f)
+        // 146 min is 4 min short of 150: buoys = 4, slot ceil(150/30) = 5 would touch, so it moves one gap further
+        val short = WaitFlags.forecast(f, mono, hero(146), null, false)!!
+        assertEquals(WaitOutcome.SHORT, short.outcome)
+        val slot = WaitFlags.rowSlot(short, buoys = 4)!!
+        assertTrue("a short flag never touches the last buoy", slot - 4 >= 1.5f)
+        // far short: 60 min for a 3-hour flag -> slot 6, plenty of gap
+        val far = WaitFlags.forecast(WaitFlags.plant(180, mono, (14 * 60 + 5) * min), mono, hero(60), null, false)!!
+        assertEquals(6f, WaitFlags.rowSlot(far, buoys = 2)!!, 0f)
+    }
+
+    @Test fun rowSlotStaysOnTheRow() {
+        val f = WaitFlags.plant(30, mono, wall) // under 30 min after rounding
+        val reach = WaitFlags.forecast(f, mono, hero(400), null, false)!!
+        assertEquals(6.5f, WaitFlags.rowSlot(reach, buoys = 6)!!, 0f) // half a gap behind the sixth buoy
+        val reachNoBuoy = WaitFlags.forecast(f, mono, hero(29), null, false)!!
+        assertEquals(1f, WaitFlags.rowSlot(reachNoBuoy, buoys = 0)!!, 0f) // pinned to the first slot
+        val shortTiny = WaitFlags.forecast(f, mono, hero(5), null, false)!!
+        assertTrue(WaitFlags.rowSlot(shortTiny, buoys = 0)!! in 1f..WaitFlags.MAX_SLOT)
+    }
+
+    // F-2: under tomorrow's share there is no flag picture (the line says it does not compare).
+    @Test fun noFlagPictureBelowTomorrowsShare() {
+        val f = WaitFlags.plant(60, mono, wall)
+        val below = WaitFlags.forecast(f, mono, hero(0, below = true), null, false)!!
+        assertEquals(WaitOutcome.BELOW_KEEP, below.outcome)
+        assertNull(WaitFlags.rowSlot(below, buoys = 0))
+    }
 }

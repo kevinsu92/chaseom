@@ -92,8 +92,8 @@ class WordingRulesTest {
         assertTrue(strings.getValue("wf_short").contains("(추정)"))
         assertTrue(strings.getValue("wf_short_swap").contains("(추정)"))
         assertEquals("표시만 해요 · 앱은 공조를 바꾸지 않아요", strings.getValue("wf_note"))
-        assertEquals("깃발 = 고른 시각", strings.getValue("is_lg_flag"))
-        listOf("wf_short", "wf_below", "wf_reaches").forEach { assertFalse(it, Regex("출발|서두르").containsMatchIn(strings.getValue(it))) }
+        assertEquals("깃발 = 내가 고른 시각", strings.getValue("is_lg_flag"))
+        (keys + "is_lg_flag").forEach { assertFalse(it, Regex("출발|서두르|떠날|바닥|끝").containsMatchIn(strings.getValue(it))) }
     }
 
     @Test fun keepShareNeverLockedAndAppDoesNotControlClimate() {

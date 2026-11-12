@@ -6,6 +6,8 @@ import app.chaseom.R
 internal object H1Layers {
     val L = mapOf(
         "base" to H1Layer(R.drawable.isl_l_base, 0f, 0f),
+        "flag_row_l1" to H1Layer(R.drawable.isl_l_flag_row_l1, 1347f, 452f),
+        "flag_row_l1_night" to H1Layer(R.drawable.isl_l_flag_row_l1_night, 1347f, 452f),
         "boat_l1" to H1Layer(R.drawable.isl_l_boat_l1, 1043f, 282f),
         "buoys_n0_l1" to H1Layer(R.drawable.isl_l_buoys_n0_l1, 1351f, 519f),
         "buoys_n1_l1" to H1Layer(R.drawable.isl_l_buoys_n1_l1, 1341f, 469f),
@@ -57,6 +59,8 @@ internal object H1Layers {
     )
     val S = mapOf(
         "base" to H1Layer(R.drawable.isl_s_base, 0f, 0f),
+        "flag_row_l1" to H1Layer(R.drawable.isl_s_flag_row_l1, 770f, 423f),
+        "flag_row_l1_night" to H1Layer(R.drawable.isl_s_flag_row_l1_night, 770f, 423f),
         "boat_l1" to H1Layer(R.drawable.isl_s_boat_l1, 547f, 306f),
         "buoys_n0_l1" to H1Layer(R.drawable.isl_s_buoys_n0_l1, 773f, 479f),
         "buoys_n1_l1" to H1Layer(R.drawable.isl_s_buoys_n1_l1, 765f, 437f),

@@ -70,6 +70,23 @@ object WaitFlags {
         return WaitFlag(atMs = nowMs + (wall - nowWallMs), wallMs = wall)
     }
 
+    /**
+     * Where the flag stands on the buoy row, in buoy slots (slot 1 = the first buoy = 30 min, 0.5 = half a gap).
+     * Whether it is reached comes from the line's own comparison (stay time >= time to the flag), never from
+     * the rounded buoys, so the picture can never look "reached" when the line is short:
+     * - reached: right behind the last buoy (touching), at least on slot 1;
+     * - short: at ceil(minutes to flag / 30), and always at least one empty slot after the last buoy;
+     * - below tomorrow's share: no flag picture (null).
+     */
+    fun rowSlot(f: WaitForecast, buoys: Int): Float? = when (f.outcome) {
+        WaitOutcome.BELOW_KEEP -> null
+        WaitOutcome.REACHES -> maxOf(buoys + 0.5f, 1f).coerceAtMost(MAX_SLOT)
+        WaitOutcome.SHORT -> maxOf(((f.remainingMinutes + 29) / 30).toFloat(), buoys + 1.5f).coerceAtMost(MAX_SLOT)
+    }
+
+    /** Right end of the row: half a slot behind the sixth buoy. */
+    const val MAX_SLOT = 6.5f
+
     /** How long a shortfall line stays away after an air-source switch. */
     const val AIR_QUIET_MS = 10 * 60_000L
 
