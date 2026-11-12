@@ -115,8 +115,6 @@ internal class H1Set(
         // Small rail line 1 = battery (start) + buoys (end at 932), line 2 = crates.
         val Small = H1Set(H1Layers.S, 960f, 24f, 836f, 92f, // sun 118 -> 92
             batX = 28f, batY = 503f, buoyX = 932f, buoyY = 503f, buoyAnchor = 1f, keepX = 28f, keepY = 551f, keepAnchor = 0f)
-        /** The Small picture box fills the height left on screen, at least this tall. */
-        val SMALL_MIN_DP = 560f
         /** Sky above a picture that is shorter than its box, and the sea under its lower 30 % (no seam). */
         val SKY_TOP = Color(0xFFF5F6F8) // The sky top is the page colour (the picture melts into it)
         val SEA_DEEP = Color(0xFF3B536E) // water bottom
@@ -150,6 +148,32 @@ internal fun h1SetFor(widthDp: Float): H1Set = if (widthDp >= 1200f) H1Set.Large
 private const val BATCH_MS = 300L
 /** Water step change; other changes use [Island.FADE_MS]. */
 private const val WATER_MS = 600
+/** The picture never shrinks below this share of its natural height (scaled, not cropped). */
+internal const val MIN_FIT = 0.75f
+
+/**
+ * The page scroll around the island. The space left on the first screen is measured from the picture's top in the
+ * unscrolled page, so scrolling never resizes the picture.
+ */
+val LocalPageScroll = androidx.compose.runtime.staticCompositionLocalOf<androidx.compose.foundation.ScrollState?> { null }
+
+/**
+ * Picture box height in dp. [left] is the height left for the box on the first screen (null = not measured yet).
+ * Without cards ([fill]) the box takes the height left; with cards it never grows past [natural].
+ * Either way, when [left] is under [natural] the box shrinks to it, never below [MIN_FIT] of [natural].
+ * No separate minimum: on Small the natural height (about 525 dp at 840 dp) is under the old 560 dp minimum, and a
+ * minimum above [left] would push the flag line off the first screen and make the height jump at [natural].
+ */
+internal fun islandBoxHeight(natural: Float, fill: Boolean, left: Float?): Float = when {
+    left == null -> natural
+    // Without cards the box is exactly the height left (taller than natural: more sky; shorter: scaled).
+    fill -> maxOf(natural * MIN_FIT, left)
+    else -> minOf(natural, maxOf(natural * MIN_FIT, left))
+}
+
+/** Picture width in dp: a box shorter than [natural] scales the whole picture by the same ratio (no crop). */
+internal fun islandPicWidth(fullW: Float, natural: Float, boxH: Float): Float =
+    if (boxH < natural) fullW * (boxH / natural) else fullW
 
 /**
  * Information island, H1 art. Each element has one meaning (IslandInfo):
@@ -208,17 +232,17 @@ fun IslandPanel(
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val set = h1SetFor(with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value })
             // Large: card width, at most 1760 dp so a full-screen window keeps the picture under 660 dp tall.
-            val picW: Dp = if (set === H1Set.Large) minOf(maxWidth, 1760.dp) else maxWidth
-            val k = picW.value / set.w // dp per canvas px
+            val fullW: Dp = if (set === H1Set.Large) minOf(maxWidth, 1760.dp) else maxWidth
             // No outline at night (it read as a 1 px seam); see the night light below.
             val outline = Modifier
-            // On Small without cards the picture box fills the height left on screen (min 560 dp, 24 dp
-            // bottom margin below the cause line); the picture stays 1.0x, bottom-aligned, with plain sky above.
-            val natural = picW * (set.h / set.w) * set.boxGrow
+            // Without cards the picture box fills the height left on screen (24 dp bottom margin below the cause
+            // line); taller than natural, the picture stays 1.0x, bottom-aligned, with plain sky above.
+            val natural = fullW * (set.h / set.w) * set.boxGrow
             val density = LocalDensity.current
             val windowH = with(density) { LocalWindowInfo.current.containerSize.height.toDp() }
             var topInWindow by remember { mutableFloatStateOf(Float.NaN) }
-            // Large without cards fills the height left too (never below its natural height).
+            val pageScroll = LocalPageScroll.current
+            // Large without cards fills the height left too (shorter than natural: scaled, at least MIN_FIT).
             val fill = ui.exchange == null && ui.airMinutes == null && !ui.seatHeatLong
             // The first-stay hint is one caption line under the cause line; the picture fills around it.
             val hintH = if (ui.firstStayHint) ChaseomUi.related + 32.dp else 0.dp
@@ -227,16 +251,22 @@ fun IslandPanel(
                 (if (ui.recircMinutes != null) ChaseomUi.line + 32.dp else 0.dp) +
                 (if (app.chaseom.BuildConfig.KICK_RAIN && ui.rain) ChaseomUi.line + 32.dp else 0.dp) +
                 (if (ui.waitForecast != null && ui.waitForecast.outcome != app.chaseom.stay.WaitOutcome.BELOW_KEEP) ChaseomUi.line + 32.dp else 0.dp)
-            val minH = if (set === H1Set.Small) H1Set.SMALL_MIN_DP.dp else natural
-            val filled = if (!fill || topInWindow.isNaN()) natural else
-                maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH - chipLineH -
-                    with(density) { flagH.toDp() })
-            // Small without cards fills the height left (sky side only; the picture
-            // stays at 1.0x across, so the buoy x 955/960 limit is untouched). Sun and wind lift, see skyLiftFor.
-            val boxH = if (fill || topInWindow.isNaN() || belowH <= 0f) filled else {
-                val left = windowH - with(density) { topInWindow.toDp() } - with(density) { belowH.toDp() } - 24.dp
-                minOf(natural, maxOf(natural * 0.75f, left))
+            // When what is under the picture (K1 card, flag lines, cards) leaves less than the natural height,
+            // the whole picture shrinks to fit (never below 75 %) instead of cropping the sky and the trees,
+            // so the flag line, "표시만 해요" and "깃발 내리기" stay on the first screen.
+            // Without cards the box fills the height left: taller than natural, the extra is sky (full width, so the
+            // buoy x 955/960 limit is untouched; sun and wind lift, see skyLiftFor); shorter, the whole picture scales.
+            val left: Dp? = when {
+                topInWindow.isNaN() -> null
+                fill -> windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH - chipLineH -
+                    with(density) { flagH.toDp() }
+                belowH <= 0f -> null
+                else -> windowH - with(density) { topInWindow.toDp() } - with(density) { belowH.toDp() } - 24.dp
             }
+            val boxH = islandBoxHeight(natural.value, fill, left?.value).dp
+            // Shorter than natural: scale the whole picture (same aspect), centred; nothing is cut off.
+            val picW: Dp = islandPicWidth(fullW.value, natural.value, boxH.value).dp
+            val k = picW.value / set.w // dp per canvas px
             // Arriving in P, the whole picture block (sky, island, water, buoys together,
             // so the water never seems to drop) rises 24 dp -> 0 and fades in, 300 ms, cubic-bezier(0, 0, 0.2, 1),
             // once per arrival, the first time it is not covered (a night notice opening the stay is read first),
@@ -244,14 +274,17 @@ fun IslandPanel(
             val rise = rememberRise(ui.moorAtMs, covered = ui.notice != null || ui.receipt != null, enabled = !animOff)
             Box(
                 // The whole picture is clipped once here (no per-layer clip).
-                Modifier.width(picW).height(boxH).onGloballyPositioned { topInWindow = it.positionInWindow().y }
-                    .graphicsLayer { translationY = (1f - rise) * RISE_DP.dp.toPx(); alpha = rise }
+                // Centred under the picture's own width (fullW), so a window wider than 1760 dp keeps the column.
+                Modifier.padding(start = (fullW - picW) / 2)
+                    .width(picW).height(boxH).onGloballyPositioned { topInWindow = it.positionInWindow().y + (pageScroll?.value ?: 0) }
+                    // Hidden until the space is measured (one frame), so the picture never shows at a size it then leaves.
+                    .graphicsLayer { translationY = (1f - rise) * RISE_DP.dp.toPx(); alpha = if (left == null) 0f else rise }
                     .clip(ChaseomUi.rContainer).then(outline)
                     .semantics { contentDescription = cd; liveRegion = LiveRegionMode.Polite },
             ) {
                 // In a taller Small box the sun (and its label) sit at 24 % and the wind at 36 % of
                 // the box height. The sun's position carries no meaning; only its size does.
-                val skyLift = if (boxH != natural) skyLiftFor(set, k * set.zoom, boxH.value) else SkyLift.NONE
+                val skyLift = if (boxH > natural) skyLiftFor(set, k * set.zoom, boxH.value) else SkyLift.NONE
                 // Wait flag on the buoy row: fades in once over 400 ms when planted; a one-time 0.95 -> 1 pulse when
                 // it is reached (no colour change). No flag picture under tomorrow's share.
                 val wf = ui.waitForecast
