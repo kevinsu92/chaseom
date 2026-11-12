@@ -170,4 +170,13 @@
     <string name="cd_settings">설정</string>
     <string name="cd_close">닫기</string>
     <string name="cd_back">뒤로</string>
+    <!-- Wait forecast (flag). Display only; no reassuring words when the flag is reached. -->
+    <string name="wf_ask">몇 시까지 기다려요? (선택)</string>
+    <string name="wf_choice">%1$s까지 (+%2$s)</string>
+    <string name="wf_remove">깃발 내리기</string>
+    <string name="wf_reaches">%1$s 깃발</string>
+    <string name="wf_short">%1$s 깃발 · 오늘 머물 시간이 깃발보다 약 %2$s 짧아요 (추정)</string>
+    <string name="wf_short_swap">비슷한 체감 카드로 바꾸면 %1$s (추정)</string>
+    <string name="wf_below">%1$s 깃발 · 지금은 내일 몫 아래라 비교하지 않아요</string>
+    <string name="wf_note">표시만 해요 · 앱은 공조를 바꾸지 않아요</string>
 </resources>

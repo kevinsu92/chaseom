@@ -354,6 +354,7 @@ private fun MainColumnContent(
                                 short = true)
                         }
                     },
+                    flagRow = { if (actions != null) WaitFlagRow(ui, actions) },
                 ) { if (actions != null) IslandCards(ui, actions) }
             }
         }

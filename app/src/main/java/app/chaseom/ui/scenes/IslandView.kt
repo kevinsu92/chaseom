@@ -163,6 +163,8 @@ fun IslandPanel(
     modifier: Modifier = Modifier,
     /** Drawn inside the top-left sky of the picture, never over the "설정 °C" label (Small toast). */
     pictureTop: @Composable () -> Unit = {},
+    /** Wait-flag row (ask / choices / forecast line), under the caption lines and above the cards. */
+    flagRow: @Composable () -> Unit = {},
     cards: @Composable () -> Unit = {},
 ) {
     val s = Island.state(ui, android.os.SystemClock.elapsedRealtime()) ?: return // same clock as the engine
@@ -201,6 +203,7 @@ fun IslandPanel(
     // With cards the whole block must fit the window, so the picture takes only the height
     // left after what is under it (measured), never below 75 % of its natural height; the sky side gives.
     var belowH by remember { mutableFloatStateOf(0f) }
+    var flagH by remember { mutableFloatStateOf(0f) }
     Column(modifier) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val set = h1SetFor(with(LocalDensity.current) { LocalWindowInfo.current.containerSize.width.toDp().value })
@@ -225,7 +228,8 @@ fun IslandPanel(
                 (if (app.chaseom.BuildConfig.KICK_RAIN && ui.rain) ChaseomUi.line + 32.dp else 0.dp)
             val minH = if (set === H1Set.Small) H1Set.SMALL_MIN_DP.dp else natural
             val filled = if (!fill || topInWindow.isNaN()) natural else
-                maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH - chipLineH)
+                maxOf(natural, minH, windowH - with(density) { topInWindow.toDp() } - ChaseomUi.related - 32.dp - 24.dp - hintH - chipLineH -
+                    with(density) { flagH.toDp() })
             // Small without cards fills the height left (sky side only; the picture
             // stays at 1.0x across, so the buoy x 955/960 limit is untouched). Sun and wind lift, see skyLiftFor.
             val boxH = if (fill || topInWindow.isNaN() || belowH <= 0f) filled else {
@@ -250,6 +254,18 @@ fun IslandPanel(
                 val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize(), sunMotion = !animOff && s.animating,
                     outsideAir = ui.climate?.recircOn == false, night = night,
                     setTemp = ui.climate?.takeIf { it.powerOn == true }?.setTempC, lift = skyLift)
+                // Wait flag on the island's left hill (picture only; the time is in the line under the picture).
+                if (ui.waitForecast != null) {
+                    val z = k * set.zoom
+                    val baseX = if (set === H1Set.Large) 440f else 250f
+                    val baseY = if (set === H1Set.Large) 236f else 262f
+                    androidx.compose.foundation.Canvas(Modifier.matchParentSize()) {
+                        val px = density.density
+                        val x = (picW.value - (set.w - baseX) * z) * px
+                        val bottom = (boxH.value - (set.h - baseY) * z) * px
+                        waitFlagMark(x, bottom - 70f * z * px, bottom, Color(0xFF5A4632), Color(0xFFFFB020))
+                    }
+                }
                 // H1: the sun and its label sit top right, so the toast takes the top-left sky up to the label.
                 var sunLabelLeft by remember { mutableFloatStateOf(Float.NaN) }
                 IslandLabels(ui, set, k, picW.value, boxH.value, shown, sunLiftDp = skyLift.sun * k * set.zoom, animOff = animOff) { sunLabelLeft = it }
@@ -320,6 +336,7 @@ fun IslandPanel(
                 Text(stringResource(hint), style = ChaseomUi.caption, color = Color(0xFF4A4E57))
             }
         }
+        Box(Modifier.fillMaxWidth().onGloballyPositioned { flagH = it.size.height.toFloat() }) { flagRow() }
         Column(Modifier.padding(top = ChaseomUi.block), verticalArrangement = Arrangement.spacedBy(ChaseomUi.related)) {
             cards() // air / swap cards under the cause line
         }

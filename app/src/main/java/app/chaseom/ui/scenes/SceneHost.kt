@@ -61,6 +61,8 @@ class StayActions(private val c: app.chaseom.stay.StayController) {
     fun dismissExchange(rule: app.chaseom.stay.ExchangeRule) = c.dismissExchange(rule)
     fun dismissAir() = c.dismissAir()
     fun closeReceipt() = c.closeReceipt()
+    fun plantWaitFlag(minutes: Int) = c.plantWaitFlag(minutes)
+    fun removeWaitFlag() = c.removeWaitFlag()
     fun finishOnboarding(toSettings: Boolean) = c.finishOnboarding(toSettings)
     fun open(page: Page) = c.open(page)
     fun saveSettings(km: Int, label: String) = c.saveSettings(km, label)

@@ -81,6 +81,19 @@ class WordingRulesTest {
         assertTrue(toastCode.contains("!showMinutes -> label"))
     }
 
+    // Wait flag: display only, no reassurance when the flag is reached, a comparison always says "(추정)".
+    @Test fun waitFlagWordingIsDisplayOnlyAndNeverReassures() {
+        val keys = listOf("wf_ask", "wf_choice", "wf_remove", "wf_reaches", "wf_short", "wf_short_swap", "wf_below", "wf_note")
+        keys.forEach { key ->
+            val text = strings.getValue(key)
+            assertFalse(key, Regex("괜찮|충분|넉넉|보장|안심|좋아요").containsMatchIn(text))
+        }
+        assertEquals("%1\$s 깃발", strings.getValue("wf_reaches"))
+        assertTrue(strings.getValue("wf_short").contains("(추정)"))
+        assertTrue(strings.getValue("wf_short_swap").contains("(추정)"))
+        assertEquals("표시만 해요 · 앱은 공조를 바꾸지 않아요", strings.getValue("wf_note"))
+    }
+
     @Test fun keepShareNeverLockedAndAppDoesNotControlClimate() {
         assertTrue(strings.getValue("k1").contains("앱은 공조를 끄지 않아요"))
     }

@@ -200,4 +200,8 @@ data class StayUi(
     val restartedFromStale: Boolean = false,
     /** Monotonic time the car arrived in P after driving (mooring); null = draw the end picture. */
     val moorAtMs: Long? = null,
+    /** Wait forecast for a planted flag (display only); null = no flag, flag time passed, night or no hero. */
+    val waitForecast: WaitForecast? = null,
+    /** A flag may be planted now: parked stay, EV hero shown, not night. */
+    val waitFlagAvailable: Boolean = false,
 )

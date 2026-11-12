@@ -1,0 +1,107 @@
+package app.chaseom.ui.scenes
+
+import android.text.format.DateFormat
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import app.chaseom.R
+import app.chaseom.stay.StayUi
+import app.chaseom.stay.WaitFlags
+import app.chaseom.stay.WaitOutcome
+import app.chaseom.ui.theme.ChaseomUi
+import app.chaseom.ui.theme.cui
+import java.util.Date
+
+/**
+ * Wait forecast row under the island (P only): "몇 시까지 기다려요? (선택)" opens a few clock-time choices
+ * (no keyboard); with a flag, one line says whether today's stay time passes it (estimate). Display only.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun WaitFlagRow(ui: StayUi, actions: StayActions) {
+    val f = ui.waitForecast
+    if (f == null && !ui.waitFlagAvailable) return
+    val k = cui()
+    val ctx = LocalContext.current
+    fun clock(ms: Long) = DateFormat.getTimeFormat(ctx).format(Date(ms))
+    var choosing by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().padding(top = ChaseomUi.related), verticalArrangement = Arrangement.spacedBy(ChaseomUi.line)) {
+        if (f == null) {
+            if (!choosing) {
+                LightPillButton(stringResource(R.string.wf_ask), { choosing = true })
+                return@Column
+            }
+            Text(stringResource(R.string.wf_ask), style = ChaseomUi.body, color = k.text2)
+            val now = System.currentTimeMillis()
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                WaitFlags.CHOICES.forEach { m ->
+                    // Same rounding as the flag itself, so the choice shows the time the flag will carry.
+                    val wall = WaitFlags.plant(m, 0L, now).wallMs
+                    LightPillButton(stringResource(R.string.wf_choice, clock(wall), duration(m)), {
+                        choosing = false
+                        actions.plantWaitFlag(m)
+                    })
+                }
+                LightPillButton(stringResource(R.string.cd_close), { choosing = false })
+            }
+            return@Column
+        }
+        val t = clock(f.flag.wallMs)
+        val line = when (f.outcome) {
+            WaitOutcome.REACHES -> stringResource(R.string.wf_reaches, t)
+            WaitOutcome.SHORT -> stringResource(R.string.wf_short, t, duration(f.shortMinutes))
+            WaitOutcome.BELOW_KEEP -> stringResource(R.string.wf_below, t)
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite }) {
+                Text(line, style = ChaseomUi.body.copy(fontWeight = FontWeight.SemiBold), color = k.text1)
+                if (f.outcome == WaitOutcome.SHORT && f.swapGainMinutes != null) {
+                    Text(stringResource(R.string.wf_short_swap, signedDuration(f.swapGainMinutes)), style = ChaseomUi.body, color = k.text1)
+                }
+                Text(stringResource(R.string.wf_note), style = ChaseomUi.caption, color = k.text2)
+            }
+            Spacer(Modifier.width(ChaseomUi.related))
+            LightPillButton(stringResource(R.string.wf_remove), { actions.removeWaitFlag() })
+        }
+    }
+}
+
+/** Flag mark: a pole from [top] to [bottom] at [x] with a small pennant to the right. */
+fun DrawScope.waitFlagMark(x: Float, top: Float, bottom: Float, pole: Color, pennant: Color) {
+    val w = 3.dp.toPx()
+    drawLine(pole, Offset(x, top), Offset(x, bottom), strokeWidth = w)
+    val ph = (bottom - top) * 0.38f
+    val pw = ph * 1.3f
+    val p = Path().apply {
+        moveTo(x + w / 2, top)
+        lineTo(x + w / 2 + pw, top + ph / 2)
+        lineTo(x + w / 2, top + ph)
+        close()
+    }
+    drawPath(p, pennant)
+}

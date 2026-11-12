@@ -1,0 +1,88 @@
+package app.chaseom.stay
+
+/**
+ * Wait forecast: the driver may plant a flag at "how long I will wait", and the screen shows whether
+ * today's stay time reaches it (estimate).
+ *
+ * Rules:
+ * - Input only while parked, by choosing one of a few clock times (no keyboard).
+ * - The flag can never be later than now + 3 hours (the same 3-hour cap as the hero).
+ * - At night (N2 hours) there is no flag: the night notice speaks instead.
+ * - Display only: the app never changes the climate to reach the flag.
+ * - The choice is kept in memory for this stay only; it is never saved.
+ * - No "you are fine until then" wording: a reached flag says only that the band passes it (estimate).
+ */
+data class WaitFlag(
+    /** Monotonic time the flag stands at (same clock as the stay engine). */
+    val atMs: Long,
+    /** Wall-clock time shown on the flag (hh:mm), taken when the flag was planted. */
+    val wallMs: Long,
+)
+
+/** What the band and the line under it show for a planted flag. */
+data class WaitForecast(
+    val flag: WaitFlag,
+    /** Minutes from now to the flag, 1..[WaitFlags.MAX_MINUTES]. */
+    val remainingMinutes: Int,
+    /** Flag position on a 3-hour scale (0..1). */
+    val fraction: Float,
+    val outcome: WaitOutcome,
+    /** Outcome SHORT: how many minutes the stay time ends before the flag. */
+    val shortMinutes: Int = 0,
+    /** Outcome SHORT with an exchange card on screen: its gain (the card is the action, not this line). */
+    val swapGainMinutes: Int? = null,
+)
+
+enum class WaitOutcome {
+    /** Today's stay time passes the flag (estimate). */
+    REACHES,
+    /** Today's stay time ends before the flag (estimate). */
+    SHORT,
+    /** The battery is already at or under tomorrow's share: no stay time to compare. */
+    BELOW_KEEP,
+}
+
+object WaitFlags {
+    /** The flag cannot stand later than now + 3 hours. */
+    const val MAX_MINUTES = EnergyModel.DISPLAY_CAP_MINUTES
+
+    /** Offered choices, minutes from now (shown as clock times). */
+    val CHOICES = listOf(30, 60, 90, 120, 150, 180)
+
+    /** Flag clock times are rounded down to this step, so the flag is never later than the choice. */
+    const val ROUND_MINUTES = 5
+
+    /**
+     * The flag for "[offsetMinutes] from now", rounded down to [ROUND_MINUTES] of wall time and kept
+     * within (now, now + [MAX_MINUTES]].
+     */
+    fun plant(offsetMinutes: Int, nowMs: Long, nowWallMs: Long): WaitFlag {
+        val offset = offsetMinutes.coerceIn(1, MAX_MINUTES).toLong() * 60_000L
+        val step = ROUND_MINUTES * 60_000L
+        val wallTarget = nowWallMs + offset
+        var wall = wallTarget - Math.floorMod(wallTarget, step)
+        if (wall <= nowWallMs) wall = wallTarget // a 5-minute floor must not put the flag in the past
+        return WaitFlag(atMs = nowMs + (wall - nowWallMs), wallMs = wall)
+    }
+
+    /** Null when there is nothing to show: no flag, the flag time has passed, night, or no hero. */
+    fun forecast(flag: WaitFlag?, nowMs: Long, hero: Hero?, exchange: Exchange?, night: Boolean): WaitForecast? {
+        if (flag == null || night || hero == null) return null
+        val remainingMs = flag.atMs - nowMs
+        if (remainingMs <= 0) return null
+        val remaining = ((remainingMs + 59_999L) / 60_000L).toInt().coerceIn(1, MAX_MINUTES)
+        val fraction = remaining / MAX_MINUTES.toFloat()
+        if (hero.belowKeep) return WaitForecast(flag, remaining, fraction, WaitOutcome.BELOW_KEEP)
+        val minutes = hero.minutes
+        // Climate off: base load only, and the hero shows no number either.
+        if (hero.hvacOff || (minutes != null && minutes >= remaining)) {
+            return WaitForecast(flag, remaining, fraction, WaitOutcome.REACHES)
+        }
+        val have = minutes ?: 0
+        return WaitForecast(
+            flag, remaining, fraction, WaitOutcome.SHORT,
+            shortMinutes = remaining - have,
+            swapGainMinutes = exchange?.gainMinutes,
+        )
+    }
+}

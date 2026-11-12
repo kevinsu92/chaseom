@@ -68,6 +68,9 @@ class StayController(
     /** A gear other than P was actually read while away (startup restriction lag alone is not "away"). */
     private var awayGearNotPark = false
     private var moorAtMs: Long? = null
+    /** Wait flag for this stay only, in memory; never saved. */
+    private var waitFlag: WaitFlag? = null
+    private var waitFlagStayStart: Long? = null
 
     private val ticker = flow {
         while (true) {
@@ -116,7 +119,8 @@ class StayController(
             null -> Unit
         }
         if (parked == false) moorAtMs = null
-        var ui = engine.update(parked, c, s, now, Calendar.getInstance().get(Calendar.HOUR_OF_DAY))
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        var ui = engine.update(parked, c, s, now, hour)
         if (engine.session != before) saveSession(engine.session)
         if (engine.session != null && now - lastSeenSaveMs >= SEEN_SAVE_MS) {
             prefs.edit { putLong(K_SEEN, now).putInt(K_SEEN_SOC, c.socPercent ?: -1) }
@@ -128,7 +132,13 @@ class StayController(
             hintDone = true
             prefs.edit { putBoolean(K_HINT_DONE, true) }
         }
+        // The flag belongs to one stay: leaving P or a new stay removes it.
+        if (!ui.parked || engine.session?.startMs != waitFlagStayStart) waitFlag = null
+        val night = isNightHour(hour)
+        val flagAllowed = ui.parked && !night && ui.hero != null && ui.policy.energyBudget
         ui = ui.copy(
+            waitForecast = WaitFlags.forecast(waitFlag, now, ui.hero, ui.exchange, night),
+            waitFlagAvailable = flagAllowed,
             connecting = parked == null && !gearEverRead,
             firstStayHint = !hintDone && ui.parked && ui.policy.energyBudget,
             moorAtMs = moorAtMs,
@@ -155,6 +165,16 @@ class StayController(
     fun dismissExchange(rule: ExchangeRule) { engine.dismissExchange(rule); rerun() }
     fun dismissAir() { engine.dismissAir(clock()); rerun() }
     fun closeReceipt() { engine.closeReceipt(); rerun() }
+
+    /** Plants the wait flag [offsetMinutes] from now (P only; never saved). */
+    fun plantWaitFlag(offsetMinutes: Int) {
+        if (!_ui.value.waitFlagAvailable) return
+        waitFlag = WaitFlags.plant(offsetMinutes, clock(), System.currentTimeMillis())
+        waitFlagStayStart = engine.session?.startMs
+        rerun()
+    }
+
+    fun removeWaitFlag() { waitFlag = null; rerun() }
 
     fun finishOnboarding(goToSettings: Boolean) {
         prefs.edit { putBoolean(K_ONBOARDED, true) }
@@ -216,3 +236,6 @@ class StayController(
         const val SEEN_SAVE_MS = 15_000L
     }
 }
+
+/** Same night window as the stay engine's night notice (22:00-06:00). */
+internal fun isNightHour(hour: Int): Boolean = hour >= 22 || hour < 6
