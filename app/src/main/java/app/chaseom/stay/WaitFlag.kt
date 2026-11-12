@@ -74,18 +74,23 @@ object WaitFlags {
      * Where the flag stands on the buoy row, in buoy slots (slot 1 = the first buoy = 30 min, 0.5 = half a gap).
      * Whether it is reached comes from the line's own comparison (stay time >= time to the flag), never from
      * the rounded buoys, so the picture can never look "reached" when the line is short:
-     * - reached: right behind the last buoy (touching), at least on slot 1;
-     * - short: at ceil(minutes to flag / 30), and always at least one empty slot after the last buoy;
+     * - reached: right behind the last buoy (touching), at least on slot 1; with all six buoys out (the cap) it
+     *   stands at its own time slot inside the row;
+     * - short: at ceil(minutes to flag / 30), at least one and a half slots after the last buoy, so a gap shows;
      * - below tomorrow's share: no flag picture (null).
+     * The row ends at the sixth slot, so the flag never leaves the picture.
      */
-    fun rowSlot(f: WaitForecast, buoys: Int): Float? = when (f.outcome) {
-        WaitOutcome.BELOW_KEEP -> null
-        WaitOutcome.REACHES -> maxOf(buoys + 0.5f, 1f).coerceAtMost(MAX_SLOT)
-        WaitOutcome.SHORT -> maxOf(((f.remainingMinutes + 29) / 30).toFloat(), buoys + 1.5f).coerceAtMost(MAX_SLOT)
+    fun rowSlot(f: WaitForecast, buoys: Int): Float? {
+        val own = ((f.remainingMinutes + 29) / 30).coerceIn(1, 6).toFloat()
+        return when (f.outcome) {
+            WaitOutcome.BELOW_KEEP -> null
+            WaitOutcome.REACHES -> if (buoys >= 6) own else maxOf(buoys + 0.5f, 1f)
+            WaitOutcome.SHORT -> maxOf(own, buoys + 1.5f).coerceAtMost(MAX_SLOT)
+        }
     }
 
-    /** Right end of the row: half a slot behind the sixth buoy. */
-    const val MAX_SLOT = 6.5f
+    /** Last slot of the row (the sixth buoy). */
+    const val MAX_SLOT = 6f
 
     /** How long a shortfall line stays away after an air-source switch. */
     const val AIR_QUIET_MS = 10 * 60_000L

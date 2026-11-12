@@ -136,7 +136,12 @@ class WaitFlagTest {
     @Test fun rowSlotStaysOnTheRow() {
         val f = WaitFlags.plant(30, mono, wall) // under 30 min after rounding
         val reach = WaitFlags.forecast(f, mono, hero(400), null, false)!!
-        assertEquals(6.5f, WaitFlags.rowSlot(reach, buoys = 6)!!, 0f) // half a gap behind the sixth buoy
+        assertEquals(1f, WaitFlags.rowSlot(reach, buoys = 6)!!, 0f) // at the cap: inside the six buoys, at its own slot
+        val cap3h = WaitFlags.forecast(WaitFlags.plant(180, mono, (14 * 60 + 5) * min), mono, hero(400), null, false)!!
+        assertEquals(6f, WaitFlags.rowSlot(cap3h, buoys = 6)!!, 0f)
+        // five buoys and a short 3-hour flag: the sixth slot (where the missing buoy would be), never off the row
+        val shortAt5 = WaitFlags.forecast(WaitFlags.plant(180, mono, (14 * 60 + 5) * min), mono, hero(160), null, false)!!
+        assertEquals(6f, WaitFlags.rowSlot(shortAt5, buoys = 5)!!, 0f)
         val reachNoBuoy = WaitFlags.forecast(f, mono, hero(29), null, false)!!
         assertEquals(1f, WaitFlags.rowSlot(reachNoBuoy, buoys = 0)!!, 0f) // pinned to the first slot
         val shortTiny = WaitFlags.forecast(f, mono, hero(5), null, false)!!
