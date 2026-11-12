@@ -1,6 +1,6 @@
 # 차섬 — 오늘 머물 시간을 보여 주는 작은 섬
 
-![tests](https://img.shields.io/badge/unit%20tests-169%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-4.0%20MB-informational)
+![tests](https://img.shields.io/badge/unit%20tests-175%20passing-2ea44f) ![runtime permissions](https://img.shields.io/badge/runtime%20permission%20prompts-0-blue) ![vehicle control](https://img.shields.io/badge/vehicle%20control-none%20(read%20only)-blue) ![apk](https://img.shields.io/badge/release%20APK-4.0%20MB-informational)
 
 | 히터를 올리면 해가 커지고 남은 시간이 줄어듦 | 내일 몫 아래로 내려가면 경고 | 운전석 문을 열면 떠나기 전 영수증 |
 |---|---|---|
@@ -10,7 +10,7 @@
 - **앱 이름**: 차섬 (Chaseom)
 - **한 줄 소개**: 전기차를 세워 두고 공조를 켠 채 머물 때, 내일 탈 거리만큼 배터리를 남긴 기준으로 **지금 설정으로 얼마나 더 머물 수 있는지(추정)**를 보여 주는 Pleos 차량 앱
 - **핵심 기능**
-  - **작은 날씨 섬**: 해 크기 = 공조 설정온도, 바람 = 풍량, 물 높이 = 배터리, 부표 1개 = 머물 수 있는 30분(최대 6개), 배의 짐 = 내일 몫. 그림 아래 범례와 캡션 "섬은 공조 설정·배터리로 그려요 · 실내 측정 아님"이 늘 보입니다. 기어 P에서만 표시합니다.
+  - **작은 날씨 섬**: 해 크기 = 공조 설정온도, 바람 = 풍량, 물 높이 = 배터리, 부표 1개 = 머물 수 있는 30분(최대 6개), 배의 짐 = 내일 몫. 그림 아래 범례와 캡션 "섬은 공조 설정·배터리로 그려요 · 실내 측정 아님"이 늘 보입니다. 카드나 깃발 줄이 함께 뜨면 그림을 자르지 않고 같은 비율로 줄여(최소 75%) 아래 문구를 첫 화면 안에 둡니다. 기어 P에서만 표시합니다.
   - **따뜻함 환율**: 다이얼을 바꾸는 순간 토스트로 남은 시간 변화(예: "설정 26°C · 풍량 6 · −21분 (추정)", 3시간 이상일 때는 "머물 시간 −12% (추정)")를 보여 주고, 비슷한 체감을 더 적은 전력으로 얻는 조합(운전석 열선, 저온 화상 주의)을 제안합니다.
   - **기다림 예보**: "몇 시까지 기다려요? (선택)"에서 30분~3시간 중 시각을 고르면 부표 줄(1개 = 30분)의 그 시각 자리에 남색 깃발이 서고(닿으면 깃발이 부표 줄 안에 서고, 못 닿으면 마지막 부표 뒤 줄 밖에 서서 그 간격이 모자란 만큼을 보여 줌), 그림 아래 한 줄이 오늘 머물 시간이 그 시각에 닿는지 보여 줍니다(예: "오후 10:15 깃발 · 오늘 머물 시간이 깃발보다 약 32분 짧아요 (추정)"). 표시만 하고 공조는 바꾸지 않습니다.
   - **내일 지킬 몫**: 내일 처음 갈 거리(여유분 20% 포함)를 배터리에서 따로 표시합니다. 남은 시간은 "(추정)", 3시간 넘으면 "3시간 이상"입니다.
@@ -49,7 +49,7 @@
 | SDK·라이브러리가 빌드 때 자동으로 넣는 권한 | `ai.pleos.playground.service.vehicle.VEHICLE_BINDING` (Pleos Vehicle SDK), `app.chaseom.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` (AndroidX, 앱 자신의 권한) |
 
 ## 4. APK 위치
-- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `f4bda3853227daa0c861ed917e3bb08ed8b0ee3fb3acb8e5a21842f92d7a42d0`)
+- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `c2f1d1b86925162e754015be06bd2dd0a93916f552636169c4a6ae0bcdb6d589`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4)
 
 ## 검증 표
@@ -57,14 +57,14 @@
 
 | 항목 | 값 |
 |---|---|
-| 단위 테스트 | **169개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
-| 테스트 커버리지 (Kover, 라인) | 도메인 **99.0%** (`stay/`의 엔진·계수·섬·깃발, Android 접착층 제외) · 전체 29.2%. 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
-| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **28 ms**, 최대 79 ms |
-| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **75 ms** (중앙값 6 ms, 10회 중 9회는 24 ms 이하) |
-| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **37 ms**, 최대 90 ms (첫 회만 90, 나머지 16–53 ms). 이전 빌드를 12시간 넘게 켠 에뮬레이터에서는 첫 회 최대 207 ms |
-| 앱 시작 (`am start -W`, 콜드 스타트) | Pleos 기준 10초 이내. 이번 측정 0.97–1.49초(에뮬레이터를 다시 켠 뒤, [docs/evidence/measure_release.json](docs/evidence/measure_release.json)), 오래 켠 에뮬레이터 1.5초 안팎(이전 빌드 측정에서는 최대 2.3초·새로 설치한 첫 실행 한 번 5.2초) |
-| 정지 화면 CPU (30초) | 평균 **0.38%** |
-| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 1.1% (전환 순간 최대 27%) |
+| 단위 테스트 | **175개 통과** (`./gradlew testDebugUnitTest`, 에뮬레이터 없이 1분) |
+| 테스트 커버리지 (Kover, 라인) | 도메인 **99.0%** (`stay/`의 엔진·계수·섬·깃발, Android 접착층 제외) · 전체 29.3%. 원자료 [docs/evidence/coverage.xml](docs/evidence/coverage.xml) |
+| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 **36 ms**, 최대 64 ms |
+| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 최대 **36 ms** (중앙값 13 ms) |
+| 다이얼 → 섬 그림이 바뀌기까지 (10회) | 중앙값 **46 ms**, 최대 90 ms (첫 회만 90, 나머지 20–65 ms). 이전 빌드를 12시간 넘게 켠 에뮬레이터에서는 첫 회 최대 207 ms |
+| 앱 시작 (`am start -W`, 콜드 스타트) | Pleos 기준 10초 이내. 이번 측정 1.24–1.53초(에뮬레이터를 다시 켠 뒤, [docs/evidence/measure_release.json](docs/evidence/measure_release.json)), 오래 켠 에뮬레이터 1.5초 안팎(이전 빌드 측정에서는 최대 2.3초·새로 설치한 첫 실행 한 번 5.2초) |
+| 정지 화면 CPU (30초) | 평균 **0.25%** |
+| 10초마다 다이얼 1회, 60초 평균 CPU | 평균 2.8% (전환 순간 최대 43%) |
 | 메모리 (PSS) | 58 MB |
 | 런타임 권한 팝업 | **0** (요청하는 권한은 모두 normal) |
 | 차량 제어 | **0** (앱은 차를 읽기만 하고, 공조를 끄거나 바꾸지 않음) |
