@@ -200,4 +200,17 @@ class WaitFlagTest {
         assertEquals(WaitOutcome.BELOW_KEEP, below.outcome)
         assertNull(WaitFlags.rowSlot(below, buoys = 0))
     }
+
+    // S5: when the stay passes the flag, the line says by how much; never when it cannot be said honestly.
+    @Test fun reachedLineCarriesTheMargin() {
+        val f = WaitFlags.plant(60, mono, wall)
+        val r = WaitFlags.forecast(f, mono, hero(167), null, false)!!
+        assertEquals(WaitOutcome.REACHES, r.outcome)
+        assertEquals(167 - r.remainingMinutes, r.longMinutes)
+        assertEquals(null, WaitFlags.forecast(f, mono, hero(null, off = true), null, false)!!.longMinutes) // climate off
+        assertEquals(null, WaitFlags.forecast(f, mono, hero(r.remainingMinutes), null, false)!!.longMinutes) // 0 min
+        // Hero at the 3-hour cap: the real margin is larger, so no number.
+        assertEquals(null, WaitFlags.forecast(f, mono, hero(900), null, false)!!.longMinutes)
+        assertEquals(0, r.shortMinutes)
+    }
 }

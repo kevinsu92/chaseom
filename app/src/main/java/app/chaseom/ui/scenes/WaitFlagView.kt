@@ -77,7 +77,8 @@ fun WaitFlagRow(ui: StayUi, actions: StayActions) {
         val line = when {
             f.airQuiet -> stringResource(R.string.wf_reaches, t)
             else -> when (f.outcome) {
-            WaitOutcome.REACHES -> stringResource(R.string.wf_reaches, t)
+            WaitOutcome.REACHES -> f.longMinutes?.let { stringResource(R.string.wf_long, t, duration(it)) }
+                ?: stringResource(R.string.wf_reaches, t)
             WaitOutcome.SHORT -> stringResource(R.string.wf_short, t, duration(f.shortMinutes))
             WaitOutcome.BELOW_KEEP -> stringResource(R.string.wf_below, t)
             }

@@ -180,6 +180,8 @@
     <string name="wf_choice">%1$s까지 (+%2$s)</string>
     <string name="wf_remove">깃발 내리기</string>
     <string name="wf_reaches">%1$s 깃발</string>
+    <!-- S5 (S1_SPEC v3 §7-2): the pair of wf_short. Numbers only, no reassurance words (QA X6-2). -->
+    <string name="wf_long">%1$s 깃발 · 깃발보다 약 %2$s 길어요 (추정)</string>
     <string name="wf_short">%1$s 깃발 · 오늘 머물 시간이 깃발보다 약 %2$s 짧아요 (추정)</string>
     <string name="wf_short_swap">비슷한 체감 카드로 바꾸면 %1$s (추정)</string>
     <string name="wf_below">%1$s 깃발 · 지금은 내일 몫 아래라 비교하지 않아요</string>

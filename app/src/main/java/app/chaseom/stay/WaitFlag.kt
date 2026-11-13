@@ -29,6 +29,11 @@ data class WaitForecast(
     val outcome: WaitOutcome,
     /** Outcome SHORT: how many minutes the stay time ends before the flag. */
     val shortMinutes: Int = 0,
+    /**
+     * Outcome REACHES (S5): how many minutes the stay time runs past the flag. Null when it cannot be said
+     * honestly: climate off (no stay number), the hero at the 3-hour cap (the real margin is larger), or under 1 min.
+     */
+    val longMinutes: Int? = null,
     /** Outcome SHORT with an exchange card on screen: its gain (the card is the action, not this line). */
     val swapGainMinutes: Int? = null,
     /**
@@ -132,7 +137,8 @@ object WaitFlags {
         val minutes = hero.minutes?.coerceAtMost(EnergyModel.DISPLAY_CAP_MINUTES)
         // Climate off: base load only, and the hero shows no number either.
         if (hero.hvacOff || (minutes != null && minutes >= remaining)) {
-            return WaitForecast(flag, remaining, fraction, WaitOutcome.REACHES)
+            val long = if (hero.hvacOff || minutes == null || hero.overCap) null else (minutes - remaining).takeIf { it >= 1 }
+            return WaitForecast(flag, remaining, fraction, WaitOutcome.REACHES, longMinutes = long)
         }
         val have = minutes ?: 0
         return WaitForecast(
