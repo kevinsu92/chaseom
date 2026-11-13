@@ -68,4 +68,23 @@ class OutsideTempGapTest {
         val cur = ClimateSetting(true, 26f, 6, false, false, 0, outsideC = 25f)
         assertEquals(16, EnergyModel.exchange(19, 77.4f, keep, cur, emptySet())!!.gainMinutes)
     }
+
+    // F5: the demo scenes (SOC 19 %) at each outside temperature, middle option min(outside, -10).
+    // Minutes: 22 C fan 3 / 26 C fan 6 / 21 C fan 6 + driver seat heat 2.
+    @Test fun demoScenesByOutsideTemperature() {
+        val keep = EnergyModel.keepPercent(30, 77.4f, 5f)
+        fun m(set: Float, fan: Int, seat: Int, o: Float?) =
+            EnergyModel.minutesToKeep(19, keep, 77.4f, EnergyModel.drawKw(ClimateSetting(true, set, fan, false, false, seat, outsideC = o)))
+        val expected = mapOf(
+            -20f to Triple(132, 118, 128),
+            -15f to Triple(147, 131, 143),
+            -10f to Triple(167, 146, 162),
+            0f to Triple(167, 146, 162),
+            25f to Triple(167, 146, 162),
+        )
+        for ((o, e) in expected) {
+            assertEquals("outside=$o", e, Triple(m(22f, 3, 0, o), m(26f, 6, 0, o), m(21f, 6, 2, o)))
+        }
+        assertEquals(Triple(167, 146, 162), Triple(m(22f, 3, 0, null), m(26f, 6, 0, null), m(21f, 6, 2, null))) // unreadable
+    }
 }

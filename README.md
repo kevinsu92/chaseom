@@ -29,7 +29,7 @@
 
 **소스에서 빌드**
 - `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`이 필요합니다.
-- 디버그 빌드와 단위 테스트: `./gradlew assembleDebug`, `./gradlew testDebugUnitTest` (테스트 176개).
+- 디버그 빌드와 단위 테스트: `./gradlew assembleDebug`, `./gradlew testDebugUnitTest` (테스트 218개).
 - 릴리스 APK: `keystore.properties`를 `keystore.properties.example`처럼 준비한 뒤 `scripts/build-release.ps1`로 만듭니다.
 - Windows에서 경로에 한글이 있으면 AGP가 빌드를 거부합니다. 영문 경로에 클론하거나, 드라이브 문자를 자동으로 연결(`subst`)하는 위 스크립트를 쓰세요.
 
@@ -41,16 +41,16 @@
 | 시스템 이미지 사이트 (Windows) | `https://nexus-playground.pleos.ai/repository/raw-releases/connect-avd/2.x/crp-sys-img.xml` |
 | 차량 값 입력 | Virtual Console (기어, 배터리, 공조, 좌석 열선, 문, 창문, 와이퍼) |
 | 빌드 | Android Studio (JBR), Gradle 9.9.0, AGP 9.5.1, Kotlin 2.4.21, compileSdk 37, minSdk 28, targetSdk 34 |
-| SDK | `ai.pleos.playground:Vehicle:2.3.2` (EvBattery, HVAC, Seat, Door, Window, Light, Wiper), AAOS `CarPropertyManager` (연료 종류, 배터리 용량, 충전구, 기어) |
+| SDK | `ai.pleos.playground:Vehicle:2.3.2` (EvBattery, HVAC, Seat, Door, Window, Light, Wiper), AAOS `CarPropertyManager` (연료 종류, 배터리 용량, 충전구, 기어, 외기온) |
 | 패키지 | `app.chaseom` |
-| 권한 | Pleos `CAR_ENERGY`, `CAR_CLIMATE`, `CAR_SEATS`, `CAR_WINDOWS`, `CAR_DOORS`, `CAR_LIGHTS` / AAOS `CAR_INFO`, `CAR_ENERGY_PORTS`, `CAR_POWERTRAIN` / `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE`. 모두 normal 권한이라 런타임 팝업이 없습니다. 빌드 때 SDK와 AndroidX가 `VEHICLE_BINDING`과 앱 자신의 권한을 더 넣습니다. |
+| 권한 | Pleos `CAR_ENERGY`, `CAR_CLIMATE`, `CAR_SEATS`, `CAR_WINDOWS`, `CAR_DOORS`, `CAR_LIGHTS` / AAOS `CAR_INFO`, `CAR_ENERGY_PORTS`, `CAR_POWERTRAIN`, `CAR_EXTERIOR_ENVIRONMENT` / `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE`. 모두 normal 권한이라 런타임 팝업이 없습니다. 빌드 때 SDK와 AndroidX가 `VEHICLE_BINDING`과 앱 자신의 권한을 더 넣습니다. |
 
 - 모든 화면과 수치는 에뮬레이터에서 확인했고, 실차에서는 확인하지 않았습니다.
 - 남은 시간은 차의 공조 상태에 공개 계수표를 곱해 낸 추정입니다. 계수와 출처는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에, 공개 실측 9건(기관 시험 3건 포함)과의 대조는 같은 문서 §6에 있습니다. 아주 추운 날, 처음 데우는 동안, 직사광선 아래에서는 실제 소모가 더 클 수 있습니다.
 - 에뮬레이터에서 신호별로 확인한 사실은 [docs/PLATFORM_NOTES.md](docs/PLATFORM_NOTES.md)에 있습니다. 알려진 한계는 아래 '한계' 절에 있습니다.
 
 ## 4. APK 위치
-- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `4e9e09fe9ce6e8403b7226b19350c85e4be67b3cc570d753d4ddcf66e53616de`)
+- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `5497eaaddc18ed1e92f02e159add0410c1d1354b726d246ac58f95ec5e8abf2e`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4)
 
 ## 검증 표
@@ -58,7 +58,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 단위 테스트 | 176개 통과 |
+| 단위 테스트 | 218개 통과 |
 | 다이얼 → 토스트가 화면에 뜨기까지 (10회씩) | 중앙값 27–33 ms, 최대 58 ms |
 | 기어 P → D, 섬과 숫자가 사라지기까지 (10회씩) | 중앙값 8–10 ms, 최대 39 ms |
 | 앱 시작 (콜드 스타트, 3회씩) | 0.9–1.4초 |
@@ -69,7 +69,7 @@
 다른 세션이 함께 돌아 호스트 부하가 큰 때에는 앱 시작 최대 1.6초, 접힘 최대 63 ms까지 관찰했습니다(같은 앱 코드의 이전 빌드). 모두 Pleos 기준(시작 10초 이내) 안입니다.
 
 ## 한계 (2차에서 고칠 것)
-- **2열 탑승 값은 SDK 2.3.2의 변환을 확인한 뒤 뒤집어 읽습니다.** Pleos Vehicle SDK 2.3.2는 AAOS 원값(0 모름, 1 비었음, 2 탑승)을 `원값 == 1`일 때 `true`로 바꿉니다(바이트코드와 에뮬레이터 로그로 확인). 그래서 SDK의 `true`는 "비었음"입니다. 이 변환은 에뮬레이터가 아니라 APK 안의 SDK에서 일어나므로 실차에도 같습니다. 앱은 확인한 SDK 버전에서만 값을 뒤집고, 다른 버전이면 "확인 안 됨"으로 둡니다. SDK 버전을 올리면 테스트가 먼저 실패합니다(`cabin/Occupancy.kt`). AAOS `SEAT_OCCUPANCY`를 직접 읽는 권한은 signature|privileged(`CONTROL_CAR_SEATS`)라 쓰지 않습니다. 어느 경우든 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증의 "뒷좌석 직접 확인" 줄을 늘 보여 줍니다.
+- **2열 탑승 값은 SDK 2.3.2의 변환을 확인한 뒤 뒤집어 읽습니다.** Pleos Vehicle SDK 2.3.2는 AAOS 원값(0 모름, 1 비었음, 2 탑승)을 `원값 == 1`일 때 `true`로 바꿉니다(바이트코드와 에뮬레이터 로그로 확인). 그래서 SDK의 `true`는 "비었음"입니다. 이 변환은 에뮬레이터가 아니라 APK 안의 SDK에서 일어나므로, 실차 VHAL이 AAOS 표준 값(0/1/2)을 줄 때는 실차에서도 같습니다. 실차의 원값은 확인하지 못했습니다. 앱은 확인한 SDK 버전에서만 값을 뒤집고, 다른 버전이면 "확인 안 됨"으로 둡니다. SDK 버전을 올리면 테스트가 먼저 실패합니다(`cabin/Occupancy.kt`). AAOS `SEAT_OCCUPANCY`를 직접 읽는 권한은 signature|privileged(`CONTROL_CAR_SEATS`)라 쓰지 않습니다. 어느 경우든 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증의 "뒷좌석 직접 확인" 줄을 늘 보여 줍니다.
 - **재연결은 AAOS 차량 서비스에만 있습니다.** AAOS `Car` 연결은 하나(`vehicle/CarConnection.kt`)이고, 차량 서비스가 다시 시작되면 기어·실내 속성·UX 제한을 다시 등록합니다. 끊긴 동안은 기어를 모름으로 보고 화면을 접습니다(`DrivingStateGateTest`). Pleos Vehicle SDK는 한 번만 초기화하지만, SDK에 연결이 끊겼음을 알리는 콜백이 문서에 없어 다시 붙이지 않습니다. '연결됨'은 첫 기어 값을 받은 뒤에만 표시합니다.
 - **외기온은 영하 10°C보다 추울 때만 씁니다.** AAOS `ENV_OUTSIDE_TEMPERATURE`(normal 권한)를 읽어, 영하 10°C보다 추우면 난방 부하를 (설정온도 − 외기온) / 32로 늘립니다. 그보다 따뜻하거나, 값을 못 읽거나, −40~60°C 밖이면 영하 10°C로 계산합니다. 계수를 잰 조건이 영하 10°C이고 온화한 날의 선형식은 검증되지 않았기 때문에, 외기온으로 남은 시간을 늘리지는 않습니다(짧게 틀리는 쪽). 냉방(2.0 kW)은 외기와 무관한 상단값 그대로입니다.
 
