@@ -139,8 +139,8 @@ internal class H1Set(
 
 /**
  * Build G, S1 (04_design/S1_SPEC.md): three always-on symbols, sun, buoys and flag. The water is a fixed sea strip
- * (battery is the header's "배터리 n%"), tomorrow's share is the dock chip "내일 n km" (the crates' K1/K2 outline
- * becomes the chip's amber border), and the boat, wind lines, water ticks, reflections and tree sway are not drawn.
+ * (battery is the header's "배터리 n%"), tomorrow's share is the dock chip "내일 몫 n km" (the crates' K1/K2 outline
+ * becomes the chip's amber border and fill), and the boat, wind lines, water ticks, reflections and tree sway are not drawn.
  * Clouds and far rain stay events. The picture is always 1.0x of its width (no fit-to-height shrink).
  */
 internal const val S1_LEVEL = 2 // the water step whose line is H1Set.waterY (L 480, S 456)
@@ -423,7 +423,7 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: 
 }
 
 /**
- * S1: tomorrow's share as one chip on the dock top ("내일 30km"), replacing the boat's three crates. At K1 / K2
+ * S1: tomorrow's share as one chip on the dock top ("내일 몫 30km"), replacing the boat's three crates. At K1 / K2
  * ([outline], IslandInfo.crateOutline: keep banner NEAR or BELOW) the chip border turns amber (day #A86C00 4.37:1,
  * night #F0B850; #E0A030 was 2.27:1) and the chip is filled with an amber tint (F8). Size and place follow the picture's scale [k] (dp per canvas px).
  */
