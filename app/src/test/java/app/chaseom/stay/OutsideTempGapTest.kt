@@ -22,9 +22,11 @@ class OutsideTempGapTest {
     @Test fun heroFollowsOutsideTemperature() {
         assertEquals(167, StayEngine().at(0, demo).hero!!.minutes)                          // unknown -> -10 C
         assertEquals(167, StayEngine().at(0, demo.copy(outsideTempC = -10f)).hero!!.minutes)
-        val mild = StayEngine().at(0, demo.copy(outsideTempC = 0f)).hero!!
-        assertEquals(228, mild.minutes)
-        assertTrue(mild.overCap)
+        // Middle option: a milder reading (0 C, the emulator's 25 C) keeps the -10 C numbers.
+        assertEquals(167, StayEngine().at(0, demo.copy(outsideTempC = 0f)).hero!!.minutes)
+        assertEquals(167, StayEngine().at(0, demo.copy(outsideTempC = 25f)).hero!!.minutes)
+        // Colder than -10 C: fewer minutes.
+        assertTrue(StayEngine().at(0, demo.copy(outsideTempC = -20f)).hero!!.minutes!! < 167)
     }
 
     // An outside-temperature change alone is not a dial action: no toast.
@@ -57,14 +59,13 @@ class OutsideTempGapTest {
         }
     }
 
-    // 25 C outside (the AOSP reference VHAL default): the warmth exchange (X1, the demo "+16") never reaches 10 min.
-    // The fan card (X2) may still appear at very low SOC; that is correct and not checked here.
-    @Test fun noExchangeCardOnAWarmDay() {
+    // 25 C outside (the Pleos Connect emulator reading): the demo stays as recorded, -21 min toast and the +16 card.
+    @Test fun emulatorReadingKeepsTheDemo() {
+        val e = StayEngine()
+        e.at(0, demo.copy(outsideTempC = 25f))
+        assertEquals(-21, e.at(1000, demo.copy(outsideTempC = 25f, driverSetTempC = 26f, fanSpeed = 6)).toast!!.deltaMinutes)
+        val keep = EnergyModel.keepPercent(30, 77.4f, 5f)
         val cur = ClimateSetting(true, 26f, 6, false, false, 0, outsideC = 25f)
-        for (soc in 5..60) {
-            val keep = EnergyModel.keepPercent(30, 77.4f, 5f)
-            assertNull("soc=$soc", EnergyModel.exchange(soc, 77.4f, keep, cur, setOf(ExchangeRule.X2_FAN)))
-        }
-        assertEquals(EnergyModel.BASE_KW, EnergyModel.drawKw(cur.copy(setTempC = 22f, fanSpeed = 0)), 0.0001f) // heating 0
+        assertEquals(16, EnergyModel.exchange(19, 77.4f, keep, cur, emptySet())!!.gainMinutes)
     }
 }

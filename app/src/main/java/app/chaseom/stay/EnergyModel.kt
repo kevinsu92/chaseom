@@ -11,7 +11,7 @@ data class ClimateSetting(
     val acOn: Boolean?,
     val recircOn: Boolean? = null,
     val driverSeatHeat: Int?,
-    /** Outside temperature from the car (AAOS ENV_OUTSIDE_TEMPERATURE); null = unknown, heating then assumes -10 C. */
+    /** Outside temperature from the car (AAOS ENV_OUTSIDE_TEMPERATURE); used only when colder than -10 C. */
     val outsideC: Float? = null,
 )
 
@@ -22,7 +22,7 @@ data class ClimateSetting(
  * efficiency, so the app multiplies the car's own climate state by a published coefficient table.
  * Sources and grades: docs/ENERGY_MODEL.md (same table as the proposal's "숫자 근거표").
  * Heating scales with the inside-outside difference. Build G reads the car's outside temperature
- * (ENV_OUTSIDE_TEMPERATURE); when it cannot be read the model keeps the old -10 C assumption.
+ * (ENV_OUTSIDE_TEMPERATURE) and uses it only when it is colder than -10 C; otherwise -10 C.
  */
 object EnergyModel {
     /** Base load while parked with the car on: INL accessory-off auxiliary load proxy + margin. */
@@ -39,8 +39,13 @@ object EnergyModel {
 
     fun validOutsideC(c: Float?): Float? = c?.takeIf { !it.isNaN() && it in OUTSIDE_MIN_C..OUTSIDE_MAX_C }
 
-    /** The outside temperature the heating term uses. */
-    fun heatOutsideC(s: ClimateSetting): Float = validOutsideC(s.outsideC) ?: HEAT_OUTSIDE_C
+    /**
+     * The outside temperature the heating term uses: the car's reading only when it is colder than -10 C
+     * (round 1 "middle option"). A milder reading is not used to lengthen the stay time: the coefficient
+     * was taken at -10 C, the linear model is unverified on mild days, and the estimate must err short.
+     * Unreadable or out of range -> -10 C.
+     */
+    fun heatOutsideC(s: ClimateSetting): Float = minOf(validOutsideC(s.outsideC) ?: HEAT_OUTSIDE_C, HEAT_OUTSIDE_C)
     const val HEAT_REFERENCE_DELTA = 32f
     /** Cooling with A/C on, replaces heating (owner reports 1-2 kW, upper value). */
     const val AC_KW = 2.0f
