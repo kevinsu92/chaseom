@@ -29,7 +29,7 @@
 
 **소스에서 빌드**
 - `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`이 필요합니다.
-- 디버그 빌드와 단위 테스트: `./gradlew assembleDebug`, `./gradlew testDebugUnitTest` (테스트 218개).
+- 디버그 빌드와 단위 테스트: `./gradlew assembleDebug`, `./gradlew testDebugUnitTest` (테스트 221개).
 - 릴리스 APK: `keystore.properties`를 `keystore.properties.example`처럼 준비한 뒤 `scripts/build-release.ps1`로 만듭니다.
 - Windows에서 경로에 한글이 있으면 AGP가 빌드를 거부합니다. 영문 경로에 클론하거나, 드라이브 문자를 자동으로 연결(`subst`)하는 위 스크립트를 쓰세요.
 
@@ -50,7 +50,7 @@
 - 에뮬레이터에서 신호별로 확인한 사실은 [docs/PLATFORM_NOTES.md](docs/PLATFORM_NOTES.md)에 있습니다. 알려진 한계는 아래 '한계' 절에 있습니다.
 
 ## 4. APK 위치
-- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `5497eaaddc18ed1e92f02e159add0410c1d1354b726d246ac58f95ec5e8abf2e`)
+- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `36263f916d076dba1ae81cc531dce0d87a8a68cfbbd9f3c61709d218a7039129`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4)
 
 ## 검증 표
@@ -58,7 +58,7 @@
 
 | 항목 | 값 |
 |---|---|
-| 단위 테스트 | 218개 통과 |
+| 단위 테스트 | 221개 통과 |
 | 다이얼 → 토스트가 화면에 뜨기까지 (10회씩) | 중앙값 27–33 ms, 최대 58 ms |
 | 기어 P → D, 섬과 숫자가 사라지기까지 (10회씩) | 중앙값 8–10 ms, 최대 39 ms |
 | 앱 시작 (콜드 스타트, 3회씩) | 0.9–1.4초 |
