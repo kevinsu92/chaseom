@@ -141,7 +141,10 @@ class StayEngine(
         // H2 item 8: an estimate from values the car has not confirmed for 60 s is not shown (cabin.Freshness).
         val since = freshSinceMs ?: nowMs.also { freshSinceMs = it }
         val unconfirmed = Freshness.stale(cabin.socConfirmedAtMs, since, nowMs) ||
-            Freshness.stale(cabin.climateConfirmedAtMs, since, nowMs)
+            Freshness.stale(cabin.climateConfirmedAtMs, since, nowMs) ||
+            Freshness.stale(cabin.powerConfirmedAtMs, since, nowMs) ||
+            // BUG_HVAC_OFF M1: an unread climate power is not "off" (null would show 공조 꺼짐 until a re-read fills it).
+            cabin.hvacPowerOn == null
         if (policy.energyBudget && soc != null && cap != null && unconfirmed) {
             hero = Hero(minutes = null, overCap = false, hvacOff = false, unconfirmed = true)
             // No toast for the jump when values come back: the gap was not a climate change by the driver.

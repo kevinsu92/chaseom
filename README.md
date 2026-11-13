@@ -31,7 +31,7 @@
 **소스에서 빌드**
 - JDK 17 이상(`JAVA_HOME`, 예: Android Studio에 들어 있는 JBR)과 Android SDK(`ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`)가 필요합니다.
 - macOS/Linux에서는 처음 한 번 `chmod +x gradlew`가 필요할 수 있습니다.
-- 디버그 빌드와 단위 테스트: `./gradlew assembleDebug`, `./gradlew testDebugUnitTest` (테스트 335개).
+- 디버그 빌드와 단위 테스트: `./gradlew assembleDebug`, `./gradlew testDebugUnitTest` (테스트 348개).
 - 릴리스 APK: `keystore.properties`를 `keystore.properties.example`처럼 준비한 뒤 `scripts/build-release.ps1`로 만듭니다.
 - Windows에서 경로에 한글이 있으면 AGP가 빌드를 거부합니다. 영문 경로에 클론하거나, 드라이브 문자를 자동으로 연결(`subst`)하는 위 스크립트를 쓰세요.
 
@@ -52,24 +52,24 @@
 - 알려진 한계는 아래 '한계' 절에 있습니다.
 
 ## 4. APK 위치
-- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, 버전 1.3.0, sha256 `4113257fbf06c58dddc93e587bc71356dfda716e5083b2bda6efc7d21f6eabad`)
+- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, 버전 1.3.1, sha256 `f27d00adb64b16d748488d1cb84f09955ad5a255738bd10d5454844f821114f8`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4) (sha256 `5874e834cd8cfe7f76882ee2d5e3123fadfbd9794c521b2e2c9edfdd5552e2b2`)
 
 ## 검증 표
-위 APK(1.3.0)를 에뮬레이터에서 잰 값입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)입니다. 측정 때 PC 부하가 높았습니다(호스트 CPU 68~93%, 에뮬레이터 load 8.7). 그래서 시간 값은 부하가 낮을 때보다 길게 나왔을 수 있습니다.
+위 APK(1.3.1)를 에뮬레이터에서 잰 값입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)입니다. 측정 때 PC 부하가 높았습니다(호스트 CPU 68~90%, 에뮬레이터 load 6.9). 그래서 시간 값은 부하가 낮을 때보다 길게 나왔을 수 있습니다.
 
 | 항목 | 값 |
 |---|---|
-| 단위 테스트 | 335개 통과 |
-| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 35 ms, 최대 57 ms |
-| 머무는 화면을 연 뒤 섬의 첫 프레임 (10회) | 중앙값 41 ms, 최대 81 ms |
-| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 중앙값 15 ms, 최대 67 ms |
-| 앱 시작 (콜드 스타트, 3회) | 1.5–2.6초 (1,517–2,557 ms) |
-| 정지 화면 CPU (30초) | 평균 0.87% |
-| 10초마다 다이얼 1회, 60초 평균 CPU | 0.9% (전환 순간 최대 15%) |
-| 메모리 (PSS) | 52 MB |
+| 단위 테스트 | 348개 통과 |
+| 다이얼 → 토스트가 화면에 뜨기까지 (10회) | 중앙값 38 ms, 최대 80 ms |
+| 머무는 화면을 연 뒤 섬의 첫 프레임 (10회) | 중앙값 45 ms, 최대 112 ms |
+| 기어 P → D, 섬과 숫자가 사라지기까지 (10회) | 중앙값 30 ms, 최대 47 ms |
+| 앱 시작 (콜드 스타트, 3회) | 2.2–2.7초 (2,152–2,701 ms) |
+| 정지 화면 CPU (30초) | 평균 0.5% |
+| 10초마다 다이얼 1회, 60초 평균 CPU | 1.1% (전환 순간 최대 19%) |
+| 메모리 (PSS) | 47 MB |
 
-앱 시작은 가장 길 때 2.6초로 Pleos 기준(시작 10초 이내) 안입니다.
+앱 시작은 가장 길 때 2.7초로 Pleos 기준(시작 10초 이내) 안입니다.
 
 ## 한계 (2차에서 고칠 것)
 - **2열 탑승 값은 SDK 2.3.2의 변환을 확인한 뒤 뒤집어 읽습니다.** Pleos Vehicle SDK 2.3.2는 AAOS 원값(0 모름, 1 비었음, 2 탑승)을 `원값 == 1`일 때 `true`로 바꿉니다(바이트코드와 에뮬레이터 로그로 확인). 그래서 SDK의 `true`는 "비었음"입니다. 이 변환은 에뮬레이터가 아니라 APK 안의 SDK에서 일어나므로, 실차 VHAL이 AAOS 표준 값(0/1/2)을 줄 때는 실차에서도 같습니다. 실차의 원값은 확인하지 못했습니다. 앱은 확인한 SDK 버전에서만 값을 뒤집고, 다른 버전이면 "확인 안 됨"으로 둡니다. SDK 버전을 올리면 테스트가 먼저 실패합니다(`cabin/Occupancy.kt`). AAOS `SEAT_OCCUPANCY`를 직접 읽는 권한은 signature|privileged(`CONTROL_CAR_SEATS`)라 쓰지 않습니다. 어느 경우든 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증의 "뒷좌석 직접 확인" 줄을 늘 보여 줍니다.

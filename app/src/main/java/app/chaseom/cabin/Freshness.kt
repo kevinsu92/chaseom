@@ -88,3 +88,69 @@ class Backoff(private val delaysMs: List<Long>) {
         step = 0
     }
 }
+
+/**
+ * Fix for the judge-test "공조 꺼짐" while the climate was on (05_qa/BUG_HVAC_OFF.md; rule from the QA review §5, R1).
+ *
+ * The 10 s re-read of SOC and climate power. Pleos SDK 2.3.2 turns the service's reply into a value inside its own
+ * callback: power with `Boolean.parseBoolean` (anything but "true" is `false`), SOC with `Integer.parseInt`, a null
+ * string as `null`. One such reply applied as is showed "공조 꺼짐" with the climate on.
+ *
+ * One instance per value:
+ * - A change event ([onEvent], non-null) or a re-read equal to the current value confirms the value.
+ * - A confirmed value is never overwritten by a re-read. A change the listener truly missed then surfaces as a stale
+ *   stamp after [Freshness.STALE_MS] ("확인 안 됨"), never as a wrong value.
+ * - A value that is not confirmed (null, or from the start-up get only) may be filled by a re-read, but only after
+ *   2 agreeing non-null re-reads in a row ([Verdict.FILL]). So a wrong or missing start-up value heals in about 20 s,
+ *   and one wrong reply never shows.
+ * - A null re-read never changes, confirms or fills anything, and breaks a pending pair.
+ *
+ * Pure (no Android types), so every rule is unit-tested.
+ */
+class RefreshFill<T : Any> {
+    enum class Verdict { CONFIRM, FILL, IGNORE }
+
+    private var confirmed = false
+    private var pending: T? = null
+
+    /** A value from the change listener. A null event (unreadable) leaves the value open to a fill. */
+    @Synchronized
+    fun onEvent(value: T?) {
+        confirmed = value != null
+        pending = null
+    }
+
+    /** A value from the start-up get (or a reconnect's get): delivered, but not confirmed. */
+    @Synchronized
+    fun onStartup() {
+        confirmed = false
+        pending = null
+    }
+
+    @Synchronized
+    fun onRead(read: T?, current: T?): Verdict {
+        if (read == null) {
+            pending = null
+            return Verdict.IGNORE
+        }
+        if (read == current) {
+            confirmed = true
+            pending = null
+            return Verdict.CONFIRM
+        }
+        if (confirmed) {
+            pending = null
+            return Verdict.IGNORE
+        }
+        if (pending == read) {
+            pending = null
+            confirmed = true
+            return Verdict.FILL
+        }
+        pending = read
+        return Verdict.IGNORE
+    }
+
+    @Synchronized
+    fun isConfirmed(): Boolean = confirmed
+}

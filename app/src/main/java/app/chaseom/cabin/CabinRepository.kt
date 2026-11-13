@@ -67,6 +67,11 @@ data class CabinState(
     val socConfirmedAtMs: Long? = null,
     /** H2 item 8: the same for the climate (power, A/C, fan, set temperature, recirculation, driver seat heat). */
     val climateConfirmedAtMs: Long? = null,
+    /**
+     * BUG_HVAC_OFF R2: the same for the climate power alone. Fan, temperature or seat events renew
+     * [climateConfirmedAtMs] but not this, so a power value the car stopped confirming still goes stale.
+     */
+    val powerConfirmedAtMs: Long? = null,
 ) {
     /** Window positions 0..10; [WINDOW_UNKNOWN] = the car did not report this window. */
     val anyWindowOpen: Boolean?

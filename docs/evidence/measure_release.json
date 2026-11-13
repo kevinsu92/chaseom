@@ -1,78 +1,78 @@
 {
  "build_type": "release",
  "island_on_screen": true,
- "apk": "Chaseom_H2_1.3.0_release.apk",
- "apk_sha256": "4113257fbf06c58dddc93e587bc71356dfda716e5083b2bda6efc7d21f6eabad",
+ "apk": "Chaseom_H2.1_1.3.1_release.apk",
+ "apk_sha256": "f27d00adb64b16d748488d1cb84f09955ad5a255738bd10d5454844f821114f8",
  "apk_bytes": 4078719,
- "apk_built": "2026-11-13T21:40:16",
- "measured": "2026-11-14T00:09:14",
+ "apk_built": "2026-11-14T01:32:46",
+ "measured": "2026-11-14T02:34:55",
  "toast_frame_ms": [
-  41.8,
-  31.4,
-  20.5,
-  28.7,
-  42.2,
-  24.1,
-  39.3,
-  57.3,
-  16.1,
-  50.7
+  38.5,
+  30.4,
+  37.9,
+  19.8,
+  39.4,
+  32.2,
+  80.1,
+  61.0,
+  40.1,
+  33.3
  ],
  "toast": {
-  "median": 35.3,
-  "max": 57.3,
+  "median": 38.2,
+  "max": 80.1,
   "n": 10
  },
  "island_frame_ms": [
-  81.1,
-  42.4,
-  50.4,
-  56.1,
-  32.9,
+  111.6,
+  42.9,
+  54.6,
+  39.1,
+  59.2,
+  45.8,
+  46.8,
+  22.7,
   43.6,
-  39.5,
-  18.6,
-  35.8,
-  17.8
+  30.9
  ],
  "island_frame": {
-  "median": 41.0,
-  "max": 81.1,
+  "median": 44.7,
+  "max": 111.6,
   "n": 10
  },
  "fold_ms": [
-  29.3,
-  -4.9,
-  26.0,
-  0.1,
-  6.3,
-  9.6,
-  13.1,
-  17.7,
-  21.7,
-  67.2
+  30.1,
+  26.4,
+  27.0,
+  47.1,
+  27.0,
+  23.4,
+  42.3,
+  36.1,
+  40.7,
+  29.8
  ],
  "fold": {
-  "median": 15.4,
-  "max": 67.2,
+  "median": 30.0,
+  "max": 47.1,
   "n": 10
  },
  "start_total_ms": [
-  2557,
-  1517,
-  1970
+  2701,
+  2441,
+  2152
  ],
- "cpu_idle_30s_avg": 0.87,
- "cpu_dial10s_60s_avg": 0.9,
- "cpu_dial10s_60s_max": 15.3,
- "pss_mb": 51.7,
+ "cpu_idle_30s_avg": 0.5,
+ "cpu_dial10s_60s_avg": 1.1,
+ "cpu_dial10s_60s_max": 19.2,
+ "pss_mb": 47.0,
  "note": "CPU = % of one core (emulator x86_64, 4 cores). Times from the app's PROBE lines (first frame after composition); host/emulator clock offset corrected (+-20 ms).",
  "host_cpu_during_pct": {
-  "n": 48,
+  "n": 49,
   "min": 68,
-  "median": 82.0,
-  "max": 93
+  "median": 80,
+  "max": 90
  },
- "guest_load1_at_start": "8.72",
+ "guest_load1_at_start": "6.87",
  "host_note": "Only emulator-5554 running; host baseline 60-80 % from background apps. Start gate: host CPU < 85 %, guest load1 < 4."
 }

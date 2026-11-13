@@ -82,6 +82,9 @@ class PleosCabinRepository(
     /** H2 item 8: retry delays when `Vehicle.initialize()` itself fails (5 s, 15 s, then every 60 s). */
     private val initRetry = Backoff(listOf(5_000L, 15_000L, 60_000L))
     private var initRetryJob: Job? = null
+    /** BUG_HVAC_OFF: what a 10 s re-read may do to each value (see [RefreshFill]). */
+    private val socFill = RefreshFill<Int>()
+    private val powerFill = RefreshFill<Boolean>()
     /** Monotonic clock for the freshness stamps; the stay engine uses the same one (StayController.clock). */
     private val clock: () -> Long = SystemClock::elapsedRealtime
     private var powerArea: SeatArea? = null
@@ -112,12 +115,17 @@ class PleosCabinRepository(
     // ---- listeners -------------------------------------------------------------------------
 
     private val socListener = object : EvBatteryStateOfChargeListener {
-        override fun onEvBatteryStateOfChargeUpdated(value: Int?) =
-            set("soc", value) { it.copy(socPercent = value, socReadable = value != null).socSeen(value) }
+        override fun onEvBatteryStateOfChargeUpdated(value: Int?) {
+            socFill.onEvent(value)
+            applySoc(value)
+        }
         override fun onFailed(e: Exception) = fail("soc", e)
     }
     private val powerListener = object : HvacPowerStateListener {
-        override fun onHvacPowerStateUpdated(value: Boolean?) = set("hvacPower", value) { it.copy(hvacPowerOn = value).climateSeen(value) }
+        override fun onHvacPowerStateUpdated(value: Boolean?) {
+            powerFill.onEvent(value)
+            applyPower(value)
+        }
         override fun onFailed(e: Exception) = fail("hvacPower", e)
     }
     private val acListener = object : HvacAcStateListener {
@@ -254,7 +262,7 @@ class PleosCabinRepository(
         _state.update { it.copy(lastError = null) }
 
         guard("soc") {
-            v.getEvBattery().getEvBatteryStateOfCharge({ s -> socListener.onEvBatteryStateOfChargeUpdated(s) }, { fail("soc", it) })
+            v.getEvBattery().getEvBatteryStateOfCharge({ s -> socFill.onStartup(); applySoc(s) }, { fail("soc", it) })
             v.getEvBattery().registerEvBatteryStateOfCharge(socListener)
         }
         guard("efficiency") {
@@ -271,7 +279,7 @@ class PleosCabinRepository(
                 val a = pickArea(areas).also { powerArea = it }
                 probe("hvacPowerArea", areaName(a))
                 guard("hvacPower") {
-                    hvac.getHvacPowerState(a, { powerListener.onHvacPowerStateUpdated(it) }, { fail("hvacPower", it) })
+                    hvac.getHvacPowerState(a, { p -> powerFill.onStartup(); applyPower(p) }, { fail("hvacPower", it) })
                     hvac.registerHvacPowerState(a, powerListener)
                 }
             }, { fail("hvacPowerCaps", it) })
@@ -600,17 +608,14 @@ class PleosCabinRepository(
     }
 
     /**
-     * H2 item 8: one read each of SOC and climate power. A changed value goes through the listener, as a missed event
-     * would. An unchanged one only renews its stamp, without a PROBE line, so the latency tools (first PROBE line after
-     * a Virtual Console write) never see a refresh as the callback they are timing.
+     * H2 item 8: one read each of SOC and climate power, only to renew the stamp of a live, unchanged value
+     * (BUG_HVAC_OFF: a re-read never overwrites a confirmed value; see [refresh] and [RefreshFill]). No PROBE line, so the latency tools
+     * (first PROBE line after a Virtual Console write) never see a refresh as the callback they are timing.
      */
     private fun refreshEstimateInputs(v: Vehicle) {
         guard("socRefresh") {
             v.getEvBattery().getEvBatteryStateOfCharge(
-                { s ->
-                    answered()
-                    if (s != _state.value.socPercent) socListener.onEvBatteryStateOfChargeUpdated(s) else _state.update { it.socSeen(s) }
-                },
+                { s -> answered(); guard("socRefreshValue") { refresh("soc", socFill, s, { it.socPercent }, { it.socSeen(s) }) { applySoc(s) } } },
                 { answered(); fail("socRefresh", it) },
             )
         }
@@ -618,12 +623,26 @@ class PleosCabinRepository(
         guard("hvacPowerRefresh") {
             v.getHVAC().getHvacPowerState(
                 a,
-                { p ->
-                    answered()
-                    if (p != _state.value.hvacPowerOn) powerListener.onHvacPowerStateUpdated(p) else _state.update { it.climateSeen(p) }
-                },
+                { p -> answered(); guard("hvacPowerRefreshValue") { refresh("hvacPower", powerFill, p, { it.hvacPowerOn }, { it.powerSeen(p) }) { applyPower(p) } } },
                 { answered(); fail("hvacPowerRefresh", it) },
             )
+        }
+    }
+
+    /**
+     * BUG_HVAC_OFF: one re-read reply, judged by [RefreshFill]. CONFIRM renews the stamp (only if the value did not
+     * change meanwhile). FILL applies the value (a start-up value that was null or wrong, after 2 agreeing reads).
+     * IGNORE logs with Log.i, not a PROBE line, so the latency tools (first PROBE after a write) never see it.
+     */
+    private inline fun <T : Any> refresh(
+        name: String, fill: RefreshFill<T>, read: T?,
+        crossinline current: (CabinState) -> T?, crossinline stamp: (CabinState) -> CabinState, apply: () -> Unit,
+    ) {
+        val cur = current(_state.value)
+        when (fill.onRead(read, cur)) {
+            RefreshFill.Verdict.CONFIRM -> _state.update { if (current(it) == read) stamp(it) else it }
+            RefreshFill.Verdict.FILL -> { Log.i(TAG, "$name refresh filled $read (was $cur)"); apply() }
+            RefreshFill.Verdict.IGNORE -> Log.i(TAG, "$name refresh read $read vs $cur: ignored")
         }
     }
 
@@ -657,6 +676,15 @@ class PleosCabinRepository(
     private fun CabinState.socSeen(value: Int?): CabinState = if (value == null) this else copy(socConfirmedAtMs = clock())
 
     private fun CabinState.climateSeen(value: Any?): CabinState = if (value == null) this else copy(climateConfirmedAtMs = clock())
+
+    /** BUG_HVAC_OFF R2: a delivered power value stamps its own stamp and the shared climate one. */
+    private fun CabinState.powerSeen(value: Boolean?): CabinState =
+        if (value == null) this else climateSeen(value).copy(powerConfirmedAtMs = clock())
+
+    private fun applySoc(value: Int?) =
+        set("soc", value) { it.copy(socPercent = value, socReadable = value != null).socSeen(value) }
+
+    private fun applyPower(value: Boolean?) = set("hvacPower", value) { it.copy(hvacPowerOn = value).powerSeen(value) }
 
     private fun CabinState.withRear(): CabinState = copy(
         rearLeftOccupied = Occupancy.resolve(pleosRearLeft, BuildConfig.PLEOS_VEHICLE_SDK),
