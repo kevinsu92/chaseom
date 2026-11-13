@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import androidx.compose.ui.graphics.toArgb
 
-/** Build G S1 (three always-on symbols) and S2 (buoys and flag at twice their size), 04_design/S1_SPEC.md v3. */
+/** Build G S1 (three always-on symbols) and S2 (buoys and flag at twice their size), internal note v3. */
 class S1LayoutTest {
     private val sets = listOf(H1Set.Large, H1Set.Small)
     // Rightmost cloth column of the flag layer (drawable-nodpi WebP, alpha > 128): Large 36, Small 33.
@@ -110,7 +110,7 @@ class S1LayoutTest {
     }
 
     @Test fun flagLineKeepsOnlyTheShortTailTogether() {
-        // External S1S2 #8: "약 33분 / 짧아요" must not split, but the long start may still wrap at spaces (eng1 W2).
+        // External S1S2 #8: "약 33분 / 짧아요" must not split, but the long start may still wrap at spaces.
         val nb = ' '
         val line = keepPhrases("오후 7:35 깃발 · 오늘 머물 시간이 깃발보다 약 2시간 29분 짧아요 (추정)")
         assertTrue(line.endsWith("약${nb}2시간${nb}29분${nb}짧아요${nb}(추정)"))

@@ -151,7 +151,7 @@ object WaitFlags {
 }
 
 /**
- * Round 2 C-4 (05_qa/PLEOS_COMPLIANCE_G.md): the wait flag as saved next to the running stay, so it survives a
+ * Round 2 C-4: the wait flag as saved next to the running stay, so it survives a
  * process kill within the same stay (Pleos: "백그라운드로 이동했다가 돌아온 경우, 마지막 사용 중이던 상태가 복원되어야
  * 합니다"). Stored as one local string; nothing leaves the car.
  *

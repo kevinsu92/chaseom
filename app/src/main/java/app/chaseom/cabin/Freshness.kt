@@ -3,7 +3,7 @@ package app.chaseom.cabin
 /**
  * H2 item 8 (external review §11): stale-value check for the two inputs of the stay estimate, SOC and climate.
  *
- * The Pleos SDK gives no disconnect callback (05_qa/STATIC_REVIEW_G.md G2). If its service stops answering, SOC and
+ * The Pleos SDK gives no disconnect callback. If its service stops answering, SOC and
  * climate keep their last values and the hero would keep showing minutes computed from a frozen battery.
  *
  * The repository stamps every SOC or climate value the car actually delivered, through a listener or a read. During a
@@ -90,7 +90,7 @@ class Backoff(private val delaysMs: List<Long>) {
 }
 
 /**
- * Fix for the judge-test "공조 꺼짐" while the climate was on (05_qa/BUG_HVAC_OFF.md; rule from the QA review §5, R1).
+ * Fix for the judge-test "공조 꺼짐" while the climate was on.
  *
  * The 10 s re-read of SOC and climate power. Pleos SDK 2.3.2 turns the service's reply into a value inside its own
  * callback: power with `Boolean.parseBoolean` (anything but "true" is `false`), SOC with `Integer.parseInt`, a null

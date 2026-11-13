@@ -6,7 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * H2 type (round 2, ISO 15008-level glance, 04_design/H2_type_sizes.md): the hero time, the ±분 toast and the flag
+ * H2 type (round 2, ISO 15008-level glance, internal note): the hero time, the ±분 toast and the flag
  * line at design's sizes still fit both windows (Large = 1682 dp app area, Small = the 841 dp 1:1 split).
  *
  * The car font (AstaSans, /product/fonts) is not on the JVM, so widths use upper-bound advances in em:

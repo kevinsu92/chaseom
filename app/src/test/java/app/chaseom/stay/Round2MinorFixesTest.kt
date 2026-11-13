@@ -8,7 +8,7 @@ import org.junit.Test
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
-/** Round 2 minor fixes C-1, C-2, C-4 (05_qa/PLEOS_COMPLIANCE_G.md). G2, G3, G5, G6 are in cabin/ and vehicle/. */
+/** Round 2 minor fixes C-1, C-2, C-4. G2, G3, G5, G6 are in cabin/ and vehicle/. */
 class Round2MinorFixesTest {
 
     // ---- C-1: CCP not supported is declared on <application> -----------------------------------------------------

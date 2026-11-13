@@ -9,7 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * 05_qa/BUG_HVAC_OFF.md: the 10 s climate-power re-read (H2 item 8) passed any differing reply straight to the
+ * internal note: the 10 s climate-power re-read (H2 item 8) passed any differing reply straight to the
  * listener. Pleos SDK 2.3.2 parses the reply with Boolean.parseBoolean, so a reply other than "true" is `false`, and
  * the hero said "공조 꺼짐" with the climate on.
  *
@@ -81,7 +81,7 @@ class HvacRefreshTest {
         assertFalse(n.hvacOff)
     }
 
-    // (a) QA/HQ: start-up power null, then re-reads true, true -> on.
+    // (a) start-up power null, then re-reads true, true -> on.
     @Test fun a_startupPowerNullThenTrueTrueTurnsOn() {
         val car = car().apply { startupSoc(19, 0); startupPower(null, 0) }
         val e = StayEngine()

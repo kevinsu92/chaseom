@@ -6,7 +6,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Round 2 G2, G3, G6 (05_qa/STATIC_REVIEW_G.md). */
+/** Round 2 G2, G3, G6. */
 class CabinRobustnessTest {
 
     // ---- G2: the poll stops feeding the SDK queue while the service gives no answer ------------------------------

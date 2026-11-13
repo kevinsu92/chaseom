@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 /**
- * Round 2 G2 (05_qa/STATIC_REVIEW_G.md): the Pleos SDK has no disconnect callback. During a Pleos service outage every
+ * Round 2 G2: the Pleos SDK has no disconnect callback. During a Pleos service outage every
  * call made by the 1 s poll goes into the SDK's unbounded internal queue (6 per tick, about 21,600 an hour) and is
  * replayed in one burst on reconnect.
  *
@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong
  * even a late one, restores the full poll.
  *
  * It only throttles the poll and drives `CabinState.connected`. It never clears a value: a slow but healthy service
- * must not hide SOC (eng1's review of this fix).
+ * must not hide SOC.
  *
  * Ticks come from the main thread; answers come from SDK binder threads, hence the atomics.
  */

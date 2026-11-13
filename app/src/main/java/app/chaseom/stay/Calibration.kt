@@ -3,8 +3,8 @@ package app.chaseom.stay
 import kotlin.math.abs
 
 /**
- * Per-car calibration of the draw model from the car's own SOC drop during a parked stay (H+calib, HQ addendum 7;
- * 03_engineering/calibration.md). Pure (no Android types), so every rule is a JVM test (CalibrationTest).
+ * Per-car calibration of the draw model from the car's own SOC drop during a parked stay.
+ * Pure (no Android types), so every rule is a JVM test (CalibrationTest).
  *
  * Measurement: the SOC is an integer percent, so a drop measured from an arbitrary start is off by up to 1 %p. A
  * window therefore runs **from one SOC step-down to a later one** (edge to edge): both ends are moments the integer

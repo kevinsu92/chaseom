@@ -93,7 +93,7 @@ class OutsideTempGapTest {
         assertEquals(Triple(167, 146, 162), Triple(m(22f, 3, 0, null), m(26f, 6, 0, null), m(21f, 6, 2, null))) // unreadable
     }
 
-    // Director §8.1-4 / eng5: the K1 banner (under 30 min left) and a swap card never show together, so the
+    // Director §8.1-4 / review: the K1 banner (under 30 min left) and a swap card never show together, so the
     // Small screen cannot overflow with both. Exhaustive over climate settings and outside temperatures <= -10 C.
     @Test fun noSwapCardWhileNearTheKeepShare() {
         val cap = 77.4f

@@ -2,7 +2,7 @@ package app.chaseom.stay
 
 /**
  * The stay service's start / stop rules as a pure class (no Android types), so every case in the F2b review
- * (03_engineering/REVIEW_F2B_SERVICE.md) is a JVM test (StayServiceStateTest) instead of a reading.
+ * is a JVM test (StayServiceStateTest) instead of a reading.
  *
  * Why the rules exist: a service started with startForegroundService must reach startForeground before it stops.
  * Stopping it earlier (gear D a moment after P, e.g. right after a cold start) makes the system crash the app with

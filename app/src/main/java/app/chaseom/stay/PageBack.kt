@@ -1,7 +1,7 @@
 package app.chaseom.stay
 
 /**
- * Round 2 C-2 (05_qa/PLEOS_COMPLIANCE_G.md, Pleos CCP guide): "CCP Back 하드키는 현재 화면의 이전 단계로 이동하거나,
+ * Round 2 C-2: "CCP Back 하드키는 현재 화면의 이전 단계로 이동하거나,
  * 더 이상 이전 화면이 없는 경우 앱 또는 시스템 레벨의 Back 동작을 수행". The parked pages are Compose state in one
  * Activity, so without this the system Back hid the whole app from Settings or About.
  *

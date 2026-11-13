@@ -18,7 +18,7 @@ import app.chaseom.R
  * driver uses another app, so the exit receipt and the 1-hour / backrest notices are decided from live signals.
  * It does no work itself. Type "specialUse" (no other FGS type matches "watch parked-car signals").
  *
- * Round 2 G1 fix (03_engineering/round2_G1_fix.md): started only where Android allows it ([ServiceKeepPolicy]) and kept
+ * Round 2 G1 fix: started only where Android allows it ([ServiceKeepPolicy]) and kept
  * for the whole ignition cycle, D included, so the moment of P needs no background start. Outside a stay the
  * notification carries no stay content ([ServiceKeepPolicy.Notice.QUIET]).
  *

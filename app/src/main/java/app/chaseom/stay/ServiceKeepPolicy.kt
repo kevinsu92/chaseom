@@ -4,7 +4,7 @@ package app.chaseom.stay
  * When StayController starts [StayService], and what its notification says. A pure class (no Android types), so every
  * rule is a JVM test (ServiceKeepPolicyTest). Replaces round 2's ServiceStartGate.
  *
- * Problem (eng1 static review G1, 05_qa/STATIC_REVIEW_G.md): the stay usually begins while another app is in front
+ * Problem: the stay usually begins while another app is in front
  * (navigation, music). On API 31+ a foreground service cannot be started from the background, so build G and round 2
  * ran the stay with no service: a cached process, which the system may freeze or kill.
  *

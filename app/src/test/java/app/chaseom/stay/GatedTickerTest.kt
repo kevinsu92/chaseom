@@ -14,7 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
- * Round 2 G1 / platform R-1 (05_qa/PLEOS_G1_FIX_REVIEW.md): with the service kept through D the process lives while
+ * Round 2 G1 / platform R-1: with the service kept through D the process lives while
  * driving, so the controller's 1 s tick must stop in D ("불필요한 타이머·폴링은 최소화").
  */
 @OptIn(ExperimentalCoroutinesApi::class)

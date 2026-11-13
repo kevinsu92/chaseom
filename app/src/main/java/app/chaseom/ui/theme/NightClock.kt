@@ -19,7 +19,7 @@ import java.util.Calendar
 
 /**
  * Night = the vehicle's dark theme OR the local clock between [FROM_HOUR]:00 and [TO_HOUR]:00 (round 2,
- * 04_design/REVIEW_BUILD_G_RELEASE.md #3). The whole app switches, not only the island, so the page and the picture
+ * internal note #3). The whole app switches, not only the island, so the page and the picture
  * always share one theme and the contrast rules of S1_SPEC §4 hold (a dark island on a light page broke them).
  * It is a theme switch, not a motion: nothing on the island moves because the clock changed (MOTION_PRINCIPLES §1.1).
  */

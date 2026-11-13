@@ -8,7 +8,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import kotlin.math.floor
 
-/** H+calib (HQ addendum 7, 03_engineering/calibration.md): per-car correction from the SOC drop during a stay. */
+/** H+calib: per-car correction from the SOC drop during a stay. */
 class CalibrationTest {
 
     private val cap = 77.4f
@@ -160,7 +160,7 @@ class CalibrationTest {
     private val settings = StaySettings(keepKm = 30, label = "work")
     private val scenes = listOf(demo, demo.copy(driverSetTempC = 26f, fanSpeed = 6), demo.copy(driverSetTempC = 21f, fanSpeed = 6, driverSeatHeat = 2))
 
-    // HQ gate: the emulator's SOC is constant, so 3 hours of a stay, switching the demo scenes, keep 167/146/162.
+    // Demo gate: the emulator's SOC is constant, so 3 hours of a stay, switching the demo scenes, keep 167/146/162.
     @Test fun demoNumbersUnchangedOnConstantSoc() {
         val e = StayEngine()
         var t = 0L

@@ -104,7 +104,7 @@ internal class H1Set(
     val zoom: Float = 1f,
     /** Box height over the set's own ratio (the zoomed picture's top sky is cropped above this). */
     val boxGrow: Float = 1f,
-    /** S1 (build G, 04_design/S1_SPEC.md §2): the fixed water line and the canvas height (= water line + sea strip). */
+    /** S1 (build G, internal note §2): the fixed water line and the canvas height (= water line + sea strip). */
     val waterY: Float = 480f,
     val h: Float = 600f,
     /** S2: buoy i (1-based) stands centred at buoyX0 + (i - 0.5) * buoyPitch, drawn twice its art size. */
@@ -141,7 +141,7 @@ internal class H1Set(
 }
 
 /**
- * Build G, S1 (04_design/S1_SPEC.md): three always-on symbols, sun, buoys and flag. The water is a fixed sea strip
+ * Build G, S1: three always-on symbols, sun, buoys and flag. The water is a fixed sea strip
  * (battery is the header's "배터리 n%"), tomorrow's share is the dock chip "내일 몫 n km" (the crates' K1/K2 outline
  * becomes the chip's amber border and fill), and the boat, wind lines, water ticks, reflections and tree sway are not drawn.
  * Clouds and far rain stay events. The picture is always 1.0x of its width (no fit-to-height shrink).
@@ -177,7 +177,7 @@ internal fun buoyCenter(set: H1Set, pos: Float): Float = set.buoyX0 + (pos - 0.5
 
 /**
  * Canvas x of the flag pole's centre. In the row it stands [H1Set.poleShift] right of the slot centre, so it no longer
- * continues the buoy head's stick (read as one long head, 04_design/REVIEW_BUILD_G_RELEASE.md #2); drawn behind the
+ * continues the buoy head's stick (read as one long head, internal note #2); drawn behind the
  * buoy, its foot disappears behind the dome. Out of the row it stands at the real time (no buoy there).
  */
 internal fun flagPoleX(set: H1Set, place: FlagPlace): Float = buoyCenter(set, place.pos) + if (place.inRow) set.poleShift else 0f

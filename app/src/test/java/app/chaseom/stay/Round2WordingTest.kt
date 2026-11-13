@@ -7,7 +7,7 @@ import org.junit.Test
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 
-/** Round 2: QA recommendations R1 and R2 (05_qa/GATE4_BUILD_F2_RESULT.md §13.24) and the (d) about strings. */
+/** Round 2: QA recommendations R1 and R2 and the (d) about strings. */
 class Round2WordingTest {
 
     private val strings: Map<String, String> by lazy {
@@ -41,7 +41,7 @@ class Round2WordingTest {
         assertEquals("배터리 = 위 숫자 줄 · 내일 몫 = 부두 칩 · 구름 = 내기순환 (공기 측정 아님) · 먼 비 = 와이퍼 AUTO", fold)
     }
 
-    // R2 follow-up (eng2 capture R2_S_day_fold_open.png): on the Small screen the line wrapped between "먼" and "비".
+    // R2 follow-up: on the Small screen the line wrapped between "먼" and "비".
     // A no-break space keeps the term together; it is the only one in the line.
     @Test fun r2FarRainDoesNotWrap() {
         val raw = strings.getValue("is_fold_line")

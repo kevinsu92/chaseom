@@ -725,6 +725,6 @@ internal val NIGHT_CARD_EDGE = Color(0xFF6B6F76)
 
 /**
  * Ink of the swap card's tail "· 비슷한 체감 (추정)": #4A4E57 on the white day card (8.34:1); at night #A0A5AD on the
- * #24272C card (6.05:1). The day ink at night was 1.80:1 (04_design/REVIEW_BUILD_G_RELEASE.md #1).
+ * #24272C card (6.05:1). The day ink at night was 1.80:1.
  */
 internal fun swapTailInk(c: ChaseomUi.Colors): Color = if (c == ChaseomUi.Night) Color(0xFFA0A5AD) else Color(0xFF4A4E57)

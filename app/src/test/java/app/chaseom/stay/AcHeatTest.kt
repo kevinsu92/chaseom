@@ -7,7 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * H2 (external review §11 item 7, HQ Addendum 8 item 7): with A/C on and the cabin needing heat, drawKw counts
+ * H2: with A/C on and the cabin needing heat, drawKw counts
  * max(heat, cool) instead of cooling's 2.0 kW alone. Before, a winter A/C+heat stay read 13-53 % long.
  */
 class AcHeatTest {

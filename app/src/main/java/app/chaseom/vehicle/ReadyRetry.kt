@@ -1,7 +1,7 @@
 package app.chaseom.vehicle
 
 /**
- * Round 2 G5 (05_qa/STATIC_REVIEW_G.md): if the gear registration fails when the car service comes up (no
+ * Round 2 G5: if the gear registration fails when the car service comes up (no
  * CarPropertyManager, or the register throws), the gear stayed FAILED for the rest of the process. Now it is tried
  * again, at most [maxRetries] time(s) per car-service connection, [DELAY_MS] later. Each new connection
  * (onLost, then onReady) gets a fresh chance; a success resets the count.

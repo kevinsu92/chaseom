@@ -9,7 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * Round 2 G1 (05_qa/STATIC_REVIEW_G.md, 03_engineering/round2_G1_fix.md): the stay service is started only at points
+ * Round 2 G1: the stay service is started only at points
  * Android allows and is kept for the ignition cycle, so a stay that begins in the background is still protected.
  */
 class ServiceKeepPolicyTest {

@@ -38,7 +38,7 @@ object ChaseomUi {
 
     /**
      * H2 (round 2, ISO 15008-level glance): the three key outputs read at a glance in the car. Their sizes live here,
-     * in one place, as design set them (04_design/H2_type_sizes.md). Large = full window, Small = the 841 dp split.
+     * in one place, as design set them. Large = full window, Small = the 841 dp split.
      */
     object Key {
         // Hero number: unchanged (already 30.5'/23.7' of arc at 750 mm on a 14.6" screen).

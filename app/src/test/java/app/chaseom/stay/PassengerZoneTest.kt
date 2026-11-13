@@ -6,7 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * H2 item 10 (HQ addendum 8): the passenger zone and the passenger seat heater count only when a front passenger is
+ * H2 item 10: the passenger zone and the passenger seat heater count only when a front passenger is
  * detected or the passenger zone is unsynced (HVAC dual on). The demo numbers 167/146/162, -21 and +16 do not change.
  */
 class PassengerZoneTest {
@@ -39,7 +39,7 @@ class PassengerZoneTest {
         return heroes + toast + gain
     }
 
-    // HQ gate: every passenger state the emulator demo can be in keeps 167/146/162, -21, +16. The VC demo sets the
+    // Demo gate: every passenger state the emulator demo can be in keeps 167/146/162, -21, +16. The VC demo sets the
     // passenger seat heater to 0 and never turns dual on; SDK 2.3.2 reports an unknown seat as detected, so the
     // detected cases are included. A synced zone's own temperature reading is ignored.
     @Test fun demoNumbersUnchanged() {
