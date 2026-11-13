@@ -74,5 +74,5 @@
   "max": 93
  },
  "guest_load1_at_start": "8.72",
- "host_note": "Only emulator-5554 running; host baseline 60-80 % from OneDrive sync and Claude apps (HQ 23:58). Start gate: host CPU < 85 %, guest load1 < 4."
+ "host_note": "Only emulator-5554 running; host baseline 60-80 % from background apps. Start gate: host CPU < 85 %, guest load1 < 4."
 }
