@@ -394,10 +394,15 @@ class PleosCabinRepository(
                 val p = cpm.getProperty<Float>(VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE, 0)
                 probe("outsideTempRaw", "${p?.value} status=${p?.status}")
                 setOutside(p?.value?.takeIf { p.status == CAR_STATUS_AVAILABLE })
-                cpm.registerCallback(outsideCallback, VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE, OUTSIDE_RATE_HZ)
             } catch (t: Throwable) {
                 fail("outsideTemp", t)
                 setOutside(null)
+            }
+            // Separate try: a refused subscription must not throw away the value just read.
+            try {
+                cpm.registerCallback(outsideCallback, VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE, OUTSIDE_RATE_HZ)
+            } catch (t: Throwable) {
+                fail("outsideTempSub", t)
             }
         } catch (t: Throwable) {
             fail("car", t)
