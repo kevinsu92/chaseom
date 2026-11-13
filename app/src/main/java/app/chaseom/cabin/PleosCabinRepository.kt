@@ -348,6 +348,8 @@ class PleosCabinRepository(
             Log.w(TAG, "car unregister: ${t.message}")
         }
         propertyManager = null
+        carConnection.unsubscribe(carUser)
+        carSubscribed = false
         _state.update { it.copy(connected = false) }
     }
 

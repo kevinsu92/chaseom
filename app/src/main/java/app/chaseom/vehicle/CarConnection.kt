@@ -42,6 +42,11 @@ class SharedHandle<T : Any> {
         h?.let { safe { user.onReady(it) } }
     }
 
+    /** The user gets no more callbacks; it already dropped its own managers. */
+    fun remove(user: User<T>) {
+        synchronized(lock) { users.removeAll { it === user } }
+    }
+
     fun ready(handle: T) {
         val (hadOld, snapshot) = synchronized(lock) {
             if (current === handle) return
@@ -90,6 +95,8 @@ class CarConnection(context: Context) {
     val readyCount: Int get() = shared.readyCount
 
     fun subscribe(user: SharedHandle.User<Car>) = shared.add(user)
+
+    fun unsubscribe(user: SharedHandle.User<Car>) = shared.remove(user)
 
     @Synchronized
     fun start() {

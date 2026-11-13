@@ -61,6 +61,9 @@ class CarUxRestrictionSource(private val carConnection: CarConnection) : CarUser
             Log.w(TAG, "CarUxRestrictions stop failed: ${t.message}")
         }
         manager = null
+        carConnection.unsubscribe(this)
+        subscribed = false
+        _requiresDO.value = null
     }
 
     private companion object {

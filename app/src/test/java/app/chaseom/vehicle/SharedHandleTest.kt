@@ -75,4 +75,19 @@ class SharedHandleTest {
         assertEquals(listOf("ready:car", "lost"), b.events)
         assertEquals(2, errors.size)
     }
+
+    // stop() then start(): a removed user gets nothing more, and can be added again.
+    @Test fun removedUserGetsNoCallbacksAndCanRejoin() {
+        val h = SharedHandle<String>(); val a = Rec()
+        h.add(a); h.ready("car"); h.remove(a); h.lost(); h.ready("car")
+        assertEquals(listOf("ready:car"), a.events)
+        h.add(a)
+        assertEquals(listOf("ready:car", "ready:car"), a.events)
+    }
+
+    @Test fun addingTheSameUserTwiceIsIgnored() {
+        val h = SharedHandle<String>(); val a = Rec()
+        h.add(a); h.add(a); h.ready("car")
+        assertEquals(listOf("ready:car"), a.events)
+    }
 }

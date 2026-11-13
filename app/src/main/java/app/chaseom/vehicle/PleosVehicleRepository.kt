@@ -90,7 +90,9 @@ class PleosVehicleRepository(private val carConnection: CarConnection) : Vehicle
             recordError("unregister", t)
         }
         propertyManager = null
-        _state.update { it.copy(connection = ConnectionState.DISCONNECTED) }
+        carConnection.unsubscribe(this)
+        subscribed = false
+        _state.update { it.copy(connection = ConnectionState.DISCONNECTED, gear = GearPosition.UNKNOWN) }
     }
 
     private fun recordError(what: String, t: Throwable?) {
