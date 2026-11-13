@@ -32,6 +32,12 @@ data class CabinState(
     val driverSeatHeat: Int? = null,
     /** Passenger seat heater level; used only by the weather island. */
     val passengerSeatHeat: Int? = null,
+    /** H2 item 10: front passenger seat occupancy (Occupancy.resolve, true = detected or sensor unknown). */
+    val passengerOccupied: Boolean? = null,
+    /** H2 item 10: HVAC dual mode on = passenger zone unsynced from the driver. */
+    val hvacDualOn: Boolean? = null,
+    /** H2 item 10: passenger zone set temperature (C). */
+    val passengerSetTempC: Float? = null,
     // Seats
     val driverBackrest: Int? = null,
     val passengerBackrest: Int? = null,
@@ -54,6 +60,13 @@ data class CabinState(
     /** Front wiper actually wiping (Pleos WiperState.ON). */
     val wiperOn: Boolean? = null,
     val lastError: String? = null,
+    /**
+     * H2 item 8: monotonic time (SystemClock.elapsedRealtime) the car last delivered an SOC value, by listener or read.
+     * null = never stamped (not judged; see [Freshness]).
+     */
+    val socConfirmedAtMs: Long? = null,
+    /** H2 item 8: the same for the climate (power, A/C, fan, set temperature, recirculation, driver seat heat). */
+    val climateConfirmedAtMs: Long? = null,
 ) {
     /** Window positions 0..10; [WINDOW_UNKNOWN] = the car did not report this window. */
     val anyWindowOpen: Boolean?

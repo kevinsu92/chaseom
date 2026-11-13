@@ -297,9 +297,9 @@ object Pleos {
     val colors: PleosColors @Composable get() = LocalPleosColors.current
 }
 
-/** Follows the vehicle day/night mode (uiMode). No in-app theme toggle. */
+/** Follows the vehicle day/night mode (uiMode) and, in round 2, the local clock (NightClock). No in-app theme toggle. */
 @Composable
-fun PleosAppTheme(night: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
+fun PleosAppTheme(night: Boolean = NightClock.isNight(isSystemInDarkTheme(), rememberLocalHour()), content: @Composable () -> Unit) {
     val c = if (night) NightColors else DayColors
     val m3 = if (night) {
         darkColorScheme(
@@ -322,7 +322,7 @@ fun PleosAppTheme(night: Boolean = isSystemInDarkTheme(), content: @Composable (
             outline = c.divider, error = c.negative, onError = c.onStatus, scrim = c.scrim,
         )
     }
-    CompositionLocalProvider(LocalPleosColors provides c) {
+    CompositionLocalProvider(LocalPleosColors provides c, LocalNight provides night) {
         MaterialTheme(colorScheme = m3, typography = M3Typography, shapes = M3Shapes, content = content)
     }
 }

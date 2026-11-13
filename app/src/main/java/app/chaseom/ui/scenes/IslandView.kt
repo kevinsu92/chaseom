@@ -2,11 +2,11 @@ package app.chaseom.ui.scenes
 
 import android.graphics.BitmapFactory
 import android.provider.Settings
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.keyframes
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -49,6 +49,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -113,6 +114,8 @@ internal class H1Set(
     val buoySrc: IntArray = intArrayOf(0, 0, 1, 1),
     /** Flag layer rows drawn (cloth and the top of the pole, no dome), the cloth's last row, the pole's columns. */
     val flagRows: Int = 1, val clothBottom: Int = 0, val poleL: Int = 0, val poleR: Int = 1,
+    /** In-row flag: the pole stands this far right of its slot's centre, behind the buoy (not on the head's line). */
+    val poleShift: Float = 0f,
     /** Tomorrow chip: centre on the dock top and its text size, canvas px. */
     val chipX: Float = 0f, val chipY: Float = 0f, val chipFont: Float = 28f,
 ) {
@@ -122,13 +125,13 @@ internal class H1Set(
         val Large = H1Set(H1Layers.L, 1600f, 40f, 1450f, 82f, // sun higher (108 -> 82)
             batX = 40f, batY = 569f, buoyX = 1466f, buoyY = 569f, buoyAnchor = 0.5f, keepX = 1172f, keepY = 569f, keepAnchor = 0.5f,
             waterY = 480f, h = 502f, buoyX0 = 1012f, buoyPitch = 85f, buoySrc = intArrayOf(0, 0, 30, 56),
-            flagRows = 51, clothBottom = 24, poleL = 7, poleR = 11, chipX = 957f, chipY = 236f, chipFont = 28f)
+            flagRows = 51, clothBottom = 24, poleL = 7, poleR = 11, poleShift = 18f, chipX = 957f, chipY = 236f, chipFont = 28f)
         // Small rail line 1 = battery (start) + buoys (end at 932), line 2 = crates.
         val Small = H1Set(H1Layers.S, 960f, 24f, 836f, 92f, // sun 118 -> 92
             batX = 28f, batY = 503f, buoyX = 932f, buoyY = 503f, buoyAnchor = 1f, keepX = 28f, keepY = 551f, keepAnchor = 0f,
             // Strip 28 canvas = 22 px on screen at the Small picture's 0.79x; chip text 24 px on screen.
             waterY = 456f, h = 484f, buoyX0 = 566f, buoyPitch = 56f, buoySrc = intArrayOf(1, 1, 25, 46),
-            flagRows = 43, clothBottom = 20, poleL = 7, poleR = 9, chipX = 508f, chipY = 252f, chipFont = 30f)
+            flagRows = 43, clothBottom = 20, poleL = 7, poleR = 9, poleShift = 14f, chipX = 508f, chipY = 252f, chipFont = 30f)
         /** Sky above a picture that is shorter than its box, and the sea under its lower 30 % (no seam). */
         val SKY_TOP = Color(0xFFF5F6F8) // The sky top is the page colour (the picture melts into it)
         val SEA_DEEP = Color(0xFF3B536E) // water bottom
@@ -171,6 +174,20 @@ internal fun flagSlotIndex(slot: Float): Int = kotlin.math.ceil(slot - 1e-4f).to
 
 /** S2: canvas x of a (possibly fractional) slot position. */
 internal fun buoyCenter(set: H1Set, pos: Float): Float = set.buoyX0 + (pos - 0.5f) * set.buoyPitch
+
+/**
+ * Canvas x of the flag pole's centre. In the row it stands [H1Set.poleShift] right of the slot centre, so it no longer
+ * continues the buoy head's stick (read as one long head, 04_design/REVIEW_BUILD_G_RELEASE.md #2); drawn behind the
+ * buoy, its foot disappears behind the dome. Out of the row it stands at the real time (no buoy there).
+ */
+internal fun flagPoleX(set: H1Set, place: FlagPlace): Float = buoyCenter(set, place.pos) + if (place.inRow) set.poleShift else 0f
+
+/**
+ * A buoy that comes or goes rises out of / sinks into the sea strip [BUOY_RISE] canvas px while it fades (one cause:
+ * the stay time crossed a 30-minute step; once, then still; MOTION_PRINCIPLES §1.1-1.2). [alpha] 0..1 = how far in.
+ */
+internal fun buoyRise(alpha: Float): Float = (1f - alpha.coerceIn(0f, 1f)) * BUOY_RISE
+internal const val BUOY_RISE = 20f
 
 /** Where the flag stands: [pos] in slot units (1 = first buoy), [inRow] = reached (no plate, behind its buoy). */
 internal data class FlagPlace(val pos: Float, val inRow: Boolean)
@@ -263,7 +280,7 @@ fun IslandPanel(
     } else {
         ""
     }
-    val night = isSystemInDarkTheme()
+    val night = app.chaseom.ui.theme.isNight()
     // Picture -> 16 -> cause line -> 32 -> cards.
     // With cards the whole block must fit the window, so the picture takes only the height
     // left after what is under it (measured), never below 75 % of its natural height; the sky side gives.
@@ -313,12 +330,17 @@ fun IslandPanel(
                 // H1: the sun and its label sit top right, so the toast takes the top-left sky up to the label.
                 var sunLabelLeft by remember { mutableFloatStateOf(Float.NaN) }
                 IslandLabels(ui, set, k, picW.value, boxH.value, shown, sunLiftDp = skyLift.sun * k * set.zoom, animOff = animOff) { sunLabelLeft = it }
-                ui.bar?.let { b -> KeepChip(b.keepKm, ui.hero?.coveredKm, outline = info.crateOutline, night = night, set = set, k = k) }
+                ui.bar?.let { b -> KeepChip(b.keepKm, ui.hero?.coveredKm, outline = info.crateOutline, night = night, set = set, k = k, animOff = animOff) }
                 val toastMax = if (sunLabelLeft.isNaN()) Modifier else Modifier.widthIn(max = with(LocalDensity.current) { sunLabelLeft.toDp() } - 32.dp)
                 Box(Modifier.align(Alignment.TopStart).padding(start = 16.dp).then(toastMax)) { pictureTop() }
             }
         }
-        Column(Modifier.fillMaxWidth()) {
+        // Lines and cards under the picture (fold line, first hint, flag row, swap / air cards) open and close in
+        // 400 ms decelerate instead of pushing the page at once (MOTION_PRINCIPLES §3.5, A-5); the picture never moves.
+        // Under a notice or the receipt, and with animations off, they change at once.
+        val still = animOff || ui.notice != null || ui.receipt != null
+        Column(Modifier.fillMaxWidth().then(if (still) Modifier else Modifier.animateContentSize(
+            tween(Island.FADE_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0f, 0f, 0.2f, 1f))))) {
         // No text on the picture. One caption row under it = legend swatches
         // (picture shapes, no numbers) + the cause chip (always shown) at the right end.
         // Small: the chip goes to a second line.
@@ -382,11 +404,12 @@ fun IslandPanel(
             Spacer(Modifier.height(ChaseomUi.related))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_fan), null,
-                    tint = Color(0xFF4A4E57), modifier = Modifier.size(ChaseomUi.iconInline))
+                    tint = k.text2, modifier = Modifier.size(ChaseomUi.iconInline))
                 Spacer(Modifier.width(ChaseomUi.line))
                 // At the 3-hour cap the time cannot change, so only the island is promised.
                 val hint = if (ui.hero?.overCap == true) R.string.is_hint_first_cap else R.string.is_hint_first
-                Text(stringResource(hint), style = ChaseomUi.caption, color = Color(0xFF4A4E57))
+                // Day text2 = #4A4E57 as before; at night text2 (#4A4E57 on the night page was about 2.2:1).
+                Text(stringResource(hint), style = ChaseomUi.caption, color = k.text2)
             }
         }
         Box(Modifier.fillMaxWidth()) { flagRow() }
@@ -428,7 +451,7 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: 
  * night #F0B850; #E0A030 was 2.27:1) and the chip is filled with an amber tint (F8). Size and place follow the picture's scale [k] (dp per canvas px).
  */
 @Composable
-private fun KeepChip(keepKm: Int, leftKm: Int?, outline: Boolean, night: Boolean, set: H1Set, k: Float) {
+private fun KeepChip(keepKm: Int, leftKm: Int?, outline: Boolean, night: Boolean, set: H1Set, k: Float, animOff: Boolean = false) {
     // F8: at K1 / K2 the chip is also filled amber (a light tint by day, a dark tint at night) so it reads as a warning.
     val bg = when {
         outline && night -> Color(0xFF4A3A1C)
@@ -443,6 +466,11 @@ private fun KeepChip(keepKm: Int, leftKm: Int?, outline: Boolean, night: Boolean
         night -> Color(0xFF4A5263)
         else -> Color(0xFFC9CED6)
     }
+    // Entering / leaving K1 / K2 the fill, text and border fade 400 ms (MOTION_PRINCIPLES 'standard'; no blink).
+    val spec = tween<Color>(if (animOff) 0 else Island.FADE_MS)
+    val bgA by androidx.compose.animation.animateColorAsState(bg, spec, label = "chipBg")
+    val inkA by androidx.compose.animation.animateColorAsState(ink, spec, label = "chipInk")
+    val edgeA by androidx.compose.animation.animateColorAsState(edge, spec, label = "chipEdge")
     val font = with(LocalDensity.current) { (set.chipFont * k).dp.toSp() }
     val chipH = set.chipFont * 44f / 28f * k
     val shape = RoundedCornerShape((chipH / 2f).dp)
@@ -451,11 +479,11 @@ private fun KeepChip(keepKm: Int, leftKm: Int?, outline: Boolean, night: Boolean
         layout(p.width, p.height) {
             p.place(((set.chipX * k).dp.toPx() - p.width / 2f).roundToInt(), ((set.chipY * k).dp.toPx() - p.height / 2f).roundToInt())
         }
-    }.height(chipH.dp).background(bg, shape).border(if (outline) 2.dp else 1.dp, edge, shape)
+    }.height(chipH.dp).background(bgA, shape).border(if (outline) 2.dp else 1.dp, edgeA, shape)
         .padding(horizontal = (16f * k).dp), contentAlignment = Alignment.Center) {
         // K2 (below the keep share): the same km as the line under the hero ("약 29km 남음"), not the target (external #5).
         Text(if (leftKm != null) stringResource(R.string.is_keep_chip_left, leftKm) else stringResource(R.string.is_keep_chip, keepKm), style = ChaseomUi.caption.copy(fontSize = font, lineHeight = font),
-            color = ink, softWrap = false, maxLines = 1)
+            color = inkA, softWrap = false, maxLines = 1)
     }
 }
 
@@ -680,24 +708,28 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
     val inRow = flagPlace?.inRow == true
     // In the row the flag stands behind its slot's buoy (the buoy still counts); out of the row on a thin plate.
     if (withSun && flagPlace != null && inRow) drawFlagS1(set, bmp, "flag_row_l1", flagPlace, flagScale, flagAlpha)
+    // A buoy that comes or goes rises from / sinks into the water (clipped at the resting foot), fading as it moves.
+    val foot = buoyTop(set) + buoySize(set).second
     for (i in 1..IslandInfo.MAX_BUOYS) {
         val was = if (i <= p.buoys) 1f else 0f
         val now = if (i <= cur.buoys) 1f else 0f
-        drawBuoy(set, bmp, i, was + (now - was) * a)
+        val al = was + (now - was) * a
+        if (was == now) drawBuoy(set, bmp, i, al)
+        else clipRect(0f, 0f, set.w, foot) { drawBuoy(set, bmp, i, al, dy = buoyRise(al)) }
     }
     if (withSun && flagPlace != null && !inRow) drawFlagS1(set, bmp, "flag_row_l1", flagPlace, flagScale, flagAlpha)
 }
 
 /** S2: buoy [i] cut out of buoys_n1_l1 and drawn twice its size, its foot 4 px into the sea strip. */
 internal fun DrawScope.drawBuoy(set: H1Set, bmp: (Int) -> ImageBitmap, i: Int, alpha: Float,
-                                filter: androidx.compose.ui.graphics.ColorFilter? = null) {
+                                filter: androidx.compose.ui.graphics.ColorFilter? = null, dy: Float = 0f) {
     if (alpha <= 0.01f) return
     val l = set.layers["buoys_n1_l1"] ?: return
     val src = set.buoySrc
     val (w, h) = buoySize(set)
     drawImage(bmp(l.id), srcOffset = androidx.compose.ui.unit.IntOffset(src[0], src[1]),
         srcSize = androidx.compose.ui.unit.IntSize(src[2] - src[0], src[3] - src[1]),
-        dstOffset = androidx.compose.ui.unit.IntOffset((buoyCenter(set, i) - w / 2f).roundToInt(), buoyTop(set).roundToInt()),
+        dstOffset = androidx.compose.ui.unit.IntOffset((buoyCenter(set, i) - w / 2f).roundToInt(), (buoyTop(set) + dy).roundToInt()),
         dstSize = androidx.compose.ui.unit.IntSize(w.roundToInt(), h.roundToInt()), alpha = alpha, colorFilter = filter)
 }
 
@@ -710,7 +742,7 @@ internal fun DrawScope.drawFlagS1(set: H1Set, bmp: (Int) -> ImageBitmap, name: S
                                   scale: Float, alpha: Float) {
     val l = set.layers[name] ?: return
     val img = bmp(l.id)
-    val cx = buoyCenter(set, place.pos)
+    val cx = flagPoleX(set, place)
     val inRow = place.inRow
     val top = flagTop(set)
     val left = cx - BUOY_SCALE * (set.poleL + set.poleR) / 2f
@@ -792,7 +824,7 @@ fun OnboardingIsland(modifier: Modifier) {
 @Composable
 private fun StillIsland(set: H1Set, pic: H1Pic, modifier: Modifier) {
     val bmp = rememberBitmaps()
-    val night = isSystemInDarkTheme()
+    val night = app.chaseom.ui.theme.isNight()
     Spacer(
         modifier.aspectRatio(set.w / set.h).drawBehind {
             bmp.frame()

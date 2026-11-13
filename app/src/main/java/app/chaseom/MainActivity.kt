@@ -18,4 +18,12 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        // Round 2 P-4: the only point where a refused background start of the stay service is tried again.
+        // onResume, not onStart (eng1 E2): the activity is then resumed and on top, so the background-start
+        // exemption surely applies.
+        (application as PleosApp).container.stay.onScreenForeground()
+    }
 }

@@ -46,6 +46,14 @@ class WordingRulesTest {
         assertEquals("design-rule words: $offenders", emptyMap<String, String>(), offenders)
     }
 
+    // H+calib: the correction line is an estimate mark, never a claim of accuracy.
+    @Test fun calibrationLineIsAnEstimate() {
+        val line = strings.getValue("h_calibrated")
+        assertEquals("이 차 기준으로 보정됨 (추정)", line)
+        assertTrue(line.endsWith("(추정)"))
+        assertFalse(Regex("정확|측정 완료|실측|검증").containsMatchIn(line))
+    }
+
     @Test fun capWordingIsThreeHoursOrMore() {
         assertEquals("3시간 이상", strings["h_hero_cap"]) // shown instead of any value >= 180 min
     }
@@ -91,7 +99,7 @@ class WordingRulesTest {
         assertEquals("%1\$s 깃발", strings.getValue("wf_reaches"))
         assertTrue(strings.getValue("wf_short").contains("(추정)"))
         // S5: the reached line pairs with wf_short; numbers only, no reassurance words.
-        assertEquals("%1\$s 깃발 · 깃발보다 약 %2\$s 길어요 (추정)", strings.getValue("wf_long"))
+        assertEquals("%1\$s 깃발 · 오늘 머물 시간이 깃발보다 약 %2\$s 길어요 (추정)", strings.getValue("wf_long"))
         listOf("여유", "괜찮", "충분", "보장").forEach { assertFalse(it, strings.getValue("wf_long").contains(it)) }
         assertTrue(strings.getValue("wf_short_swap").contains("(추정)"))
         assertEquals("표시만 해요 · 앱은 공조를 바꾸지 않아요", strings.getValue("wf_note"))

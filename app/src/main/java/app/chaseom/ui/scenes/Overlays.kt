@@ -104,7 +104,7 @@ fun ReceiptOverlay(r: Receipt, policy: ModePolicy, actions: StayActions, ui: app
         // The sheet edge is a soft shadow (the scrim is only 25 %).
         Column(
             Modifier.widthIn(max = ChaseomUi.receiptWidthLarge).padding(vertical = 24.dp, horizontal = ChaseomUi.margin(size))
-                .pleosShadow(2, 28.dp, enabled = !androidx.compose.foundation.isSystemInDarkTheme()) // Pleos Level 2 shadow
+                .pleosShadow(2, 28.dp, enabled = !app.chaseom.ui.theme.isNight()) // Pleos Level 2 shadow
                 .clip(ChaseomUi.rContainer).background(k.surface).padding(ChaseomUi.block).verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(ChaseomUi.line),
         ) {

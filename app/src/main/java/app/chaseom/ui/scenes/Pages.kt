@@ -36,6 +36,7 @@ import app.chaseom.stay.AppMode
 import app.chaseom.stay.Page
 import app.chaseom.stay.StaySettings
 import app.chaseom.stay.StayUi
+import app.chaseom.stay.backTarget
 import app.chaseom.ui.theme.BigButton
 import app.chaseom.ui.theme.ButtonKind
 import app.chaseom.ui.theme.ButtonSize
@@ -157,7 +158,7 @@ fun SettingsScene(current: StaySettings, actions: StayActions, modifier: Modifie
     // The same 960 dp reading width as the first-use screen.
     Column(modifier.widthIn(max = ChaseomUi.readableMax).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(PleosDimens.space32)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton76(R.drawable.ic_back, stringResource(R.string.cd_back)) { actions.open(Page.NONE) }
+            IconButton76(R.drawable.ic_back, stringResource(R.string.cd_back)) { actions.open(backTarget(Page.SETTINGS, AppMode.FULL) ?: Page.NONE) }
             Spacer(Modifier.width(PleosDimens.space24))
             Text(stringResource(R.string.s_title), style = ChaseomUi.title, color = c.textPrimary)
         }
@@ -212,7 +213,7 @@ fun AboutScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(PleosDimens.space24)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton76(R.drawable.ic_back, stringResource(R.string.cd_back)) {
-                actions.open(if (ui.policy.mode == AppMode.FULL) Page.SETTINGS else Page.NONE)
+                actions.open(backTarget(Page.ABOUT, ui.policy.mode) ?: Page.NONE)
             }
             Spacer(Modifier.width(PleosDimens.space24))
             Text(stringResource(R.string.s_about), style = ChaseomUi.title, color = c.textPrimary)
@@ -223,8 +224,10 @@ fun AboutScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
             Small(stringResource(R.string.manual_source))
         }
         Body(stringResource(if (ui.policy.mode == AppMode.FULL) R.string.about_fuel_ev else R.string.about_fuel_reduced), strong = true)
-        Body(stringResource(R.string.about_model))
-        Small(stringResource(R.string.about_coeff))
+        // Round 2 (d): the about text follows the outside-temperature rule the build uses.
+        val full = app.chaseom.BuildConfig.OUTSIDE_FULL
+        Body(stringResource(if (full) R.string.about_model_full else R.string.about_model))
+        Small(stringResource(if (full) R.string.about_coeff_full else R.string.about_coeff))
         Body(stringResource(R.string.about_v2l))
         if (!ui.backrestSupported) Small(stringResource(R.string.about_backrest_none))
         Box(Modifier.height(PleosDimens.space24))

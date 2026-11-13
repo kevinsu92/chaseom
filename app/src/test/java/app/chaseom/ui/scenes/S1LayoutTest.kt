@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import androidx.compose.ui.graphics.toArgb
 
 /** Build G S1 (three always-on symbols) and S2 (buoys and flag at twice their size), 04_design/S1_SPEC.md v3. */
 class S1LayoutTest {
@@ -65,7 +66,7 @@ class S1LayoutTest {
         // UXR C7: >= 8 px from the picture's right edge.
         for (set in sets) {
             assertTrue(buoyCenter(set, 6) + buoySize(set).first / 2f <= set.w - 8f)
-            val flagLeft = buoyCenter(set, 6) - BUOY_SCALE * (set.poleL + set.poleR) / 2f
+            val flagLeft = flagPoleX(set, FlagPlace(6f, inRow = true)) - BUOY_SCALE * (set.poleL + set.poleR) / 2f
             assertTrue(flagLeft + BUOY_SCALE * clothRight.getValue(set) <= set.w - 8f)
             assertTrue(flagTop(set) >= 8f)
         }
@@ -118,5 +119,56 @@ class S1LayoutTest {
         // No "약": only "(추정)" sticks to the word before it.
         assertEquals("비슷한 체감 카드로 바꾸면 +15분${nb}(추정)", keepPhrases("비슷한 체감 카드로 바꾸면 +15분 (추정)"))
         assertEquals("오후 7:35 깃발 · 오늘 머물 시간이 깃발보다 약 2시간 29분 짧아요 (추정)", line.replace(nb, ' '))
+    }
+
+    @Test fun inRowPoleStandsBesideTheHeadAndBehindTheDome() {
+        // REVIEW_BUILD_G_RELEASE #2: the pole no longer continues the head's stick. Measured from buoys_n1_l1
+        // (drawn 2x): head ball half-width L 10 / S 8, stick half-width 2, dome half-width L 30 / S 24.
+        val ball = mapOf(H1Set.Large to 10f, H1Set.Small to 8f)
+        for (set in sets) {
+            val off = flagPoleX(set, FlagPlace(2f, inRow = true)) - buoyCenter(set, 2)
+            val halfPole = BUOY_SCALE * (set.poleR - set.poleL) / 2f
+            assertTrue(off - halfPole - 2f >= 8f)                    // >= 8 px of sky from the stick
+            assertTrue(off - halfPole - ball.getValue(set) >= 4f)    // and clear of the head ball
+            assertTrue(off + halfPole <= buoySize(set).first / 2f)   // the foot is hidden behind the dome
+        }
+        assertEquals(18f, H1Set.Large.poleShift); assertEquals(14f, H1Set.Small.poleShift)
+        // Out of the row the pole stays at the real time.
+        assertEquals(buoyCenter(H1Set.Large, 5.2f), flagPoleX(H1Set.Large, FlagPlace(5.2f, inRow = false)))
+    }
+
+    @Test fun aComingBuoyRisesOutOfTheWaterAndEndsStill() {
+        assertEquals(0f, buoyRise(1f))          // at rest: exactly where a still buoy is drawn
+        assertEquals(BUOY_RISE, buoyRise(0f))   // start: fully under the strip
+        for (set in sets) {
+            // The clip line is the resting foot, 4 px into the sea strip: the moving buoy's lower part stays under water.
+            assertEquals(set.waterY + 4f, buoyTop(set) + buoySize(set).second, 0.001f)
+            // A short rise that reads as 'came up' (>= 12 px on screen), not a dive (<= a quarter of the buoy).
+            assertTrue(BUOY_RISE * screen.getValue(set) >= 12f)
+            assertTrue(BUOY_RISE <= buoySize(set).second / 4f)
+        }
+    }
+
+    private fun lum(c: androidx.compose.ui.graphics.Color): Double {
+        fun ch(v: Float) = if (v <= 0.03928f) v / 12.92 else Math.pow((v + 0.055) / 1.055, 2.4)
+        return 0.2126 * ch(c.red) + 0.7152 * ch(c.green) + 0.0722 * ch(c.blue)
+    }
+    private fun ratio(a: androidx.compose.ui.graphics.Color, b: androidx.compose.ui.graphics.Color): Double {
+        val (x, y) = lum(a) to lum(b)
+        return (maxOf(x, y) + 0.05) / (minOf(x, y) + 0.05)
+    }
+
+    @Test fun swapCardTextReadsAtNight() {
+        // REVIEW_BUILD_G_RELEASE #1: the day ink #4A4E57 on the night card #24272C was 1.80:1.
+        val night = app.chaseom.ui.theme.ChaseomUi.Night
+        val day = app.chaseom.ui.theme.ChaseomUi.Day
+        assertEquals(1.80, ratio(androidx.compose.ui.graphics.Color(0xFF4A4E57), night.surface), 0.02)
+        assertEquals(0xFFA0A5AD.toInt(), swapTailInk(night).toArgb())
+        assertEquals(6.05, ratio(swapTailInk(night), night.surface), 0.02)
+        assertEquals(0xFF4A4E57.toInt(), swapTailInk(day).toArgb())
+        assertTrue(ratio(swapTailInk(day), day.surface) >= 4.5)
+        // Same card's footer "개인차 있음 · 계산 근거는…" (text3) and the first-stay hint (text2 on the page) at night.
+        assertTrue(ratio(night.text3, night.surface) >= 4.5)
+        assertTrue(ratio(night.text2, night.bg) >= 4.5)
     }
 }

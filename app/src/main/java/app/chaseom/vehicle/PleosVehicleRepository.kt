@@ -4,6 +4,8 @@ import android.car.Car
 import android.car.VehiclePropertyIds
 import android.car.hardware.CarPropertyValue
 import android.car.hardware.property.CarPropertyManager
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import app.chaseom.Probe
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +31,10 @@ class PleosVehicleRepository(private val carConnection: CarConnection) : Vehicle
 
     private var subscribed = false
     @Volatile private var propertyManager: CarPropertyManager? = null
+    /** Round 2 G5: one delayed retry of a failed registration. */
+    private val readyRetry = ReadyRetry()
+    @Volatile private var currentHandle: Car? = null
+    private val retryHandler by lazy { Handler(Looper.getMainLooper()) }
     private val gearCallback = object : CarPropertyManager.CarPropertyEventCallback {
         override fun onChangeEvent(value: CarPropertyValue<*>) {
             // A late event from a manager dropped by onLost() must not bring back PARK / CONNECTED.
@@ -69,15 +75,24 @@ class PleosVehicleRepository(private val carConnection: CarConnection) : Vehicle
             if (p != null) {
                 _state.update { it.copy(gear = gearFromProperty(p.status, p.value), connection = ConnectionState.CONNECTED, lastError = null) }
             }
+            readyRetry.reset()
         } catch (t: Throwable) {
+            propertyManager = null
             _state.update { it.copy(gear = GearPosition.UNKNOWN, connection = ConnectionState.FAILED) }
             recordError("gear", t)
+            // G5: one more try on this same connection, unless it is lost or replaced meanwhile.
+            if (readyRetry.onFailure()) {
+                currentHandle = handle
+                retryHandler.postDelayed({ if (currentHandle === handle && propertyManager == null) onReady(handle) }, ReadyRetry.DELAY_MS)
+            }
         }
     }
 
     /** Car service crashed or is restarting: old managers are invalid, gear is unknown until it is back. */
     @Synchronized
     override fun onLost() {
+        currentHandle = null
+        readyRetry.reset()
         propertyManager = null
         _state.update { it.copy(gear = GearPosition.UNKNOWN, connection = ConnectionState.CONNECTING) }
     }

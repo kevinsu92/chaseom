@@ -11,9 +11,30 @@ data class ClimateSetting(
     val acOn: Boolean?,
     val recircOn: Boolean? = null,
     val driverSeatHeat: Int?,
-    /** Outside temperature from the car (AAOS ENV_OUTSIDE_TEMPERATURE); used only when colder than -10 C. */
+    /** Outside temperature from the car (AAOS ENV_OUTSIDE_TEMPERATURE); how it is used depends on [outsideMode]. */
     val outsideC: Float? = null,
+    /** Round 2 (d): which outside-temperature rule the heating term uses. Default is the build G rule. */
+    val outsideMode: OutsideMode = OutsideMode.COLD_ONLY,
+    /**
+     * H2 item 10: the passenger zone and the passenger seat heater count only when [passengerCounted] (a front
+     * passenger is detected, or the passenger zone is unsynced from the driver). Otherwise both are ignored, as before.
+     */
+    val passengerCounted: Boolean = false,
+    val passengerSeatHeat: Int? = null,
+    /** The passenger zone is unsynced (HVAC dual on). Only then can its set temperature differ from the driver's. */
+    val passengerZoneUnsynced: Boolean = false,
+    /** Passenger zone set temperature; used only when [passengerZoneUnsynced] and warmer than the driver's. */
+    val passengerSetTempC: Float? = null,
 )
+
+/**
+ * How the heating term uses the car's outside temperature.
+ *  - [COLD_ONLY] (build G, default): only a reading colder than -10 C; otherwise -10 C.
+ *  - [FULL] (round 2 (d), behind BuildConfig.OUTSIDE_FULL, off by default): any valid reading, clamped to
+ *    [EnergyModel.FULL_OUTSIDE_MAX_C] so a mild or hot reading never drops heating below the mild-day evidence.
+ *    Unreadable or out of range is -10 C in both modes.
+ */
+enum class OutsideMode { COLD_ONLY, FULL }
 
 /**
  * Draw model for a parked, powered EV. Every number on screen built from it is shown as "(추정)".
@@ -45,9 +66,23 @@ object EnergyModel {
      * was taken at -10 C, the linear model is unverified on mild days, and the estimate must err short.
      * Unreadable or out of range -> -10 C.
      */
-    fun heatOutsideC(s: ClimateSetting): Float = minOf(validOutsideC(s.outsideC) ?: HEAT_OUTSIDE_C, HEAT_OUTSIDE_C)
+    fun heatOutsideC(s: ClimateSetting): Float {
+        val reading = validOutsideC(s.outsideC) ?: return HEAT_OUTSIDE_C
+        return when (s.outsideMode) {
+            OutsideMode.COLD_ONLY -> minOf(reading, HEAT_OUTSIDE_C)
+            OutsideMode.FULL -> minOf(reading, FULL_OUTSIDE_MAX_C)
+        }
+    }
+
+    /**
+     * [OutsideMode.FULL] upper clamp. Above it the heating term stays at its 15 C value (22 C set: 0.50 kW).
+     * Why 15 C: the only mild-day record (ENERGY_MODEL.md M1, Ioniq 5 N, 23 C set, about 0.48 kW total) must
+     * still come out larger in the app. At 15 C a 23 C set gives 0.30 + 0.575 + 0.09 = 0.97 kW (2.0x M1).
+     * Without the clamp a reading at or above the set temperature gives heating 0 (0.39 kW, 0.81x M1: errs long).
+     */
+    const val FULL_OUTSIDE_MAX_C = 15f
     const val HEAT_REFERENCE_DELTA = 32f
-    /** Cooling with A/C on, replaces heating (owner reports 1-2 kW, upper value). */
+    /** Cooling with A/C on (owner reports 1-2 kW, upper value). With heating demand the larger of the two counts. */
     const val AC_KW = 2.0f
     /** Recirculation while heating: steady heating load 4.32 -> 3.29 kW (-24 %). */
     const val RECIRC_HEAT_FACTOR = 0.76f
@@ -70,17 +105,49 @@ object EnergyModel {
     fun seatKw(level: Int?): Float = SEAT_HEAT_KW[(level ?: 0).coerceIn(0, 3)]
 
     fun drawKw(s: ClimateSetting): Float {
-        val seat = seatKw(s.driverSeatHeat)
+        val seat = seatKw(s.driverSeatHeat) + if (s.passengerCounted) seatKw(s.passengerSeatHeat) else 0f
         if (!s.powerOn) return BASE_KW + seat
         val fan = (s.fanSpeed ?: 0).coerceIn(0, 8) * FAN_KW_PER_STEP
-        val cabin = if (s.acOn == true) {
-            AC_KW
-        } else {
-            val t = s.setTempC ?: 22f
-            val heat = (HEAT_KW_AT_22C * (t - heatOutsideC(s)) / HEAT_REFERENCE_DELTA).coerceAtLeast(0f)
-            if (s.recircOn == true) heat * RECIRC_HEAT_FACTOR else heat
+        val heat = heatKw(s)
+        // H2 (external review §11 item 7): with A/C on, heating is still counted when the cabin needs heat. Before,
+        // A/C replaced heating with 2.0 kW, so a winter A/C+heat stay read 13-53 % long (2.3-3.4 kW heating vs 2.0).
+        // max(heat, cool), not heat + a compressor share: it closes exactly that gap with the two sourced terms and
+        // adds no new coefficient (no source gives the compressor share of a dehumidifying winter run).
+        val cabin = when {
+            s.acOn != true -> heat
+            heatingDemand(s) -> maxOf(heat, AC_KW)
+            else -> AC_KW
         }
         return BASE_KW + cabin + fan + seat
+    }
+
+    /** Heating term at the set temperature (recirculation applied); the outside rule is [heatOutsideC]. */
+    fun heatKw(s: ClimateSetting): Float {
+        val t = heatSetC(s)
+        val heat = (HEAT_KW_AT_22C * (t - heatOutsideC(s)) / HEAT_REFERENCE_DELTA).coerceAtLeast(0f)
+        return if (s.recircOn == true) heat * RECIRC_HEAT_FACTOR else heat
+    }
+
+    /**
+     * The cabin needs heat: the car's outside reading is below the set temperature. With no valid reading the
+     * season is unknown, so it counts as true and A/C takes the larger term (the estimate errs short).
+     * A summer reading (outside at or above the set temperature) keeps cooling alone, as before.
+     */
+    fun heatingDemand(s: ClimateSetting): Boolean {
+        val outside = validOutsideC(s.outsideC) ?: return true
+        return outside < heatSetC(s)
+    }
+
+    /**
+     * Set temperature the heating term uses. The 2.3 kW coefficient holds the whole cabin at one set point (zones
+     * synced; a synced passenger zone follows the driver, so its own reading is ignored). An unsynced passenger zone
+     * set warmer than the driver's raises it to the two zones' mean.
+     * A colder passenger zone is not used to lower it: the estimate keeps erring short.
+     */
+    fun heatSetC(s: ClimateSetting): Float {
+        val t = s.setTempC ?: 22f
+        val p = s.passengerSetTempC
+        return if (s.passengerZoneUnsynced && p != null && p > t) (t + p) / 2f else t
     }
 
     fun keepPercent(keepKm: Int, capacityKwh: Float, kmPerKwh: Float): Float {
@@ -122,10 +189,16 @@ object EnergyModel {
     /** H·X: X1..X3, biggest gain >= [MIN_GAIN_MINUTES], skipping [dismissed]. */
     fun exchange(
         soc: Int, capacityKwh: Float, keepPercent: Float, current: ClimateSetting, dismissed: Set<ExchangeRule>,
+        /** H+calib: the per-car factor (Calibration.factor); 1 = model only. */
+        factor: Float = 1f,
     ): Exchange? {
         // Gains are measured on the 3-hour-capped values. Already at/above the cap -> gain 0 -> no card.
-        fun minutes(s: ClimateSetting) = minutesToKeep(soc, keepPercent, capacityKwh, drawKw(s)).coerceAtMost(DISPLAY_CAP_MINUTES)
+        fun minutes(s: ClimateSetting) = minutesToKeep(soc, keepPercent, capacityKwh, drawKw(s) * factor).coerceAtMost(DISPLAY_CAP_MINUTES)
         val base = minutes(current)
+        // Round 2 (d): the K1 banner (under NEAR_KEEP_MINUTES) and a swap card never show together (Small screen).
+        // Under the build G rule no card qualifies there anyway (OutsideTempGapTest); in OutsideMode.FULL, A/C off on
+        // a mild day can (0 C, 23 C, A/C on, SOC 11 %: X3 +12 min at 25 min left), so the rule is now explicit.
+        if (base < NEAR_KEEP_MINUTES) return null
         val temp = current.setTempC
         val candidates = buildList {
             if (current.powerOn && temp != null && temp >= 23f && (current.driverSeatHeat ?: 0) < 2) {
@@ -143,4 +216,6 @@ object EnergyModel {
     }
 
     const val MIN_GAIN_MINUTES = 10
+    /** Below this many minutes left the K1 "near tomorrow's share" banner shows (StayEngine). */
+    const val NEAR_KEEP_MINUTES = 30
 }

@@ -9,7 +9,8 @@ package app.chaseom.stay
  * - The flag can never be later than now + 3 hours (the same 3-hour cap as the hero).
  * - At night (N2 hours) there is no flag: the night notice speaks instead.
  * - Display only: the app never changes the climate to reach the flag.
- * - The choice is kept in memory for this stay only; it is never saved.
+ * - The choice belongs to this stay only. Round 2 C-4: it is saved locally with the stay start
+ *   ([WaitFlagRecord]) so a process killed during the stay brings it back; a different stay drops it.
  * - No "you are fine until then" wording: a reached flag says only that the band passes it (estimate).
  */
 data class WaitFlag(
@@ -125,9 +126,9 @@ object WaitFlags {
         return f.copy(airQuiet = true)
     }
 
-    /** Null when there is nothing to show: no flag, the flag time has passed, night, or no hero. */
+    /** Null when there is nothing to show: no flag, the flag time has passed, night, or no hero (or an unconfirmed one). */
     fun forecast(flag: WaitFlag?, nowMs: Long, hero: Hero?, exchange: Exchange?, night: Boolean): WaitForecast? {
-        if (flag == null || night || hero == null) return null
+        if (flag == null || night || hero == null || hero.unconfirmed) return null
         val remainingMs = flag.atMs - nowMs
         if (remainingMs <= 0) return null
         val remaining = ((remainingMs + 59_999L) / 60_000L).toInt().coerceIn(1, MAX_MINUTES)
@@ -146,5 +147,34 @@ object WaitFlags {
             shortMinutes = remaining - have,
             swapGainMinutes = exchange?.gainMinutes,
         )
+    }
+}
+
+/**
+ * Round 2 C-4 (05_qa/PLEOS_COMPLIANCE_G.md): the wait flag as saved next to the running stay, so it survives a
+ * process kill within the same stay (Pleos: "백그라운드로 이동했다가 돌아온 경우, 마지막 사용 중이던 상태가 복원되어야
+ * 합니다"). Stored as one local string; nothing leaves the car.
+ *
+ * Both times are monotonic (elapsedRealtime), like the stay start, so they stay valid across a process restart in the
+ * same boot. After a reboot the stay itself is not restored, so the flag is dropped with it ([belongsTo]).
+ */
+data class WaitFlagRecord(val stayStartMs: Long, val flag: WaitFlag) {
+    fun encode(): String = "$VERSION,$stayStartMs,${flag.atMs},${flag.wallMs}"
+
+    /** The flag is shown only in the stay it was planted in. */
+    fun belongsTo(sessionStartMs: Long?): Boolean = sessionStartMs != null && sessionStartMs == stayStartMs
+
+    companion object {
+        private const val VERSION = 1
+
+        /** Null for anything malformed or from another format version: a lost flag is safe, a wrong one is not. */
+        fun decode(raw: String?): WaitFlagRecord? {
+            val p = raw?.split(',') ?: return null
+            if (p.size != 4 || p[0].toIntOrNull() != VERSION) return null
+            val start = p[1].toLongOrNull()?.takeIf { it > 0 } ?: return null
+            val at = p[2].toLongOrNull()?.takeIf { it > start } ?: return null
+            val wall = p[3].toLongOrNull()?.takeIf { it > 0 } ?: return null
+            return WaitFlagRecord(start, WaitFlag(atMs = at, wallMs = wall))
+        }
     }
 }

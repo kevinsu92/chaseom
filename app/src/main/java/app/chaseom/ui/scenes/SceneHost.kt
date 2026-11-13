@@ -1,5 +1,6 @@
 package app.chaseom.ui.scenes
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +12,7 @@ import androidx.compose.ui.Modifier
 import app.chaseom.AppContainer
 import app.chaseom.stay.AppMode
 import app.chaseom.stay.Page
+import app.chaseom.stay.backTarget
 import app.chaseom.ui.theme.Pleos
 import app.chaseom.ui.theme.PleosDimens
 
@@ -36,6 +38,10 @@ fun SceneHost(container: AppContainer) {
             if (ui.connecting) ConnectingScene() else GlanceScene(firstRun = stay.firstRun)
             return@Box
         }
+        // Round 2 C-2: system / CCP Back goes one page back first (Settings -> stay, About -> Settings);
+        // only on the top screen does it fall through to the platform (Hide).
+        val back = backTarget(page, ui.policy.mode)
+        BackHandler(enabled = back != null) { back?.let(actions::open) }
         val content = Modifier.fillMaxSize()
             .padding(horizontal = PleosDimens.marginWide)
             .padding(top = PleosDimens.safeTop, bottom = PleosDimens.safeBottom)

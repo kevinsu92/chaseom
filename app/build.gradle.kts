@@ -39,6 +39,9 @@ android {
         resValue("string", "app_name", appLabel)
         // The rear-seat mapping is checked per Pleos SDK version (cabin/Occupancy.kt).
         buildConfigField("String", "PLEOS_VEHICLE_SDK", "\"${libs.versions.pleosVehicle.get()}\"")
+        // Round 2 (d): use the car's outside temperature at every temperature (EnergyModel OutsideMode.FULL).
+        // Off by default (build G rule: only colder than -10 C). -Poutside.full=true turns it on.
+        buildConfigField("boolean", "OUTSIDE_FULL", (findProperty("outside.full") ?: "false").toString())
     }
 
     // AAOS Car API (CarUxRestrictionsManager), provided by the platform at runtime.
@@ -112,4 +115,17 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+}
+
+// Platform review E-1 (round 2): a release APK must not ship with OUTSIDE_FULL on while the README and the
+// proposal say "outside temperature only when colder than -10 C". Any Release task with -Poutside.full=true fails.
+// Turning (d) on for release is a deliberate change: drop this check together with the README/proposal update.
+val outsideFullRequested = (findProperty("outside.full") ?: "false").toString().toBoolean()
+gradle.taskGraph.whenReady {
+    val releaseTasks = allTasks.filter { it.project == project && it.name.contains("Release") }
+    if (outsideFullRequested && releaseTasks.isNotEmpty()) {
+        throw GradleException(
+            "outside.full=true is not allowed in a release build (platform E-1): ${releaseTasks.first().name}",
+        )
+    }
 }

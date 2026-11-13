@@ -89,6 +89,50 @@ class StayServiceStateTest {
         assertEquals(AfterStart.KEEP_RUNNING, s.onStartCommand(true))
     }
 
+    // ---- Round 2, review S5: scenario-table rows and S2 paths not covered above ----
+
+    // "Duplicate start" row: two accepted starts, two onStartCommand calls, one stop ends it.
+    @Test fun duplicateStartIsHarmless() {
+        val s = StayServiceState()
+        s.onStartAccepted(); s.onStartAccepted()
+        assertEquals(AfterStart.KEEP_RUNNING, s.onStartCommand(true))
+        assertEquals(AfterStart.KEEP_RUNNING, s.onStartCommand(true))
+        assertEquals(StopAction.STOP_SERVICE_NOW, s.stop())
+        assertEquals(StopAction.NONE, s.stop())
+    }
+
+    // S2: a failed startForeground after a pending stop; the late destroy of that instance changes nothing.
+    @Test fun failureThenLateDestroyStaysClean() {
+        val s = StayServiceState()
+        s.onStartAccepted(); s.stop()
+        assertEquals(AfterStart.STOP_FAILED, s.onStartCommand(false))
+        s.onDestroy()
+        assertFalse(s.requested || s.foreground || s.pendingStop)
+    }
+
+    // S2: a failure while a newer start is already queued resets that start too; the controller's next start works.
+    @Test fun failureWithQueuedStartRecovers() {
+        val s = StayServiceState()
+        s.onStartAccepted(); s.onStartAccepted()
+        assertEquals(AfterStart.STOP_FAILED, s.onStartCommand(false))
+        assertEquals(StopAction.NONE, s.stop()) // nothing left to stop in D
+        s.onStartAccepted()
+        assertEquals(AfterStart.KEEP_RUNNING, s.onStartCommand(true))
+        assertEquals(StopAction.STOP_SERVICE_NOW, s.stop())
+    }
+
+    // S1 + S4 together: deferred stop, a new start before the old destroy, then D again: never left in the foreground.
+    @Test fun neverForegroundInDriveAfterAnyFlicker() {
+        val s = StayServiceState()
+        s.onStartAccepted(); s.stop()
+        assertEquals(AfterStart.STOP_AFTER_FOREGROUND, s.onStartCommand(true))
+        s.onStartAccepted()
+        s.onDestroy()
+        assertEquals(AfterStart.KEEP_RUNNING, s.onStartCommand(true))
+        assertEquals(StopAction.STOP_SERVICE_NOW, s.stop())
+        assertFalse(s.foreground)
+    }
+
     // S4: the deferred path tells the caller to remove the notification and stop, never to keep running in D.
     @Test fun deferredStopNeverKeepsRunning() {
         val s = StayServiceState()

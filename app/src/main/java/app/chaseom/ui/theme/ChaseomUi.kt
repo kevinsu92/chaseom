@@ -36,13 +36,42 @@ object ChaseomUi {
     private val BodyRole = Base.copy(fontWeight = FontWeight.Normal)
     private val LabelRole = Base.copy(fontWeight = FontWeight.Medium)
 
+    /**
+     * H2 (round 2, ISO 15008-level glance): the three key outputs read at a glance in the car. Their sizes live here,
+     * in one place, as design set them (04_design/H2_type_sizes.md). Large = full window, Small = the 841 dp split.
+     */
+    object Key {
+        // Hero number: unchanged (already 30.5'/23.7' of arc at 750 mm on a 14.6" screen).
+        const val HERO_L = 72; const val HERO_S = 56; const val HERO_LINE_L = 80; const val HERO_LINE_S = 64
+        // "머물 수 있어요" after the number: 32/26 -> 40/36 (part of the hero group).
+        const val TAIL_L = 40; const val TAIL_S = 36; const val TAIL_LINE_L = 48; const val TAIL_LINE_S = 44
+        // ±분 toast: 24 -> 36 (17.1' on 14.6", ~20' on 17"; ISO 15008 minimum 16', recommended 20'). Pill min 48 dp grows.
+        // Large line 40 / vertical padding 4 (design §5): a 2-line toast is 88 dp beside the 80 dp hero row, so it reaches
+        // 4 dp into the 8 dp gaps above and below and touches nothing. One line stays 48 dp (the minimum).
+        const val TOAST_L = 36; const val TOAST_S = 36; const val TOAST_LINE_L = 40; const val TOAST_LINE_S = 44
+        const val TOAST_H_L = 48; const val TOAST_H_S = 48; const val TOAST_PAD_V_L = 4; const val TOAST_PAD_V_S = 7
+        // Flag line and its swap line under it: 26 -> 36.
+        const val FLAG_L = 36; const val FLAG_S = 36; const val FLAG_LINE_L = 44; const val FLAG_LINE_S = 44
+    }
+
     /** Headline: hero number "약 2시간 47분". The one display-size text. */
-    fun hero(s: Size) = Headline.copy(fontSize = if (s == Size.Large) 72.sp else 56.sp, lineHeight = if (s == Size.Large) 80.sp else 64.sp,
-        letterSpacing = (-0.5).sp)
+    fun hero(s: Size) = Headline.copy(fontSize = (if (s == Size.Large) Key.HERO_L else Key.HERO_S).sp,
+        lineHeight = (if (s == Size.Large) Key.HERO_LINE_L else Key.HERO_LINE_S).sp, letterSpacing = (-0.5).sp)
+    /** The ±분 dial toast text (SemiBold). */
+    fun toast(s: Size) = LabelRole.copy(fontSize = (if (s == Size.Large) Key.TOAST_L else Key.TOAST_S).sp,
+        lineHeight = (if (s == Size.Large) Key.TOAST_LINE_L else Key.TOAST_LINE_S).sp, fontWeight = FontWeight.SemiBold)
+    fun toastHeight(s: Size): Dp = (if (s == Size.Large) Key.TOAST_H_L else Key.TOAST_H_S).dp
+    fun toastPadV(s: Size): Dp = (if (s == Size.Large) Key.TOAST_PAD_V_L else Key.TOAST_PAD_V_S).dp
+    /** The flag line "7:00 깃발 · 오늘 머물 시간이 깃발보다 약 n 길어요 (추정)" (SemiBold). */
+    fun flagLine(s: Size) = BodyRole.copy(fontSize = (if (s == Size.Large) Key.FLAG_L else Key.FLAG_S).sp,
+        lineHeight = (if (s == Size.Large) Key.FLAG_LINE_L else Key.FLAG_LINE_S).sp, fontWeight = FontWeight.SemiBold)
+    /** The swap line under a short flag ("자리를 바꾸면 …"), same size, Regular. */
+    fun flagSub(s: Size) = flagLine(s).copy(fontWeight = FontWeight.Normal)
     /** K2 hero sentence "내일 몫을 쓰고 있어요". */
     fun heroSentence(s: Size) = hero(s).copy(fontSize = if (s == Size.Large) 56.sp else 44.sp, lineHeight = if (s == Size.Large) 64.sp else 52.sp)
     /** "머물 수 있어요" after the number, on its baseline. */
-    fun heroTail(s: Size) = TitleRole.copy(fontSize = if (s == Size.Large) 32.sp else 26.sp, lineHeight = 40.sp)
+    fun heroTail(s: Size) = TitleRole.copy(fontSize = (if (s == Size.Large) Key.TAIL_L else Key.TAIL_S).sp,
+        lineHeight = (if (s == Size.Large) Key.TAIL_LINE_L else Key.TAIL_LINE_S).sp)
     /** "(추정)" = 40 % of the hero, Regular, text3. Same size wherever it follows a hero.
      *  Every "(추정)" stays (17 lines, all different estimates). text3 #6E727B passes only on bg #F7F8FA / white (4.54:1);
      *  on any darker grey surface use text2. */
@@ -81,7 +110,7 @@ object ChaseomUi {
 
     /* ---------------------------------------------------------------- Sizes */
     val bannerHeight = 56.dp; val bannerBar = 6.dp; val bannerIcon = 28.dp; val bannerGap = 8.dp
-    val toastHeight = 48.dp; val dirCircle = 32.dp; val toastDirCircle = 28.dp   // toast 48 fixed, text = caption 24 SemiBold
+    val dirCircle = 32.dp; val toastDirCircle = 28.dp   // toast height and text: toastHeight(s) / toast(s), Key above
     val buttonHeight = 64.dp; val pillHeight = 48.dp; val touchMin = 76.dp   // visual 64 / 48, hit area always 76
     val cardBar = 8.dp; val cardPadH = 32.dp; val cardPadV = 24.dp; val cardOutline = 1.dp
     val iconInline = 28.dp; val iconPoint = 36.dp; val iconPointCircle = 64.dp; val iconButton = 40.dp; val glanceIcon = 160.dp

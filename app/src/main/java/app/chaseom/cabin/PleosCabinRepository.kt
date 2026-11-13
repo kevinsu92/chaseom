@@ -13,6 +13,7 @@ import ai.pleos.playground.vehicle.constant.control.WiperSwitch
 import ai.pleos.playground.vehicle.listener.DoorPositionListener
 import ai.pleos.playground.vehicle.listener.EvBatteryStateOfChargeListener
 import ai.pleos.playground.vehicle.listener.HvacAcStateListener
+import ai.pleos.playground.vehicle.listener.HvacDualStateListener
 import ai.pleos.playground.vehicle.listener.HvacFanSpeedListener
 import ai.pleos.playground.vehicle.listener.HvacPowerStateListener
 import ai.pleos.playground.vehicle.listener.HvacRecirculationStateListener
@@ -26,6 +27,7 @@ import android.car.VehiclePropertyIds
 import android.car.hardware.CarPropertyValue
 import android.car.hardware.property.CarPropertyManager
 import android.content.Context
+import android.os.SystemClock
 import android.util.Log
 import app.chaseom.BuildConfig
 import app.chaseom.Probe
@@ -63,14 +65,25 @@ class PleosCabinRepository(
     override val source = DataSource.PLEOS_SDK
 
     private var vehicle: Vehicle? = null
-    private var propertyManager: CarPropertyManager? = null
+    @Volatile private var propertyManager: CarPropertyManager? = null
     private var carSubscribed = false
 
     // Rear occupancy: mapped by the verified Pleos SDK version (see Occupancy).
     @Volatile private var pleosRearLeft: Boolean? = null
     @Volatile private var pleosRearRight: Boolean? = null
     private var pollJob: Job? = null
+    /** Round 2 G2: throttles the poll while the Pleos service gives no answer at all. */
+    private val pollWatchdog = PollWatchdog()
+    /** Round 2 G3: a deferred door apply never overwrites a newer door event. */
+    private val doorEvents = LatestEvent()
     private val pollGate = PollGate(start = { vehicle?.let { startPolling(it) } }, stop = ::stopPolling)
+    /** H2 item 8: when to release and re-create the SDK after a long silence (see [ReconnectPolicy]). */
+    private val reconnect = ReconnectPolicy()
+    /** H2 item 8: retry delays when `Vehicle.initialize()` itself fails (5 s, 15 s, then every 60 s). */
+    private val initRetry = Backoff(listOf(5_000L, 15_000L, 60_000L))
+    private var initRetryJob: Job? = null
+    /** Monotonic clock for the freshness stamps; the stay engine uses the same one (StayController.clock). */
+    private val clock: () -> Long = SystemClock::elapsedRealtime
     private var powerArea: SeatArea? = null
     private var acArea: SeatArea? = null
     private var fanArea: SeatArea? = null
@@ -100,33 +113,33 @@ class PleosCabinRepository(
 
     private val socListener = object : EvBatteryStateOfChargeListener {
         override fun onEvBatteryStateOfChargeUpdated(value: Int?) =
-            set("soc", value) { it.copy(socPercent = value, socReadable = value != null) }
+            set("soc", value) { it.copy(socPercent = value, socReadable = value != null).socSeen(value) }
         override fun onFailed(e: Exception) = fail("soc", e)
     }
     private val powerListener = object : HvacPowerStateListener {
-        override fun onHvacPowerStateUpdated(value: Boolean?) = set("hvacPower", value) { it.copy(hvacPowerOn = value) }
+        override fun onHvacPowerStateUpdated(value: Boolean?) = set("hvacPower", value) { it.copy(hvacPowerOn = value).climateSeen(value) }
         override fun onFailed(e: Exception) = fail("hvacPower", e)
     }
     private val acListener = object : HvacAcStateListener {
-        override fun onHvacAcStateUpdated(value: Boolean?) = set("ac", value) { it.copy(acOn = value) }
+        override fun onHvacAcStateUpdated(value: Boolean?) = set("ac", value) { it.copy(acOn = value).climateSeen(value) }
         override fun onFailed(e: Exception) = fail("ac", e)
     }
     private val fanListener = object : HvacFanSpeedListener {
-        override fun onHvacFanSpeedUpdated(value: Int?) = set("fan", value) { it.copy(fanSpeed = value) }
+        override fun onHvacFanSpeedUpdated(value: Int?) = set("fan", value) { it.copy(fanSpeed = value).climateSeen(value) }
         override fun onFailed(e: Exception) = fail("fan", e)
     }
     private val tempListener = object : HvacTemperatureValueListener {
         override fun onHvacTemperatureUpdated(celsius: Float?, other: Float?) =
-            set("tempSet", "$celsius/$other") { it.copy(driverSetTempC = celsius) }
+            set("tempSet", "$celsius/$other") { it.copy(driverSetTempC = celsius).climateSeen(celsius) }
         override fun onFailed(e: Exception) = fail("tempSet", e)
     }
     private val recircListener = object : HvacRecirculationStateListener {
         override fun onHvacAutoRecirculationStateUpdated(value: Boolean?) =
-            set("recirc", value) { it.copy(recirculationOn = value) }
+            set("recirc", value) { it.copy(recirculationOn = value).climateSeen(value) }
         override fun onFailed(e: Exception) = fail("recirc", e)
     }
     private val seatHeatListener = object : HvacSeatTemperatureListener {
-        override fun onHvacSeatTemperatureUpdated(value: Int?) = set("seatHeat", value) { it.copy(driverSeatHeat = value) }
+        override fun onHvacSeatTemperatureUpdated(value: Int?) = set("seatHeat", value) { it.copy(driverSeatHeat = value).climateSeen(value) }
         override fun onFailed(e: Exception) = fail("seatHeat", e)
     }
     private val passengerSeatHeatListener = object : HvacSeatTemperatureListener {
@@ -150,6 +163,27 @@ class PleosCabinRepository(
         }
         override fun onFailed(e: Exception) = fail("occRearLeft", e)
     }
+    // H2 item 10: front passenger occupancy, dual (zone sync) state, passenger set temperature.
+    @Volatile private var pleosPassengerOcc: Boolean? = null
+    private var dualArea: SeatArea? = null
+    private val passengerOccListener = object : SeatOccupancyListener {
+        override fun onSeatOccupancyUpdated(value: Boolean?) {
+            pleosPassengerOcc = value
+            set("occPassenger", value) {
+                it.copy(passengerOccupied = Occupancy.resolve(pleosPassengerOcc, BuildConfig.PLEOS_VEHICLE_SDK))
+            }
+        }
+        override fun onFailed(e: Exception) = fail("occPassenger", e)
+    }
+    private val dualListener = object : HvacDualStateListener {
+        override fun onHvacDualStateUpdated(value: Boolean?) = set("hvacDual", value) { it.copy(hvacDualOn = value) }
+        override fun onFailed(e: Exception) = fail("hvacDual", e)
+    }
+    private val passengerTempListener = object : HvacTemperatureValueListener {
+        override fun onHvacTemperatureUpdated(celsius: Float?, other: Float?) =
+            set("tempSetPas", "$celsius/$other") { it.copy(passengerSetTempC = celsius) }
+        override fun onFailed(e: Exception) = fail("tempSetPas", e)
+    }
     private val rearRightOccListener = object : SeatOccupancyListener {
         override fun onSeatOccupancyUpdated(value: Boolean?) {
             pleosRearRight = value
@@ -168,11 +202,17 @@ class PleosCabinRepository(
         object : DoorPositionListener {
             override fun onPositionUpdated(value: Int?) {
                 val open = doorOpenFromPosition(value)
+                val token = doorEvents.next(key)
                 val apply = { set("door.$key", value) { it.withDoor(key, open) } }
                 // The receipt is built the moment the driver door opens, from the state at that moment.
                 // The light switch is polled once a second, so read it again first (a light switched
                 // off just before the door opened must not show as "on").
-                if (key == "driver" && open == true && _state.value.driverDoorOpen != true) readLightThen(apply) else apply()
+                // G3: a close that arrives during that read is applied at once; the late open must then be dropped.
+                if (key == "driver" && open == true && _state.value.driverDoorOpen != true) {
+                    readLightThen { if (doorEvents.isLatest(key, token)) apply() }
+                } else {
+                    apply()
+                }
             }
             override fun onFailed(e: Exception) = fail("door.$key", e)
         }
@@ -187,6 +227,8 @@ class PleosCabinRepository(
     }
     private val portCallback = object : CarPropertyManager.CarPropertyEventCallback {
         override fun onChangeEvent(value: CarPropertyValue<*>) {
+            // G6: a late event from a manager dropped by onLost() must not bring back an old port state.
+            if (propertyManager == null) return
             val open = value.value as? Boolean
             set("chargePort", open) { it.copy(chargePortOpen = open) }
         }
@@ -203,9 +245,11 @@ class PleosCabinRepository(
         } catch (t: Throwable) {
             Log.e(TAG, "Vehicle.initialize failed", t)
             _state.update { it.copy(connected = false, lastError = t.message) }
+            scheduleInitRetry()
             return
         }
         vehicle = v
+        initRetry.reset()
         // "connected" turns true on the first answer from the Pleos service (see [set]), not right after initialize().
         _state.update { it.copy(lastError = null) }
 
@@ -261,6 +305,16 @@ class PleosCabinRepository(
             }, { fail("recircCaps", it) })
         }
         guard("tempSet") { hvac.registerHvacTemperature(driver, tempListener) }
+        guard("tempSetPas") { hvac.registerHvacTemperature(passenger, passengerTempListener) }
+        guard("hvacDual") {
+            hvac.checkHvacDualCapabilities({ _, areas ->
+                val a = pickArea(areas).also { dualArea = it }
+                guard("hvacDual") {
+                    hvac.getHvacDualState(a, { dualListener.onHvacDualStateUpdated(it) }, { fail("hvacDual", it) })
+                    hvac.registerHvacDualState(a, dualListener)
+                }
+            }, { fail("hvacDualCaps", it) })
+        }
         val seat = v.getSeat()
         guard("seatHeat") {
             seat.getHvacSeatTemperature(driver, { seatHeatListener.onHvacSeatTemperatureUpdated(it) }, { fail("seatHeat", it) })
@@ -291,6 +345,7 @@ class PleosCabinRepository(
         }
         guard("occRearLeft") { seat.registerSeatOccupancy(rearLeft, rearLeftOccListener) }
         guard("occRearRight") { seat.registerSeatOccupancy(rearRight, rearRightOccListener) }
+        guard("occPassenger") { seat.registerSeatOccupancy(passenger, passengerOccListener) }
         doorAreas.forEach { (key, area) -> guard("door.$key") { v.getDoor().registerDoorPosition(area, doorListeners.getValue(key)) } }
         windowAreas.forEach { (key, area) -> guard("window.$key") { v.getWindow().registerWindowPosition(area, windowListeners.getValue(key)) } }
 
@@ -312,33 +367,15 @@ class PleosCabinRepository(
     private fun stopPolling() {
         pollJob?.cancel()
         pollJob = null
+        pollWatchdog.reset()
         _state.update { it.copy(cabinLightOn = null, readingLightOn = null, wiperAuto = null, wiperOn = null) }
     }
 
     @Synchronized
     override fun stop() {
-        pollGate.ready(false)
-        val v = vehicle ?: return
-        guard("unregister") {
-            v.getEvBattery().unregisterEvBatteryStateOfCharge(socListener)
-            val hvac = v.getHVAC()
-            powerArea?.let { hvac.unregisterHvacPowerState(it, powerListener) }
-            acArea?.let { hvac.unregisterHvacAcState(it, acListener) }
-            fanArea?.let { hvac.unregisterHvacFanSpeed(it, fanListener) }
-            hvac.unregisterHvacTemperature(driver, tempListener)
-            recircArea?.let { hvac.unregisterHvacRecirculationState(it, recircListener) }
-            val seat = v.getSeat()
-            seat.unregisterHvacSeatTemperature(driver, seatHeatListener)
-            seat.unregisterHvacSeatTemperature(passenger, passengerSeatHeatListener)
-            seat.unregisterSeatBackrestAnglePosition(driver, driverBackrestListener)
-            seat.unregisterSeatBackrestAnglePosition(passenger, passengerBackrestListener)
-            seat.unregisterSeatOccupancy(rearLeft, rearLeftOccListener)
-            seat.unregisterSeatOccupancy(rearRight, rearRightOccListener)
-            doorAreas.forEach { (k, a) -> v.getDoor().unregisterDoorPosition(a, doorListeners.getValue(k)) }
-            windowAreas.forEach { (k, a) -> v.getWindow().unregisterWindowPosition(a, windowListeners.getValue(k)) }
-        }
-        guard("release") { v.release() }
-        vehicle = null
+        initRetryJob?.cancel()
+        initRetryJob = null
+        if (!releaseVehicle()) return
         try {
             propertyManager?.let { pm ->
                 pm.unregisterCallback(portCallback)
@@ -350,7 +387,65 @@ class PleosCabinRepository(
         propertyManager = null
         carConnection.unsubscribe(carUser)
         carSubscribed = false
+    }
+
+    /**
+     * Stops the poll, unregisters every Pleos listener and releases the SDK. The AAOS car side is not touched.
+     * Values are kept (a reconnect must not blank the screen); their freshness stamps age instead, so the stay
+     * screen says "확인 안 됨" until the new connection answers. Returns false when there was no vehicle.
+     */
+    private fun releaseVehicle(): Boolean {
+        pollGate.ready(false)
+        val v = vehicle ?: return false
+        guard("unregister") {
+            v.getEvBattery().unregisterEvBatteryStateOfCharge(socListener)
+            val hvac = v.getHVAC()
+            powerArea?.let { hvac.unregisterHvacPowerState(it, powerListener) }
+            acArea?.let { hvac.unregisterHvacAcState(it, acListener) }
+            fanArea?.let { hvac.unregisterHvacFanSpeed(it, fanListener) }
+            hvac.unregisterHvacTemperature(driver, tempListener)
+            hvac.unregisterHvacTemperature(passenger, passengerTempListener)
+            dualArea?.let { hvac.unregisterHvacDualState(it, dualListener) }
+            recircArea?.let { hvac.unregisterHvacRecirculationState(it, recircListener) }
+            val seat = v.getSeat()
+            seat.unregisterHvacSeatTemperature(driver, seatHeatListener)
+            seat.unregisterHvacSeatTemperature(passenger, passengerSeatHeatListener)
+            seat.unregisterSeatBackrestAnglePosition(driver, driverBackrestListener)
+            seat.unregisterSeatBackrestAnglePosition(passenger, passengerBackrestListener)
+            seat.unregisterSeatOccupancy(rearLeft, rearLeftOccListener)
+            seat.unregisterSeatOccupancy(rearRight, rearRightOccListener)
+            seat.unregisterSeatOccupancy(passenger, passengerOccListener)
+            doorAreas.forEach { (k, a) -> v.getDoor().unregisterDoorPosition(a, doorListeners.getValue(k)) }
+            windowAreas.forEach { (k, a) -> v.getWindow().unregisterWindowPosition(a, windowListeners.getValue(k)) }
+        }
+        guard("release") { v.release() }
+        vehicle = null
         _state.update { it.copy(connected = false) }
+        return true
+    }
+
+    /**
+     * H2 item 8: the Pleos service has not answered for [Freshness.STALE_MS] during a stay, and the SDK's own re-bind
+     * did not bring it back. Release the SDK and create it again, as a fresh app start would. [start] registers every
+     * listener again, reads every value once, and restarts the poll if the stay still wants it.
+     */
+    @Synchronized
+    private fun reconnectSdk() {
+        if (vehicle == null) return // stopped meanwhile
+        Log.w(TAG, "Pleos service silent for ${Freshness.STALE_MS / 1000} s: reconnecting the SDK")
+        probe("sdkReconnect", "silent")
+        releaseVehicle()
+        start()
+    }
+
+    /** H2 item 8: `Vehicle.initialize()` failed; try again later instead of staying without the SDK until a restart. */
+    private fun scheduleInitRetry() {
+        if (initRetryJob?.isActive == true) return
+        val wait = initRetry.next()
+        initRetryJob = scope.launch {
+            delay(wait)
+            start()
+        }
     }
 
     // ---- AAOS standard properties ------------------------------------------------------------
@@ -360,7 +455,7 @@ class PleosCabinRepository(
         override fun onReady(handle: Car) = startCarProperties(handle)
         override fun onLost() {
             propertyManager = null
-            _state.update { it.copy(outsideTempC = null) }
+            _state.update { it.afterCarServiceLost() } // G6: outside temp and charge port become unknown
         }
     }
 
@@ -418,47 +513,62 @@ class PleosCabinRepository(
     private fun startPolling(v: Vehicle) {
         pollJob?.cancel()
         pollJob = scope.launch {
+            var tick = 0L
             while (isActive) {
-                guard("cabinLight") {
+                // G2: with no answer for 5 ticks the service is treated as away. Then only one probe read goes
+                // out every 10 s, so the SDK queue cannot grow without bound; the first answer brings the full poll back.
+                val mode = pollWatchdog.onTick()
+                if (pollWatchdog.away) _state.update { if (it.connected) it.copy(connected = false) else it }
+                // H2 item 8: a long silence -> release and re-create the SDK (at most once per backoff step).
+                if (reconnect.shouldAttempt(pollWatchdog.silentTicks * POLL_MS, clock())) {
+                    scope.launch { reconnectSdk() }
+                }
+                // H2 item 8: re-confirm SOC and the climate power state every 10 s (the first tick of a stay included),
+                // so an unchanged but live value keeps a fresh stamp. Only on full ticks: no extra calls while away.
+                if (mode == PollWatchdog.Poll.FULL && tick % Freshness.REFRESH_TICKS == 0L) refreshEstimateInputs(v)
+                tick++
+                if (mode != PollWatchdog.Poll.SKIP) guard("cabinLight") {
                     v.getLight().getCabinLightSwitch(
-                        { s -> setIfChanged("cabinLight", s == LightSwitch.ON) { st, on -> (st.cabinLightOn != on) to st.copy(cabinLightOn = on) } },
-                        { fail("cabinLight", it) },
+                        { s -> answered(); setIfChanged("cabinLight", s == LightSwitch.ON) { st, on -> (st.cabinLightOn != on) to st.copy(cabinLightOn = on) } },
+                        { answered(); fail("cabinLight", it) },
                     )
                 }
-                guard("readingLight") {
-                    v.getLight().getReadingLightSwitch(
-                        driver,
-                        { s -> setIfChanged("readingLight", s == LightSwitch.ON) { st, on -> (st.readingLightOn != on) to st.copy(readingLightOn = on) } },
-                        { fail("readingLight", it) },
-                    )
-                }
-                // Wiper: lever by polling, wiping state read in the same tick. A read
-                // failure leaves the value null, and null never counts as rain.
-                guard("wiper") {
-                    v.getWiper().getCurrentWiperSwitch(
-                        frontWindshield,
-                        { sw -> setIfChanged("wiperAuto", sw == WiperSwitch.AUTO) { st, x -> (st.wiperAuto != x) to st.copy(wiperAuto = x) } },
-                        { fail("wiperSwitch", it) },
-                    )
-                    v.getWiper().getCurrentWiperState(
-                        frontWindshield,
-                        { ws -> setIfChanged("wiperOn", ws == WiperState.ON) { st, x -> (st.wiperOn != x) to st.copy(wiperOn = x) } },
-                        { fail("wiperState", it) },
-                    )
-                }
-                // Backrest: the emulator's position write does not always raise ON_CHANGE events,
-                // so the current value is also polled.
-                guard("backrestPoll") {
-                    v.getSeat().getCurrentSeatBackrestAnglePosition(
-                        driver,
-                        { b -> setIfChanged("backrestDriverPoll", b) { st, x -> (st.driverBackrest != x) to st.copy(driverBackrest = x) } },
-                        { fail("backrestDriverPoll", it) },
-                    )
-                    v.getSeat().getCurrentSeatBackrestAnglePosition(
-                        passenger,
-                        { b -> setIfChanged("backrestPassengerPoll", b) { st, x -> (st.passengerBackrest != x) to st.copy(passengerBackrest = x) } },
-                        { fail("backrestPassengerPoll", it) },
-                    )
+                if (mode == PollWatchdog.Poll.FULL) {
+                    guard("readingLight") {
+                        v.getLight().getReadingLightSwitch(
+                            driver,
+                            { s -> answered(); setIfChanged("readingLight", s == LightSwitch.ON) { st, on -> (st.readingLightOn != on) to st.copy(readingLightOn = on) } },
+                            { answered(); fail("readingLight", it) },
+                        )
+                    }
+                    // Wiper: lever by polling, wiping state read in the same tick. A read
+                    // failure leaves the value null, and null never counts as rain.
+                    guard("wiper") {
+                        v.getWiper().getCurrentWiperSwitch(
+                            frontWindshield,
+                            { sw -> answered(); setIfChanged("wiperAuto", sw == WiperSwitch.AUTO) { st, x -> (st.wiperAuto != x) to st.copy(wiperAuto = x) } },
+                            { answered(); fail("wiperSwitch", it) },
+                        )
+                        v.getWiper().getCurrentWiperState(
+                            frontWindshield,
+                            { ws -> answered(); setIfChanged("wiperOn", ws == WiperState.ON) { st, x -> (st.wiperOn != x) to st.copy(wiperOn = x) } },
+                            { answered(); fail("wiperState", it) },
+                        )
+                    }
+                    // Backrest: the emulator's position write does not always raise ON_CHANGE events,
+                    // so the current value is also polled.
+                    guard("backrestPoll") {
+                        v.getSeat().getCurrentSeatBackrestAnglePosition(
+                            driver,
+                            { b -> answered(); setIfChanged("backrestDriverPoll", b) { st, x -> (st.driverBackrest != x) to st.copy(driverBackrest = x) } },
+                            { answered(); fail("backrestDriverPoll", it) },
+                        )
+                        v.getSeat().getCurrentSeatBackrestAnglePosition(
+                            passenger,
+                            { b -> answered(); setIfChanged("backrestPassengerPoll", b) { st, x -> (st.passengerBackrest != x) to st.copy(passengerBackrest = x) } },
+                            { answered(); fail("backrestPassengerPoll", it) },
+                        )
+                    }
                 }
                 delay(POLL_MS)
             }
@@ -489,6 +599,41 @@ class PleosCabinRepository(
         }
     }
 
+    /**
+     * H2 item 8: one read each of SOC and climate power. A changed value goes through the listener, as a missed event
+     * would. An unchanged one only renews its stamp, without a PROBE line, so the latency tools (first PROBE line after
+     * a Virtual Console write) never see a refresh as the callback they are timing.
+     */
+    private fun refreshEstimateInputs(v: Vehicle) {
+        guard("socRefresh") {
+            v.getEvBattery().getEvBatteryStateOfCharge(
+                { s ->
+                    answered()
+                    if (s != _state.value.socPercent) socListener.onEvBatteryStateOfChargeUpdated(s) else _state.update { it.socSeen(s) }
+                },
+                { answered(); fail("socRefresh", it) },
+            )
+        }
+        val a = powerArea ?: return
+        guard("hvacPowerRefresh") {
+            v.getHVAC().getHvacPowerState(
+                a,
+                { p ->
+                    answered()
+                    if (p != _state.value.hvacPowerOn) powerListener.onHvacPowerStateUpdated(p) else _state.update { it.climateSeen(p) }
+                },
+                { answered(); fail("hvacPowerRefresh", it) },
+            )
+        }
+    }
+
+    /** G2: any poll reply, value or failure, means the Pleos service is there. Values are never cleared here. */
+    private fun answered() {
+        pollWatchdog.onAnswer()
+        reconnect.onAnswer()
+        _state.update { if (it.connected) it else it.copy(connected = true) }
+    }
+
     private fun lightUnknownThen(then: () -> Unit) {
         _state.update { it.copy(cabinLightOn = null) }
         then()
@@ -507,6 +652,11 @@ class PleosCabinRepository(
         val c = EnergyModel.validOutsideC(celsius)?.let { Math.round(it * 2f) / 2f }
         setIfChanged("outsideTemp", c) { st, x -> (st.outsideTempC != x) to st.copy(outsideTempC = x) }
     }
+
+    /** H2 item 8: a delivered SOC value is confirmed now; an unreadable (null) one confirms nothing. */
+    private fun CabinState.socSeen(value: Int?): CabinState = if (value == null) this else copy(socConfirmedAtMs = clock())
+
+    private fun CabinState.climateSeen(value: Any?): CabinState = if (value == null) this else copy(climateConfirmedAtMs = clock())
 
     private fun CabinState.withRear(): CabinState = copy(
         rearLeftOccupied = Occupancy.resolve(pleosRearLeft, BuildConfig.PLEOS_VEHICLE_SDK),

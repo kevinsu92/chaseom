@@ -86,7 +86,8 @@ class ModeAndEnergyTest {
         assertEquals(0.30f, EnergyModel.BASE_KW, 0f)
         assertEquals(2.3f, EnergyModel.drawKw(ClimateSetting(true, 22f, 0, false, false, 0)) - EnergyModel.BASE_KW, 0.0001f)
         assertEquals(2.3f * 36f / 32f, EnergyModel.drawKw(ClimateSetting(true, 26f, 0, false, false, 0)) - EnergyModel.BASE_KW, 0.0001f)
-        assertEquals(2.0f, EnergyModel.drawKw(ClimateSetting(true, 26f, 0, true, false, 0)) - EnergyModel.BASE_KW, 0.0001f)
+        // A/C coefficient on its own: a summer reading (no heating demand). H2: with heating demand see AcHeatTest.
+        assertEquals(2.0f, EnergyModel.drawKw(ClimateSetting(true, 26f, 0, true, false, 0, outsideC = 30f)) - EnergyModel.BASE_KW, 0.0001f)
         assertEquals(2.3f * 0.76f, EnergyModel.drawKw(ClimateSetting(true, 22f, 0, false, true, 0)) - EnergyModel.BASE_KW, 0.0001f)
         assertEquals(0.03f * 3, EnergyModel.drawKw(ClimateSetting(true, 22f, 3, false, false, 0)) - EnergyModel.BASE_KW - 2.3f, 0.0001f)
         assertEquals(listOf(0f, 0.049f, 0.066f, 0.100f), (0..3).map { EnergyModel.seatKw(it) })

@@ -1,6 +1,7 @@
 package app.chaseom.stay
 
 import app.chaseom.cabin.CabinState
+import app.chaseom.cabin.Freshness
 
 /** Timing rules. Tests may shorten them; release never does. */
 data class StayTiming(
@@ -46,7 +47,18 @@ class StayEngine(
     /** When the saved stay was last seen running, and the SOC then. */
     restoredSeenAtMs: Long? = null,
     restoredSocAtSave: Int? = null,
+    /** Round 2 (d): outside-temperature rule for the heating estimate; the app passes BuildConfig.OUTSIDE_FULL. */
+    private val outsideMode: OutsideMode = OutsideMode.COLD_ONLY,
+    /** H+calib: per-car correction of the draw model, restored from the controller's prefs. */
+    private val calibration: Calibration = Calibration(),
 ) {
+    /** H+calib: what to persist; [calibrationChanged] is set when it changed and cleared by [takeCalibrationChange]. */
+    val calibrationSaved: Calibration.Saved get() = calibration.saved
+    private var calibrationChanged = false
+
+    /** true once after the saved calibration changed (the controller then writes it to prefs). */
+    fun takeCalibrationChange(): Boolean = calibrationChanged.also { calibrationChanged = false }
+
     var session: StaySession? = restored
         private set
 
@@ -76,6 +88,8 @@ class StayEngine(
     private var seatHighSinceMs: Long? = null
     private var prevDriverDoorOpen: Boolean? = null
     private var receipt: Receipt? = null
+    /** H2 item 8: when this engine began watching the current stay (start of the freshness grace). */
+    private var freshSinceMs: Long? = null
 
     /**
      * @param parked true = PARKED (gear P and the system allows), false = definitely not parked (ends
@@ -108,6 +122,11 @@ class StayEngine(
             recircOn = cabin.recirculationOn,
             driverSeatHeat = cabin.driverSeatHeat,
             outsideC = cabin.outsideTempC,
+            outsideMode = outsideMode,
+            passengerCounted = cabin.passengerOccupied == true || cabin.hvacDualOn == true,
+            passengerSeatHeat = cabin.passengerSeatHeat,
+            passengerZoneUnsynced = cabin.hvacDualOn == true,
+            passengerSetTempC = cabin.passengerSetTempC,
         )
 
         val backrestSupported = cabin.backrestMin != null && cabin.backrestMax != null && cabin.backrestMax > cabin.backrestMin
@@ -119,24 +138,40 @@ class StayEngine(
         var exchange: Exchange? = null
         val soc = cabin.socPercent
         val cap = cabin.batteryCapacityKwh
-        if (policy.energyBudget && soc != null && cap != null) {
+        // H2 item 8: an estimate from values the car has not confirmed for 60 s is not shown (cabin.Freshness).
+        val since = freshSinceMs ?: nowMs.also { freshSinceMs = it }
+        val unconfirmed = Freshness.stale(cabin.socConfirmedAtMs, since, nowMs) ||
+            Freshness.stale(cabin.climateConfirmedAtMs, since, nowMs)
+        if (policy.energyBudget && soc != null && cap != null && unconfirmed) {
+            hero = Hero(minutes = null, overCap = false, hvacOff = false, unconfirmed = true)
+            // No toast for the jump when values come back: the gap was not a climate change by the driver.
+            prevClimate = null
+            prevMinutes = null
+            toast = null
+        } else if (policy.energyBudget && soc != null && cap != null) {
             val eff = EnergyModel.efficiency(cabin.evEfficiencyKmPerKwh)
             val keepPct = EnergyModel.keepPercent(settings.keepKm, cap, eff)
-            val minutes = EnergyModel.minutesToKeep(soc, keepPct, cap, EnergyModel.drawKw(climate))
+            val modelKw = EnergyModel.drawKw(climate)
+            // H+calib: the window key ignores the outside reading itself; a change that moves the model kW still resets it.
+            if (calibration.observe(soc, cap, climate.copy(outsideC = null) to modelKw, modelKw, nowMs)) calibrationChanged = true
+            val factor = calibration.factor
+            val kw = modelKw * factor
+            val minutes = EnergyModel.minutesToKeep(soc, keepPct, cap, kw)
             val below = soc <= keepPct
             hero = Hero(
-                minutes, minutes >= EnergyModel.DISPLAY_CAP_MINUTES, !climate.powerOn, EnergyModel.drawKw(climate),
+                minutes, minutes >= EnergyModel.DISPLAY_CAP_MINUTES, !climate.powerOn, kw,
+                calibrated = calibration.applied,
                 belowKeep = below,
                 coveredKm = if (below) EnergyModel.coveredKm(soc, cap, eff).coerceAtMost(settings.keepKm) else null,
             )
             bar = BarModel(soc, keepPct, settings.keepKm, settings.label, below)
             keepBanner = when {
                 below -> KeepBanner.BELOW
-                climate.powerOn && minutes < 30 -> KeepBanner.NEAR
+                climate.powerOn && minutes < EnergyModel.NEAR_KEEP_MINUTES -> KeepBanner.NEAR
                 else -> null
             }
             if (policy.dialToast) updateToast(climate, minutes, nowMs)
-            if (policy.exchangeCard) exchange = EnergyModel.exchange(soc, cap, keepPct, climate, dismissedX)
+            if (policy.exchangeCard) exchange = EnergyModel.exchange(soc, cap, keepPct, climate, dismissedX, factor)
         }
         if (toast != null && nowMs > toast!!.untilMs) toast = null
 
@@ -226,6 +261,7 @@ class StayEngine(
     }
 
     private fun endStay() {
+        calibration.endStay()
         session = null
         restartedFromStale = false
         pendingTimeCheck = null // a stay that ended while the app watched is not "restored"
@@ -251,6 +287,7 @@ class StayEngine(
         seatHighSinceMs = null
         prevDriverDoorOpen = null
         receipt = null
+        freshSinceMs = null
     }
 
     // ---- N1 / N2 / N3 -----------------------------------------------------------------------

@@ -57,6 +57,19 @@ class AppContainer(context: Context) {
 
     val stay = StayController(appContext, appScope, cabinRepository, drivingRestriction, vehicleRepository.state)
 
+    /**
+     * Connects every vehicle signal; idempotent. Called when the app first comes to the front (SdkLifecycleBinder)
+     * and, round 2 G1, from BootReceiver: a process started at boot has no screen, but the kept stay service needs
+     * live gear and cabin signals.
+     */
+    fun connectSignals() {
+        // Users subscribe first; the one car connection then serves them all (and again after a car service restart).
+        carUxRestrictions.start()
+        vehicleRepository.start()
+        cabinRepository.start()
+        carConnection.start()
+    }
+
     private fun isServicePresent(action: String): Boolean {
         val pm = appContext.packageManager
         val intent = Intent(action)

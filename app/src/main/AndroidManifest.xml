@@ -33,6 +33,8 @@
     <!-- Stay service: keeps signals alive while another app is in front. Normal. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Round 2 G1: start the stay service at boot (an allowed background start). Normal, install-time. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".PleosApp"
@@ -45,6 +47,12 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.PleosApp">
+
+        <!--
+            Round 2 C-1: the app does not implement CCP (rotary) focus; every control is touch only.
+            Pleos CCP guide: "CCP를 지원하지 않는 앱은 <application> 요소에 다음 메타데이터를 추가하여 CCP 미지원 앱임을 선언합니다."
+        -->
+        <meta-data android:name="com.hmg.rotary.ROTARY_SUPPORTED" android:value="false" />
 
         <activity
             android:name=".MainActivity"
@@ -68,7 +76,18 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Keeps parked-car signal listeners alive during a stay so the exit checklist and safety notices still appear after the driver switches apps." />
+                android:value="Keeps parked-car signal listeners alive for the ignition cycle so a stay that begins while another app is in front is still counted, and the exit checklist and safety notices still appear. Shows no stay content while driving." />
         </service>
+        <!--
+            Round 2 G1. BOOT_COMPLETED is a protected broadcast (only the system can send it), so exporting the
+            receiver lets no other app trigger it. Starts the stay service only after onboarding.
+        -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

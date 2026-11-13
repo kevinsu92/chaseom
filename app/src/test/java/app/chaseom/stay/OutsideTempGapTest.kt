@@ -51,11 +51,16 @@ class OutsideTempGapTest {
         assertNull(EnergyModel.validOutsideC(Float.POSITIVE_INFINITY))
     }
 
-    // Cooling stays 2.0 kW whatever the outside reading, including unknown.
-    @Test fun coolingIgnoresOutside() {
-        for (o in listOf(null, -10f, 0f, 25f, 40f)) {
+    // H2: A/C alone is 2.0 kW only when the cabin needs no heat (outside at/above the set temperature). Below it, or
+    // with no reading, the larger term counts: at a 22 C set heating (2.3 kW) is larger (AcHeatTest has the rest).
+    @Test fun coolingAloneOnlyWithoutHeatingDemand() {
+        for (o in listOf(22f, 25f, 40f)) {
             val s = ClimateSetting(true, 22f, 0, true, false, 0, outsideC = o)
             assertEquals("outside=$o", EnergyModel.BASE_KW + EnergyModel.AC_KW, EnergyModel.drawKw(s), 0.0001f)
+        }
+        for (o in listOf(null, -10f, 0f, 21.9f)) {
+            val s = ClimateSetting(true, 22f, 0, true, false, 0, outsideC = o)
+            assertEquals("outside=$o", EnergyModel.BASE_KW + EnergyModel.HEAT_KW_AT_22C, EnergyModel.drawKw(s), 0.0001f)
         }
     }
 

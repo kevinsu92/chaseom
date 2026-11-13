@@ -27,7 +27,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import app.chaseom.R
 import app.chaseom.stay.StayUi
@@ -83,16 +82,30 @@ fun WaitFlagRow(ui: StayUi, actions: StayActions) {
             WaitOutcome.BELOW_KEEP -> stringResource(R.string.wf_below, t)
             }
         }
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite }) {
-                Text(keepPhrases(line), style = ChaseomUi.body.copy(fontWeight = FontWeight.SemiBold), color = k.text1)
+        val size = app.chaseom.ui.theme.uiSize()
+        val lines: @Composable (Modifier) -> Unit = { m ->
+            Column(m.semantics { liveRegion = LiveRegionMode.Polite }) {
+                // H2: flag line and its swap line at 36 sp (ISO 15008 glance); no maxLines, phrases kept together.
+                Text(keepPhrases(line), style = ChaseomUi.flagLine(size), color = k.text1)
                 if (!f.airQuiet && f.outcome == WaitOutcome.SHORT && f.swapGainMinutes != null) {
-                    Text(keepPhrases(stringResource(R.string.wf_short_swap, signedDuration(f.swapGainMinutes))), style = ChaseomUi.body, color = k.text1)
+                    Text(keepPhrases(stringResource(R.string.wf_short_swap, signedDuration(f.swapGainMinutes))), style = ChaseomUi.flagSub(size), color = k.text1)
                 }
                 Text(stringResource(R.string.wf_note), style = ChaseomUi.caption, color = k.text2)
             }
-            Spacer(Modifier.width(ChaseomUi.related))
-            LightPillButton(stringResource(R.string.wf_remove), { actions.removeWaitFlag() })
+        }
+        if (size == ChaseomUi.Size.Small) {
+            // H2 (design): on the 841 dp split the remove pill goes under the lines, so the 36 sp line gets the full
+            // column (~790 dp instead of ~630) and the longest sentence stays within two lines.
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(ChaseomUi.line)) {
+                lines(Modifier.fillMaxWidth())
+                LightPillButton(stringResource(R.string.wf_remove), { actions.removeWaitFlag() })
+            }
+        } else {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                lines(Modifier.weight(1f))
+                Spacer(Modifier.width(ChaseomUi.related))
+                LightPillButton(stringResource(R.string.wf_remove), { actions.removeWaitFlag() })
+            }
         }
     }
 }

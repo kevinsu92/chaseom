@@ -43,9 +43,14 @@
     <string name="h_hero_stay">머물 수 있어요</string>
     <string name="h_island_meta">배터리 %1$d%% · 내일 몫 %2$dkm는 남겨 두고 계산했어요</string>
     <string name="h_hero_cap">3시간 이상</string>
+    <!-- H+calib: shown under the hero only when the per-car correction is applied (Calibration.applied). -->
+    <string name="h_calibrated">이 차 기준으로 보정됨 (추정)</string>
     <string name="estimate">(추정)</string>
     <string name="h_hvac_off">공조 꺼짐</string>
     <string name="h_hvac_off_sub">지금은 공조로 쓰는 전력이 없어요 (추정)</string>
+    <!-- H2 item 8: SOC or climate not confirmed by the car for 60 s; the estimate is hidden. -->
+    <string name="h_unconfirmed">확인 안 됨</string>
+    <string name="h_unconfirmed_sub">차에서 1분 넘게 새 값이 오지 않아 시간을 숨겼어요</string>
     <string name="h_bar_today">오늘 쓸 수 있는 몫</string>
     <string name="h_bar_keep">내일 지킬 몫 %1$dkm</string>
     <string name="h_bar_meta">배터리 %1$d%% · 내일 몫 약 %2$d%% (여유분 20%% 포함, 추정)</string>
@@ -126,6 +131,8 @@
     <string name="s_save">저장</string>
     <string name="s_about">앱 정보</string>
     <string name="about_v2l">현대차 V2L 방전 제한처럼 하한을 두고, 공조 체류에 내일 이동 거리 기준으로 넓혔어요</string>
+    <!-- Round 2 (d), shown only when BuildConfig.OUTSIDE_FULL. -->
+    <string name="about_model_full">계산: 배터리 용량 × (현재 %% − 내일 몫 %%) ÷ 지금 설정의 소비 전력. 소비 전력은 출처 계수표로 추정해요(차량이 알려 주는 외기온으로 난방을 보정, 15°C보다 따뜻하면 15°C로, 못 읽으면 영하 10°C로, 아래 표)</string>
     <string name="about_model">계산: 배터리 용량 × (현재 %% − 내일 몫 %%) ÷ 지금 설정의 소비 전력. 소비 전력은 출처 계수표로 추정해요(영하 10°C 정상상태 기준, 차량이 알려 주는 외기온이 더 추우면 그 값으로, 아래 표)</string>
     <string name="about_fuel_ev">차종: 전기차로 확인됨</string>
     <string name="about_fuel_reduced">차종: 전기차로 확인되지 않음 (경고·하차 확인만)</string>
@@ -147,7 +154,7 @@
     <!-- K2: what is left of tomorrow's share, the same number as h_k2_meta. -->
     <string name="is_keep_chip_left">내일 몫 약 %1$dkm (추정)</string>
     <!-- Build G S1: the line folded under the (i) note names what left the picture, only things on screen. -->
-    <string name="is_fold_line">배터리 = 위 숫자 줄 · 내일 몫 = 부두 칩 · 구름 = 내기순환 · 먼 비 = 와이퍼</string>
+    <string name="is_fold_line">배터리 = 위 숫자 줄 · 내일 몫 = 부두 칩 · 구름 = 내기순환 (공기 측정 아님) · 먼&#160;비 = 와이퍼 AUTO</string>
     <string name="is_fold_open">그림 설명 펼치기</string>
     <!-- Next to the sun for 2.5 s after the set temperature changes; "설정" always. -->
     <string name="is_sun_change">설정 %1$s → %2$s°C</string>
@@ -183,7 +190,7 @@
     <string name="wf_remove">깃발 내리기</string>
     <string name="wf_reaches">%1$s 깃발</string>
     <!-- S5 (S1_SPEC v3 §7-2): the pair of wf_short. Numbers only, no reassurance words (QA X6-2). -->
-    <string name="wf_long">%1$s 깃발 · 깃발보다 약 %2$s 길어요 (추정)</string>
+    <string name="wf_long">%1$s 깃발 · 오늘 머물 시간이 깃발보다 약 %2$s 길어요 (추정)</string>
     <string name="wf_short">%1$s 깃발 · 오늘 머물 시간이 깃발보다 약 %2$s 짧아요 (추정)</string>
     <string name="wf_short_swap">비슷한 체감 카드로 바꾸면 %1$s (추정)</string>
     <string name="wf_below">%1$s 깃발 · 지금은 내일 몫 아래라 비교하지 않아요</string>

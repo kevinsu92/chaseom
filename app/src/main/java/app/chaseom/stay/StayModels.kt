@@ -80,6 +80,13 @@ data class Hero(
     val belowKeep: Boolean = false,
     /** Below keep: estimated km of tomorrow's distance the battery still covers. */
     val coveredKm: Int? = null,
+    /**
+     * H2 item 8: SOC or the climate was not confirmed by the car for 60 s (cabin.Freshness). The hero says
+     * "확인 안 됨" and shows no estimate; [minutes] is then null and the bar, K1/K2, toast, exchange and flag are hidden.
+     */
+    val unconfirmed: Boolean = false,
+    /** H+calib: the minutes use this car's measured correction ("이 차 기준으로 보정됨 (추정)"). */
+    val calibrated: Boolean = false,
 )
 
 data class BarModel(val socPercent: Int, val keepPercent: Float, val keepKm: Int, val label: String, val belowKeep: Boolean)

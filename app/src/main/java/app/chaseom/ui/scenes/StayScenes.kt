@@ -206,7 +206,7 @@ fun StayFullScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
         val hasSide = ui.exchange != null || ui.seatHeatLong || ui.airMinutes != null
         // With the island face there is no second column; the cards go under the island's
         // chips, so the island never changes size when a card appears.
-        val islandFace = app.chaseom.BuildConfig.KICK_ISLAND && ui.hero != null
+        val islandFace = app.chaseom.BuildConfig.KICK_ISLAND && ui.hero != null && !ui.hero.unconfirmed
         BoxWithConstraints(Modifier.fillMaxWidth().weight(1f)) {
             val twoCol = maxWidth >= 1200.dp && hasSide && !islandFace
             val heroSize = if (maxWidth >= 2000.dp) 96.sp else 60.sp
@@ -242,7 +242,7 @@ private fun MainColumn(
 ) {
     // Face of the stay screen: only the keep bar is replaced; numbers "(추정)", toast and cards stay.
     val face = when {
-        ui.hero == null -> Face.BAR
+        ui.hero == null || ui.hero.unconfirmed -> Face.BAR // H2 item 8: no island picture from unconfirmed values
         app.chaseom.BuildConfig.KICK_ISLAND -> Face.ISLAND
         else -> Face.BAR
     }
@@ -264,7 +264,7 @@ internal enum class ToastPlace { HERO_ROW, ISLAND_TOP, BOTTOM }
 /** The hero row exists only with a number (not climate off, not below tomorrow's share). */
 internal fun toastPlace(ui: StayUi, wide: Boolean, islandFace: Boolean): ToastPlace {
     val h = ui.hero
-    val heroRow = h != null && !h.hvacOff && !h.belowKeep
+    val heroRow = h != null && !h.hvacOff && !h.belowKeep && !h.unconfirmed
     return when {
         wide && heroRow -> ToastPlace.HERO_ROW
         !wide && islandFace -> ToastPlace.ISLAND_TOP
@@ -290,6 +290,10 @@ private fun MainColumnContent(
         val hero = ui.hero
         if (hero == null) {
             Body(stringResource(R.string.h_hvac_off), color = c.textSecondary)
+        } else if (hero.unconfirmed) {
+            // H2 item 8: the car has not confirmed SOC or the climate for 60 s. No number, no "(추정)" time.
+            Text(stringResource(R.string.h_unconfirmed), style = ChaseomUi.heroSentence(size), color = k.text1)
+            Text(stringResource(R.string.h_unconfirmed_sub), style = ChaseomUi.body, color = k.text2)
         } else if (hero.belowKeep) {
             // Below tomorrow's share the hero states the situation only (no "약 0분",
             // no "time you can stay" label); the K2 banner above asks for the action.
@@ -315,25 +319,29 @@ private fun MainColumnContent(
             } else {
                 val value = if (hero.overCap) stringResource(R.string.h_hero_cap)
                 else stringResource(R.string.h_hero_value, duration(hero.minutes ?: 0))
-                // Number, tail and "(추정)" on one baseline. The Large toast floats over the
-                // right end of this row (out of the layout flow), so the hero never moves.
-                Box(Modifier.fillMaxWidth()) {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(value, style = ChaseomUi.hero(size), color = k.text1, modifier = Modifier.alignByBaseline())
-                        if (face == Face.ISLAND) {
+                // Number, tail and "(추정)" on one baseline. The Large toast sits at the right end of this row, out of
+                // the layout flow (the row keeps the hero's height), so the hero never moves. H2: at 36 sp a long
+                // toast is given only the width the hero leaves (minus a gap) and wraps, so it never covers hero text.
+                val heroToast = if (toastPlace == ToastPlace.HERO_ROW) ui.toast else null
+                HeroRowWithToast(
+                    hero = {
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(value, style = ChaseomUi.hero(size), color = k.text1, modifier = Modifier.alignByBaseline())
+                            if (face == Face.ISLAND) {
+                                Spacer(Modifier.width(ChaseomUi.related))
+                                Text(stringResource(R.string.h_hero_stay), style = ChaseomUi.heroTail(size),
+                                    color = k.text1, modifier = Modifier.alignByBaseline())
+                            }
                             Spacer(Modifier.width(ChaseomUi.related))
-                            Text(stringResource(R.string.h_hero_stay), style = ChaseomUi.heroTail(size).copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Medium),
-                                color = k.text1, modifier = Modifier.alignByBaseline())
+                            Text(stringResource(R.string.estimate), style = ChaseomUi.estimate(size), color = k.text3, modifier = Modifier.alignByBaseline())
                         }
-                        Spacer(Modifier.width(ChaseomUi.related))
-                        Text(stringResource(R.string.estimate), style = ChaseomUi.estimate(size), color = k.text3, modifier = Modifier.alignByBaseline())
-                    }
-                    if (toastPlace == ToastPlace.HERO_ROW) {
-                        ui.toast?.let { t -> DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes, t.capRatePercent, Modifier.align(Alignment.CenterEnd)) }
-                    }
-                }
+                    },
+                    toast = heroToast?.let { t -> { DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes, t.capRatePercent, Modifier) } },
+                )
                 // Bundle 5: say why the number stops at 3 hours.
                 if (hero.overCap) Text(stringResource(R.string.h_cap_note), style = ChaseomUi.body, color = k.text2)
+                // H+calib: the minutes use this car's measured correction. Never shown on the emulator (SOC constant).
+                if (hero.calibrated) Text(stringResource(R.string.h_calibrated), style = ChaseomUi.body, color = k.text2)
             }
         }
         // One description line under the hero (the island's meta line moved here).
@@ -349,7 +357,7 @@ private fun MainColumnContent(
                         // Small: inside the top-left sky of the picture (16 dp, shadow 0 4 16 25 %), up to the "설정 °C" label (H1).
                         if (toastPlace == ToastPlace.ISLAND_TOP) ui.toast?.let { t ->
                             // The one shadow in the app, day only (0 4 16 8 %).
-                            val night = androidx.compose.foundation.isSystemInDarkTheme()
+                            val night = app.chaseom.ui.theme.isNight()
                             DialToast(t.items, t.deltaMinutes, t.heldAboveCap, t.showMinutes, t.capRatePercent,
                                 Modifier.padding(top = ChaseomUi.related), // the toast draws its own Level 2 shadow (day)
                                 short = true)
@@ -427,6 +435,29 @@ private fun ClimateLine(s: ClimateSetting) {
     }
 }
 
+/**
+ * H2: the hero row with the Large dial toast at its right end. The hero is measured first and placed at the start;
+ * the toast gets only the width left after [HERO_TOAST_GAP] and is centred on the hero row. The layout's height is
+ * the hero's alone, so a toast appearing or wrapping never moves anything below.
+ */
+@Composable
+private fun HeroRowWithToast(hero: @Composable () -> Unit, toast: (@Composable () -> Unit)?) {
+    androidx.compose.ui.layout.Layout(
+        content = { hero(); toast?.invoke() },
+        modifier = Modifier.fillMaxWidth(),
+    ) { ms, c ->
+        val h = ms[0].measure(c.copy(minWidth = 0))
+        val gap = HERO_TOAST_GAP.roundToPx()
+        val t = ms.getOrNull(1)?.measure(c.copy(minWidth = 0, minHeight = 0, maxWidth = (c.maxWidth - h.width - gap).coerceAtLeast(0)))
+        layout(c.maxWidth, h.height) {
+            h.place(0, 0)
+            t?.place(c.maxWidth - t.width, (h.height - t.height) / 2)
+        }
+    }
+}
+
+internal val HERO_TOAST_GAP = 24.dp
+
 @Composable
 private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Boolean, showMinutes: Boolean, capRate: Int?, modifier: Modifier, short: Boolean = false) {
     val none = heldAboveCap || abs(delta) < 1
@@ -454,15 +485,20 @@ private fun DialToast(items: List<ClimateChange>, delta: Int, heldAboveCap: Bool
     // Pleos: a toast is its message only (no icon); the sign of the number says the direction.
     // Pleos Level 2 shadow by day.
     val k = cui()
+    val size = uiSize()
+    val h = ChaseomUi.toastHeight(size)
     Row(
-        modifier.heightIn(min = ChaseomUi.toastHeight).pleosShadow(2, 24.dp, enabled = !androidx.compose.foundation.isSystemInDarkTheme())
-            .clip(androidx.compose.foundation.shape.RoundedCornerShape(24.dp)).background(k.toast)
-            .padding(horizontal = 22.dp, vertical = 7.dp),
+        modifier.heightIn(min = h).pleosShadow(2, h / 2, enabled = !app.chaseom.ui.theme.isNight())
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(h / 2)).background(k.toast)
+            .padding(horizontal = 22.dp, vertical = ChaseomUi.toastPadV(size)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // An air-source switch shows its name only, no minutes (see Toast.showMinutes).
         Text(when { !showMinutes -> label; label.isEmpty() -> deltaText; else -> stringResource(R.string.d_toast_fmt, label, deltaText) },
-            style = ChaseomUi.banner, color = k.onToast, maxLines = 2)
+            // H2: 36 sp. Three lines at most: on Small, while the "설정 °C" label shows (2.5 s after a temperature
+            // change), the toast box ends at the label (~470 dp) and the longest three-item toast needs three lines;
+            // two would cut "(추정)" off.
+            style = ChaseomUi.toast(size), color = k.onToast, maxLines = 3)
     }
 }
 
@@ -547,7 +583,7 @@ private fun InfoCard(text: String) {
         // On the #0B0C0E night page the card edge needs 3:1 -> a #6B6F76 outline at night
         // (about 3.8:1; the card surface alone is about 1.3:1).
         Modifier.fillMaxWidth().clip(ChaseomUi.rContainer).background(k.surface)
-            .border(ChaseomUi.cardOutline, if (androidx.compose.foundation.isSystemInDarkTheme()) NIGHT_CARD_EDGE else k.line, ChaseomUi.rContainer)
+            .border(ChaseomUi.cardOutline, if (app.chaseom.ui.theme.isNight()) NIGHT_CARD_EDGE else k.line, ChaseomUi.rContainer)
             .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -609,8 +645,8 @@ fun IslandCards(ui: StayUi, actions: StayActions) {
                                     Spacer(Modifier.width(ChaseomUi.line))
                                     Text(gain, style = ChaseomUi.title.copy(fontSize = 32.sp, lineHeight = 40.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
                                         color = k.text1, softWrap = false)
-                                    // The tail "· 비슷한 체감 (추정)" is 26 Regular #4A4E57 (the value stays 32 Bold).
-                                    Text(line.substring(at + gain.length), style = ChaseomUi.body, color = Color(0xFF4A4E57), softWrap = false)
+                                    // The tail "· 비슷한 체감 (추정)" is 26 Regular (the value stays 32 Bold), ink per theme.
+                                    Text(line.substring(at + gain.length), style = ChaseomUi.body, color = swapTailInk(k), softWrap = false)
                                 }
                             }
                         }
@@ -643,8 +679,8 @@ private fun IslandCard(onClose: (() -> Unit)?, content: @Composable androidx.com
     val k = cui()
     val shape = RoundedCornerShape(16.dp)
     Row(
-        Modifier.fillMaxWidth().pleosShadow(1, 16.dp, enabled = !androidx.compose.foundation.isSystemInDarkTheme()) // Pleos Level 1 shadow
-            .clip(shape).background(k.surface).border(1.dp, if (androidx.compose.foundation.isSystemInDarkTheme()) k.line else Color(0xFFECEEF1), shape),
+        Modifier.fillMaxWidth().pleosShadow(1, 16.dp, enabled = !app.chaseom.ui.theme.isNight()) // Pleos Level 1 shadow
+            .clip(shape).background(k.surface).border(1.dp, if (app.chaseom.ui.theme.isNight()) k.line else Color(0xFFECEEF1), shape),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(start = 28.dp, end = ChaseomUi.related, top = 24.dp, bottom = 24.dp),
@@ -669,7 +705,7 @@ internal fun TextButton76(label: String, onClick: () -> Unit) {
 /** Light pill (#EEEFF1), 56 dp, 26 Medium, 76 dp touch area. Card close and receipt close. */
 @Composable
 internal fun LightPillButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val night = androidx.compose.foundation.isSystemInDarkTheme()
+    val night = app.chaseom.ui.theme.isNight()
     Box(
         modifier.heightIn(min = ChaseomUi.touchMin).pressable(shape = ChaseomUi.rPill, onClick = onClick),
         contentAlignment = Alignment.Center,
@@ -686,3 +722,9 @@ internal fun LightPillButton(label: String, onClick: () -> Unit, modifier: Modif
 
 /** Night card edge on #0B0C0E: contrast about 3.8:1 (K1 card boundary needs >= 3:1). */
 internal val NIGHT_CARD_EDGE = Color(0xFF6B6F76)
+
+/**
+ * Ink of the swap card's tail "· 비슷한 체감 (추정)": #4A4E57 on the white day card (8.34:1); at night #A0A5AD on the
+ * #24272C card (6.05:1). The day ink at night was 1.80:1 (04_design/REVIEW_BUILD_G_RELEASE.md #1).
+ */
+internal fun swapTailInk(c: ChaseomUi.Colors): Color = if (c == ChaseomUi.Night) Color(0xFFA0A5AD) else Color(0xFF4A4E57)
