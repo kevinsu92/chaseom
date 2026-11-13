@@ -169,6 +169,27 @@ internal fun flagTop(set: H1Set): Float = buoyTop(set) - FLAG_GAP - BUOY_SCALE *
 /** The slot the flag stands in: the buoy slot holding the chosen time (F2 rowSlot, rounded up), 1..6. */
 internal fun flagSlotIndex(slot: Float): Int = kotlin.math.ceil(slot - 1e-4f).toInt().coerceIn(1, IslandInfo.MAX_BUOYS)
 
+/** S2: canvas x of a (possibly fractional) slot position. */
+internal fun buoyCenter(set: H1Set, pos: Float): Float = set.buoyX0 + (pos - 0.5f) * set.buoyPitch
+
+/** Where the flag stands: [pos] in slot units (1 = first buoy), [inRow] = reached (no plate, behind its buoy). */
+internal data class FlagPlace(val pos: Float, val inRow: Boolean)
+
+/**
+ * Reached: the slot holding the chosen time, never past the last buoy (rowSlot), so its buoy still counts; with no
+ * buoy (stay under 30 min) it still stands as reached, without the plate (external S1S2 #7).
+ * Short: the open water after the last buoy's own slot is the shortfall (external #6: ceil drew up to 30 min too
+ * much), but never closer than one slot to the last buoy (UXR C4: >= 0.5 slot of open water), at most slot 6.
+ */
+internal fun flagPlace(f: app.chaseom.stay.WaitForecast, buoys: Int): FlagPlace? = when (f.outcome) {
+    app.chaseom.stay.WaitOutcome.BELOW_KEEP -> null
+    app.chaseom.stay.WaitOutcome.REACHES ->
+        FlagPlace(flagSlotIndex(app.chaseom.stay.WaitFlags.rowSlot(f, buoys) ?: 1f).toFloat(), inRow = true)
+    app.chaseom.stay.WaitOutcome.SHORT ->
+        FlagPlace((buoys + maxOf(1f, 0.5f + f.shortMinutes / IslandInfo.MINUTES_PER_BUOY.toFloat()))
+            .coerceAtMost(IslandInfo.MAX_BUOYS.toFloat()), inRow = false)
+}
+
 /** Sun radius change: 600 ms, cubic-bezier(0, 0, 0.2, 1), only across an S/M/L step. */
 internal const val SUN_MS = 600
 /** Sun glow pulse: 200 ms, glow only, within one step, at most once per 1.2 s. */
@@ -277,7 +298,7 @@ fun IslandPanel(
                 // Wait flag on the buoy row: fades in once over 400 ms when planted; a one-time 0.95 -> 1 pulse when
                 // it is reached (no colour change). No flag picture under tomorrow's share.
                 val wf = ui.waitForecast
-                val flagSlot = wf?.let { app.chaseom.stay.WaitFlags.rowSlot(it, info.buoys) }
+                val flagPlace = wf?.let { flagPlace(it, info.buoys) }
                 val flagAlpha = remember(wf?.flag?.atMs) { Animatable(if (animOff) 1f else 0f) }
                 LaunchedEffect(wf?.flag?.atMs) { if (wf != null) flagAlpha.animateTo(1f, tween(400)) }
                 val reached = wf?.outcome == app.chaseom.stay.WaitOutcome.REACHES
@@ -288,11 +309,11 @@ fun IslandPanel(
                 val shown = islandPicture(set, info, ui.moorAtMs, s.mooring, animOff, Modifier.matchParentSize(), sunMotion = !animOff && s.animating,
                     outsideAir = ui.climate?.recircOn == false, night = night,
                     setTemp = ui.climate?.takeIf { it.powerOn == true }?.setTempC, lift = skyLift,
-                    flagSlot = flagSlot, flagScale = flagScale.value, flagAlpha = flagAlpha.value)
+                    flagPlace = flagPlace, flagScale = flagScale.value, flagAlpha = flagAlpha.value)
                 // H1: the sun and its label sit top right, so the toast takes the top-left sky up to the label.
                 var sunLabelLeft by remember { mutableFloatStateOf(Float.NaN) }
                 IslandLabels(ui, set, k, picW.value, boxH.value, shown, sunLiftDp = skyLift.sun * k * set.zoom, animOff = animOff) { sunLabelLeft = it }
-                ui.bar?.let { b -> KeepChip(b.keepKm, outline = info.crateOutline, night = night, set = set, k = k) }
+                ui.bar?.let { b -> KeepChip(b.keepKm, ui.hero?.coveredKm, outline = info.crateOutline, night = night, set = set, k = k) }
                 val toastMax = if (sunLabelLeft.isNaN()) Modifier else Modifier.widthIn(max = with(LocalDensity.current) { sunLabelLeft.toDp() } - 32.dp)
                 Box(Modifier.align(Alignment.TopStart).padding(start = 16.dp).then(toastMax)) { pictureTop() }
             }
@@ -407,7 +428,7 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: 
  * night #F0B850; #E0A030 was 2.27:1). Size and place follow the picture's scale [k] (dp per canvas px).
  */
 @Composable
-private fun KeepChip(keepKm: Int, outline: Boolean, night: Boolean, set: H1Set, k: Float) {
+private fun KeepChip(keepKm: Int, leftKm: Int?, outline: Boolean, night: Boolean, set: H1Set, k: Float) {
     val bg = if (night) Color(0xFF2B3140) else Color.White
     val ink = if (night) Color(0xFFD6DAE0) else Color(0xFF4A4E57)
     val edge = when {
@@ -426,7 +447,8 @@ private fun KeepChip(keepKm: Int, outline: Boolean, night: Boolean, set: H1Set, 
         }
     }.height(chipH.dp).background(bg, shape).border(if (outline) 2.dp else 1.dp, edge, shape)
         .padding(horizontal = (16f * k).dp), contentAlignment = Alignment.Center) {
-        Text(stringResource(R.string.is_keep_chip, keepKm), style = ChaseomUi.caption.copy(fontSize = font, lineHeight = font),
+        // K2 (below the keep share): the same km as the line under the hero ("약 29km 남음"), not the target (external #5).
+        Text(if (leftKm != null) stringResource(R.string.is_keep_chip_left, leftKm) else stringResource(R.string.is_keep_chip, keepKm), style = ChaseomUi.caption.copy(fontSize = font, lineHeight = font),
             color = ink, softWrap = false, maxLines = 1)
     }
 }
@@ -498,7 +520,7 @@ private fun rememberBitmaps(): H1Bitmaps {
 @Composable
 private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring: Boolean, motionOff: Boolean, modifier: Modifier,
                           sunMotion: Boolean = false, outsideAir: Boolean = false, night: Boolean = false, setTemp: Float? = null,
-                          lift: SkyLift = SkyLift.NONE, flagSlot: Float? = null, flagScale: Float = 1f, flagAlpha: Float = 1f): H1Shown {
+                          lift: SkyLift = SkyLift.NONE, flagPlace: FlagPlace? = null, flagScale: Float = 1f, flagAlpha: Float = 1f): H1Shown {
     val target = H1Pic.of(info)
     val bmp = rememberBitmaps()
     var shown by remember { mutableStateOf(target) } // first value at once: never an empty island first
@@ -566,7 +588,6 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
     }
     val cur = rememberUpdatedState(shown)
     val before = rememberUpdatedState(prev)
-    val flagI = flagSlot?.let { flagSlotIndex(it) }
     Spacer(modifier.drawBehind {
         bmp.frame()
         // Sky above a picture shorter than its box; deep sea under the lower 30 % so no rounding gap shows sky.
@@ -579,7 +600,7 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
             scale(k, k, pivot = Offset.Zero) {
                 drawH1(set, bmp, cur.value, before.value, t.value,
                     sunScale = sunR.value / H1Set.SUN_R[cur.value.sun], glow = glow.value * GLOW_EXTRA, lift = lift,
-                    driftT = drift.value, withSun = !night, flagSlot = flagI, flagScale = flagScale, flagAlpha = flagAlpha)
+                    driftT = drift.value, withSun = !night, flagPlace = flagPlace, flagScale = flagScale, flagAlpha = flagAlpha)
             }
         }
         if (night) {
@@ -600,10 +621,10 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
                     // The night flag (light cloth) is drawn over the night light, like the night sun and rain.
                     // The night flag (white cloth) goes over the night light; in the row its buoy is drawn again
                     // in front of it, lit like the rest (S1_SPEC v3, M-5).
-                    if (flagI != null) {
-                        val inRow = flagI <= c.buoys
-                        drawFlagS1(set, bmp, "flag_row_l1_night", flagI, inRow, flagScale, flagAlpha)
-                        if (inRow) drawBuoy(set, bmp, flagI, 1f, NIGHT_BUOY)
+                    if (flagPlace != null) {
+                        drawFlagS1(set, bmp, "flag_row_l1_night", flagPlace, flagScale, flagAlpha)
+                        val i = flagPlace.pos.toInt()
+                        if (flagPlace.inRow && i in 1..c.buoys) drawBuoy(set, bmp, i, 1f, NIGHT_BUOY)
                     }
                 }
             }
@@ -622,7 +643,7 @@ internal data class H1Shown(val pic: H1Pic, val sunR: Float)
  */
 internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, prev: H1Pic?, t: Float,
                               sunScale: Float = 1f, glow: Float = 0f, lift: SkyLift = SkyLift.NONE,
-                              driftT: Float = -1f, withSun: Boolean = true, flagSlot: Int? = null, flagScale: Float = 1f,
+                              driftT: Float = -1f, withSun: Boolean = true, flagPlace: FlagPlace? = null, flagScale: Float = 1f,
                               flagAlpha: Float = 1f) {
     val p = prev ?: cur
     val a = if (prev == null) 1f else t
@@ -650,15 +671,15 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
     } else if (set.layers.containsKey("air")) slot(if (p.air) "air" else null, if (cur.air) "air" else null, y = lift.sun)
     // S1: the sea is one fixed strip; its height never changes with the battery.
     drawRect(H1Set.SEA_DEEP, Offset(0f, set.waterY), androidx.compose.ui.geometry.Size(set.w, set.h - set.waterY + 2f))
-    val inRow = flagSlot != null && flagSlot <= cur.buoys
+    val inRow = flagPlace?.inRow == true
     // In the row the flag stands behind its slot's buoy (the buoy still counts); out of the row on a thin plate.
-    if (withSun && flagSlot != null && inRow) drawFlagS1(set, bmp, "flag_row_l1", flagSlot, inRow = true, flagScale, flagAlpha)
+    if (withSun && flagPlace != null && inRow) drawFlagS1(set, bmp, "flag_row_l1", flagPlace, flagScale, flagAlpha)
     for (i in 1..IslandInfo.MAX_BUOYS) {
         val was = if (i <= p.buoys) 1f else 0f
         val now = if (i <= cur.buoys) 1f else 0f
         drawBuoy(set, bmp, i, was + (now - was) * a)
     }
-    if (withSun && flagSlot != null && !inRow) drawFlagS1(set, bmp, "flag_row_l1", flagSlot, inRow = false, flagScale, flagAlpha)
+    if (withSun && flagPlace != null && !inRow) drawFlagS1(set, bmp, "flag_row_l1", flagPlace, flagScale, flagAlpha)
 }
 
 /** S2: buoy [i] cut out of buoys_n1_l1 and drawn twice its size, its foot 4 px into the sea strip. */
@@ -679,11 +700,12 @@ internal fun DrawScope.drawBuoy(set: H1Set, bmp: (Int) -> ImageBitmap, i: Int, a
  * down to the water, and under an out-of-row flag a thin plate 36 x 6 in the pole's colour (a dome read as a buoy, B-1).
  * Pulse [scale] is about the foot.
  */
-internal fun DrawScope.drawFlagS1(set: H1Set, bmp: (Int) -> ImageBitmap, name: String, slot: Int, inRow: Boolean,
+internal fun DrawScope.drawFlagS1(set: H1Set, bmp: (Int) -> ImageBitmap, name: String, place: FlagPlace,
                                   scale: Float, alpha: Float) {
     val l = set.layers[name] ?: return
     val img = bmp(l.id)
-    val cx = buoyCenter(set, slot)
+    val cx = buoyCenter(set, place.pos)
+    val inRow = place.inRow
     val top = flagTop(set)
     val left = cx - BUOY_SCALE * (set.poleL + set.poleR) / 2f
     val poleW = BUOY_SCALE * (set.poleR - set.poleL).toFloat()

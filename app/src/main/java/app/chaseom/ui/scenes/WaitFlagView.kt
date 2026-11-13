@@ -85,9 +85,9 @@ fun WaitFlagRow(ui: StayUi, actions: StayActions) {
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite }) {
-                Text(line, style = ChaseomUi.body.copy(fontWeight = FontWeight.SemiBold), color = k.text1)
+                Text(keepPhrases(line), style = ChaseomUi.body.copy(fontWeight = FontWeight.SemiBold), color = k.text1)
                 if (!f.airQuiet && f.outcome == WaitOutcome.SHORT && f.swapGainMinutes != null) {
-                    Text(stringResource(R.string.wf_short_swap, signedDuration(f.swapGainMinutes)), style = ChaseomUi.body, color = k.text1)
+                    Text(keepPhrases(stringResource(R.string.wf_short_swap, signedDuration(f.swapGainMinutes))), style = ChaseomUi.body, color = k.text1)
                 }
                 Text(stringResource(R.string.wf_note), style = ChaseomUi.caption, color = k.text2)
             }
@@ -96,6 +96,12 @@ fun WaitFlagRow(ui: StayUi, actions: StayActions) {
         }
     }
 }
+
+/**
+ * Lines wrap only between " · " phrases, never inside one ("약 33분 / 짧아요" on Small, external S1S2 #8): the spaces
+ * inside each phrase become no-break spaces. A phrase wider than the line still wraps (the text never clips).
+ */
+internal fun keepPhrases(text: String): String = text.split(" · ").joinToString(" · ") { it.replace(' ', '\u00A0') }
 
 /** Flag mark: a pole from [top] to [bottom] at [x] with a small pennant to the right. */
 fun DrawScope.waitFlagMark(x: Float, top: Float, bottom: Float, pole: Color, pennant: Color) {
