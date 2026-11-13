@@ -133,11 +133,10 @@
 
     <!-- Face: small weather island (flag FACE_ISLAND). Picture has no text; chips only. -->
     <string name="is_legend">섬은 공조 설정·배터리로 그려요 · 실내 측정 아님</string>
-    <!-- Legend: picture shapes = values, no numbers. -->
+    <!-- Legend: picture shapes = values, no numbers. Build G S1: three symbols (sun, buoy, flag); battery is the
+         header number and tomorrow's share is the dock chip (h_bar_keep), so no water or crate item. -->
     <string name="is_lg_sun">해 = 설정 온도</string>
-    <string name="is_lg_water">물 = 배터리</string>
     <string name="is_lg_buoy">부표 1개 = 30분</string>
-    <string name="is_lg_keep">짐 = 내일 몫</string>
     <!-- Only while the cloud shows; N = minutes recirculation has been on. -->
     <string name="is_lg_air">구름 = 내기순환 %1$d분째 (공기 측정 아님)</string>
     <!-- Far rain legend: only while the AUTO wiper is wiping. -->

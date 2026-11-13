@@ -163,9 +163,11 @@ class WordingRulesTest {
         assertEquals(emptyList<String>(), strings.keys.filter { it.startsWith("is_rail_") })
         // The confirmed legend strings, letter for letter.
         assertEquals("해 = 설정 온도", strings["is_lg_sun"])
-        assertEquals("물 = 배터리", strings["is_lg_water"])
         assertEquals("부표 1개 = 30분", strings["is_lg_buoy"])
-        assertEquals("짐 = 내일 몫", strings["is_lg_keep"])
+        // Build G S1: water and crates leave the legend (battery = header number, tomorrow = dock chip "내일 지킬 몫 n km").
+        assertFalse(strings.containsKey("is_lg_water") || strings.containsKey("is_lg_keep"))
+        assertEquals("내일 지킬 몫 %1\$dkm", strings["h_bar_keep"])
+        assertEquals("깃발 = 내가 고른 시각", strings["is_lg_flag"])
         assertEquals("구름 = 내기순환 %1\$d분째 (공기 측정 아님)", strings["is_lg_air"])
         assertEquals("먼 비 = 와이퍼 AUTO 작동", strings["is_lg_rain"]) // AUTO and actually wiping only
         // The toast's ± minutes carry "(추정)" -> "설정 26°C · 풍량 6 · −21분 (추정)".

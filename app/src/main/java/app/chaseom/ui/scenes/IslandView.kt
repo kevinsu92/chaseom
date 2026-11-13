@@ -104,17 +104,26 @@ internal class H1Set(
     val zoom: Float = 1f,
     /** Box height over the set's own ratio (the zoomed picture's top sky is cropped above this). */
     val boxGrow: Float = 1f,
+    /**
+     * Canvas height drawn (build G, S1): the water is a fixed strip [WATER_STRIP] px under the lowest water line,
+     * so the picture ends there; the layers below it are cut by the box clip.
+     */
+    val h: Float = 600f,
+    /** S2: canvas x of the first buoy (where the boat was) and the dock-top centre of the tomorrow chip. */
+    val buoyLeft: Float = 0f,
+    val chipX: Float = 0f, val chipY: Float = 0f,
 ) {
-    val h = 600f
     /** Canvas y of the water surface per step 1..5 (layers manifest water_top_y_by_step). */
     val waterTop: FloatArray get() = if (w == 1600f) floatArrayOf(520f, 480f, 440f, 400f, 360f) else floatArrayOf(480f, 456f, 432f, 408f, 384f)
     companion object {
         val Large = H1Set(H1Layers.L, 1600f, 40f, 1450f, 82f, // sun higher (108 -> 82)
             batX = 40f, batY = 569f, buoyX = 1466f, buoyY = 569f, buoyAnchor = 0.5f, keepX = 1172f, keepY = 569f, keepAnchor = 0.5f,
-            zoom = 1.08f, boxGrow = 1.08f) // one scale per window size; the whole zoomed picture fits
+            zoom = 1.08f, boxGrow = 1.08f, // one scale per window size; the whole zoomed picture fits
+            h = 520f + WATER_STRIP, buoyLeft = 1060f, chipX = 965f, chipY = 285f)
         // Small rail line 1 = battery (start) + buoys (end at 932), line 2 = crates.
         val Small = H1Set(H1Layers.S, 960f, 24f, 836f, 92f, // sun 118 -> 92
-            batX = 28f, batY = 503f, buoyX = 932f, buoyY = 503f, buoyAnchor = 1f, keepX = 28f, keepY = 551f, keepAnchor = 0f)
+            batX = 28f, batY = 503f, buoyX = 932f, buoyY = 503f, buoyAnchor = 1f, keepX = 28f, keepY = 551f, keepAnchor = 0f,
+            h = 480f + WATER_STRIP, buoyLeft = 560f, chipX = 470f, chipY = 300f)
         /** Sky above a picture that is shorter than its box, and the sea under its lower 30 % (no seam). */
         val SKY_TOP = Color(0xFFF5F6F8) // The sky top is the page colour (the picture melts into it)
         val SEA_DEEP = Color(0xFF3B536E) // water bottom
@@ -122,6 +131,17 @@ internal class H1Set(
         val SUN_R = floatArrayOf(28f, 44f, 64f)
     }
 }
+
+/**
+ * Build G, S1 (three always-on symbols: sun, buoys, flag). The water is a fixed strip (battery is the header's
+ * "배터리 n%"), tomorrow's share is the dock chip "내일 지킬 몫 n km" (the crates and their K1/K2 outline move into
+ * the chip's amber border), and the boat, wind lines and water ticks are not drawn. Clouds and far rain stay events.
+ */
+internal const val WATER_STRIP = 22f
+/** The fixed water step under S1 (the lowest water line, so the island shows whole). */
+internal const val S1_LEVEL = 1
+/** S2: buoys and flag twice their art size, scaled about the first buoy's foot on the water line. */
+internal const val BUOY_SCALE = 2f
 
 /** Sun radius change: 600 ms, cubic-bezier(0, 0, 0.2, 1), only across an S/M/L step. */
 internal const val SUN_MS = 600
@@ -136,7 +156,7 @@ internal data class H1Pic(val sun: Int, val wind: Int, val level: Int, val buoys
     companion object {
         // Boat = car (trunk hatch, charge cable) is off: the cable read as
         // "charging" for a port that is only open, and the hatch is ~25 px and repeats the Pleos 3D car.
-        fun of(i: IslandInfo) = H1Pic(i.sunLevel, i.wind, i.waterStep + 1, i.buoys, i.crateOutline, i.cloud,
+        fun of(i: IslandInfo) = H1Pic(i.sunLevel, i.wind, S1_LEVEL, i.buoys, i.crateOutline, i.cloud,
             rain = app.chaseom.BuildConfig.KICK_RAIN && i.rain)
     }
 }
@@ -249,8 +269,7 @@ fun IslandPanel(
             // On Small the caption row is two lines (legend, then the cause chip).
             val chipLineH = (if (set === H1Set.Small) ChaseomUi.line + 32.dp else 0.dp) +
                 (if (ui.recircMinutes != null) ChaseomUi.line + 32.dp else 0.dp) +
-                (if (app.chaseom.BuildConfig.KICK_RAIN && ui.rain) ChaseomUi.line + 32.dp else 0.dp) +
-                (if (ui.waitForecast != null && ui.waitForecast.outcome != app.chaseom.stay.WaitOutcome.BELOW_KEEP) ChaseomUi.line + 32.dp else 0.dp)
+                (if (app.chaseom.BuildConfig.KICK_RAIN && ui.rain) ChaseomUi.line + 32.dp else 0.dp)
             // When what is under the picture (K1 card, flag lines, cards) leaves less than the natural height,
             // the whole picture shrinks to fit (never below 75 %) instead of cropping the sky and the trees,
             // so the flag line, "표시만 해요" and "깃발 내리기" stay on the first screen.
@@ -303,6 +322,7 @@ fun IslandPanel(
                 // H1: the sun and its label sit top right, so the toast takes the top-left sky up to the label.
                 var sunLabelLeft by remember { mutableFloatStateOf(Float.NaN) }
                 IslandLabels(ui, set, k, picW.value, boxH.value, shown, sunLiftDp = skyLift.sun * k * set.zoom, animOff = animOff) { sunLabelLeft = it }
+                ui.bar?.let { b -> KeepChip(b.keepKm, k2 = info.crateOutline, night = night, set = set, k = k, picW = picW.value, boxH = boxH.value) }
                 val toastMax = if (sunLabelLeft.isNaN()) Modifier else Modifier.widthIn(max = with(LocalDensity.current) { sunLabelLeft.toDp() } - 32.dp)
                 Box(Modifier.align(Alignment.TopStart).padding(start = 16.dp).then(toastMax)) { pictureTop() }
             }
@@ -323,12 +343,13 @@ fun IslandPanel(
                 Text(stringResource(R.string.is_legend), style = ChaseomUi.caption, color = k.text2, softWrap = false)
             }
         }
+        val flagInLegend = ui.waitForecast != null && ui.waitForecast.outcome != app.chaseom.stay.WaitOutcome.BELOW_KEEP
         val legend: @Composable () -> Unit = {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                // S1: three symbols on one line. The flag item is there while a flag is planted.
                 LegendItem(Swatch.SUN, stringResource(R.string.is_lg_sun))
-                LegendItem(Swatch.WATER, stringResource(R.string.is_lg_water))
                 LegendItem(Swatch.BUOY, stringResource(R.string.is_lg_buoy))
-                LegendItem(Swatch.CRATE, stringResource(R.string.is_lg_keep))
+                if (flagInLegend) LegendItem(Swatch.FLAG, stringResource(R.string.is_lg_flag))
             }
         }
         // The cloud item exists only while the cloud is drawn; its own line under the legend.
@@ -342,10 +363,6 @@ fun IslandPanel(
             if (showRain) {
                 Spacer(Modifier.height(ChaseomUi.line))
                 LegendItem(Swatch.RAIN, stringResource(R.string.is_lg_rain))
-            }
-            if (ui.waitForecast != null && ui.waitForecast.outcome != app.chaseom.stay.WaitOutcome.BELOW_KEEP) {
-                Spacer(Modifier.height(ChaseomUi.line))
-                LegendItem(Swatch.FLAG, stringResource(R.string.is_lg_flag))
             }
         }
         if (small) {
@@ -406,6 +423,32 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: 
     // The label keeps 22 px from the disc while the sun radius animates.
     PicText(AnnotatedString(text), bare, x(set.sunX - shown.sunR - 22f), y(set.sunY) + sunLiftDp, 1f, sunLabelLeft)
 }
+
+/**
+ * S1: tomorrow's share as one chip on the dock ("내일 지킬 몫 30km", the bottom bar's own words), replacing the boat's
+ * three crates. At K1 / K2 the chip takes the crates' amber outline (#E0A030, 2 dp); the words do not change.
+ */
+@Composable
+private fun KeepChip(keepKm: Int, k2: Boolean, night: Boolean, set: H1Set, k: Float, picW: Float, boxH: Float) {
+    val z = k * set.zoom
+    val cx = picW - (set.w - set.chipX) * z
+    val cy = boxH - (set.h - set.chipY) * z
+    val bg = if (night) Color(0xFF1E2A40) else Color.White
+    val ink = if (night) Color(0xFFE6E9EE) else Color(0xFF131417)
+    val edge = when { k2 -> KEEP_AMBER; night -> Color(0xFF4A5568); else -> Color(0xFFC9CED6) }
+    Box(Modifier.layout { m, cons ->
+        val p = m.measure(cons.copy(minWidth = 0, minHeight = 0))
+        layout(p.width, p.height) {
+            p.place((cx.dp.toPx() - p.width / 2f).roundToInt(), (cy.dp.toPx() - p.height / 2f).roundToInt())
+        }
+    }.background(bg, RoundedCornerShape(8.dp)).border(if (k2) 2.dp else 1.dp, edge, RoundedCornerShape(8.dp))
+        .padding(horizontal = 12.dp, vertical = 4.dp)) {
+        Text(stringResource(R.string.h_bar_keep, keepKm), style = ChaseomUi.caption, color = ink, softWrap = false, maxLines = 1)
+    }
+}
+
+/** K1 / K2 outline of tomorrow's share (was the crate frame). */
+internal val KEEP_AMBER = Color(0xFFE0A030)
 
 /** Shown for [SUN_LABEL_MS] after the last change of the set temperature: (before the first change, now). */
 @Composable
@@ -520,20 +563,14 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         glow.snapTo(0f)
         glow.animateTo(0f, keyframes { durationMillis = GLOW_MS; 1f at GLOW_MS / 2 })
     }
-    // 1 = out at sea, 0 = moored.
-    val moor = remember { Animatable(if (mooring && !motionOff) 1f else 0f) }
-    val bob = remember { Animatable(0f) }
+    // S1 draws no boat, so there is no mooring slide; the arrival keeps its probe line and the picture rise.
     val windowInfo = LocalWindowInfo.current
     LaunchedEffect(moorAtMs) {
-        if (!mooring || motionOff) { moor.snapTo(0f); return@LaunchedEffect }
-        moor.snapTo(1f); bob.snapTo(0f)
-        // Start once our window is focused and has drawn a frame, so the whole arrival is visible.
+        if (!mooring || motionOff) return@LaunchedEffect
         withTimeoutOrNull(400) { snapshotFlow { windowInfo.isWindowFocused }.first { it } }
         withFrameNanos { }
         delay(Island.MOOR_START_DELAY_MS)
         app.chaseom.Probe.log("moorFrame")
-        moor.animateTo(0f, tween(Island.MOOR_SLIDE_MS, easing = androidx.compose.animation.core.CubicBezierEasing(0.33f, 1f, 0.68f, 1f)))
-        bob.animateTo(0f, keyframes { durationMillis = Island.MOOR_BOB_MS; Island.BOB_DP at Island.MOOR_BOB_MS / 2 })
     }
     // Switching to outside air while the cloud is up, the cloud drifts off the picture once and is
     // gone (no text, no other change). A window opening just fades it, like every other state change.
@@ -554,15 +591,11 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
         drawRect(H1Set.SKY_TOP)
         drawRect(H1Set.SEA_DEEP, topLeft = Offset(0f, size.height * 0.7f))
         val k = size.width / set.w * set.zoom
-        val boat = set.layers.getValue("boat_l1")
-        val boatRight = boat.x + bmp(boat.id).width
-        // The boat starts inside the visible picture: min(360 dp, right edge - boat right - 8 dp).
-        val slide = minOf(Island.MOOR_SLIDE_DP.dp.toPx(), (set.w - boatRight) * k - 8.dp.toPx()).coerceAtLeast(0f)
         // Zoom about the bottom-right corner: the canvas right and bottom edges stay at the box's edges.
         val ox = size.width - set.w * k; val oy = size.height - set.h * k
         translate(left = ox, top = oy) {
             scale(k, k, pivot = Offset.Zero) {
-                drawH1(set, bmp, cur.value, before.value, t.value, boatDx = moor.value * slide / k, boatDy = bob.value.dp.toPx() / k,
+                drawH1(set, bmp, cur.value, before.value, t.value,
                     sunScale = sunR.value / H1Set.SUN_R[cur.value.sun], glow = glow.value * GLOW_EXTRA, lift = lift,
                     driftT = drift.value, withSun = !night, flagSlot = flagSlot, flagScale = flagScale, flagAlpha = flagAlpha)
             }
@@ -583,7 +616,7 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
                     }
                     drawSun(set, bmp, cur.value, sunR.value / H1Set.SUN_R[cur.value.sun], glow.value * GLOW_EXTRA, lift, night = true)
                     // The night flag (light cloth) is drawn over the night light, like the night sun and rain.
-                    if (flagSlot != null) drawFlag(set, bmp, "flag_row_l1_night", flagSlot, -(c.level - 1) * set.step, flagScale, flagAlpha)
+                    if (flagSlot != null) onBuoyRow(set) { drawFlag(set, bmp, "flag_row_l1_night", flagSlot, -(c.level - 1) * set.step, flagScale, flagAlpha) }
                 }
             }
         }
@@ -595,7 +628,7 @@ private fun islandPicture(set: H1Set, info: IslandInfo, moorAtMs: Long?, mooring
 internal data class H1Shown(val pic: H1Pic, val sunR: Float)
 
 /** The 13-layer stack (design layer order), in canvas px. [t] cross-fades [prev] -> [cur]. */
-internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, prev: H1Pic?, t: Float, boatDx: Float = 0f, boatDy: Float = 0f,
+internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic, prev: H1Pic?, t: Float,
                               sunScale: Float = 1f, glow: Float = 0f, lift: SkyLift = SkyLift.NONE,
                               driftT: Float = -1f, withSun: Boolean = true, flagSlot: Float? = null, flagScale: Float = 1f,
                               flagAlpha: Float = 1f) {
@@ -620,7 +653,7 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
     if (withSun) slot(if (p.rain) "rain" else null, if (cur.rain) "rain" else null)
     slot("trees_w${p.wind}", "trees_w${cur.wind}")
     if (withSun) drawSun(set, bmp, cur, sunScale, glow, lift)
-    slot(if (p.wind > 0) "wind_w${p.wind}" else null, if (cur.wind > 0) "wind_w${cur.wind}" else null, y = lift.wind)
+    // S1: no wind lines (the fan had no legend item; the bottom climate bar shows it).
     // One fixed cloud layer after the wind, same lift as the sun (only in layer sets that have it).
     if (driftT >= 0f) {
         // Drifting out to the right edge, fading over the last half.
@@ -628,17 +661,29 @@ internal fun DrawScope.drawH1(set: H1Set, bmp: (Int) -> ImageBitmap, cur: H1Pic,
         if (air != null) one("air", (2f - 2f * driftT).coerceIn(0f, 1f), x = (set.w - air.x) * driftT, y = lift.sun)
     } else if (set.layers.containsKey("air")) slot(if (p.air) "air" else null, if (cur.air) "air" else null, y = lift.sun)
     slot("wet_l${p.level}", "wet_l${cur.level}")
-    one("boat_l1", 1f, boatDx, dy + boatDy)
-    slot("buoys_n${p.buoys}_l1", "buoys_n${cur.buoys}_l1", y = dy)
-    // Wait flag on the buoy row: after the buoys, before the water (its foot sits on the water line).
-    if (withSun && flagSlot != null) drawFlag(set, bmp, "flag_row_l1", flagSlot, dy, flagScale, flagAlpha)
+    // S1: no boat and no crates (tomorrow's share is the dock chip); S2: the buoy row at twice its size.
+    onBuoyRow(set) {
+        slot("buoys_n${p.buoys}_l1", "buoys_n${cur.buoys}_l1", y = dy)
+        // Wait flag on the buoy row: after the buoys, before the water (its foot sits on the water line).
+        if (withSun && flagSlot != null) drawFlag(set, bmp, "flag_row_l1", flagSlot, dy, flagScale, flagAlpha)
+    }
     slot("water_l${p.level}", "water_l${cur.level}")
     slot("refl_l${p.level}", "refl_l${cur.level}")
     slot("surf_l${p.level}", "surf_l${cur.level}")
-    slot("ticks_l${p.level}", "ticks_l${cur.level}")
-    // The crate frame rides on the boat (K1 / K2: IslandInfo.crateOutline).
-    slot(if (p.k2) "k2_l1" else null, if (cur.k2) "k2_l1" else null, boatDx, dy + boatDy)
+    // S1: no water ticks (the water no longer moves).
 }
+
+/** S2: draws [block] scaled [BUOY_SCALE]x about the first buoy's foot on the lowest water line, moved to [H1Set.buoyLeft]. */
+internal fun DrawScope.onBuoyRow(set: H1Set, block: DrawScope.() -> Unit) {
+    val row = set.layers["buoys_n1_l1"] ?: return block()
+    translate(left = set.buoyLeft - row.x) { scale(BUOY_SCALE, BUOY_SCALE, pivot = buoyPivot(set)) { block() } }
+}
+
+/** Pivot of the S2 buoy row: the first buoy layer's left edge on the S1 water line. */
+internal fun buoyPivot(set: H1Set): Offset = Offset(set.layers.getValue("buoys_n1_l1").x, set.waterTop[S1_LEVEL - 1])
+
+/** Canvas x where art x [x] of the buoy row lands after the S2 move and scale. */
+internal fun buoyRowX(set: H1Set, x: Float): Float = set.buoyLeft + (x - buoyPivot(set).x) * BUOY_SCALE
 
 /** Canvas px between two buoy slots for the flag layer (flag_manifest.json step_px). */
 internal fun flagStep(set: H1Set): Float = if (set === H1Set.Large) 44f else 32f
