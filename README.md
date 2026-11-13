@@ -75,6 +75,21 @@
 - **외기온은 영하 10°C보다 추울 때만 씁니다.** AAOS `ENV_OUTSIDE_TEMPERATURE`(normal 권한)를 읽어, 영하 10°C보다 추우면 난방 부하를 (설정온도 − 외기온) / 32로 늘립니다. 그보다 따뜻하거나, 값을 못 읽거나, −40~60°C 밖이면 영하 10°C로 계산합니다. 계수를 잰 조건이 영하 10°C이고 온화한 날의 선형식은 검증되지 않았기 때문에, 외기온으로 남은 시간을 늘리지는 않습니다(짧게 틀리는 쪽). 냉방(2.0 kW)은 외기와 무관한 상단값 그대로입니다.
 - **A/C를 켜면 난방 대신 냉방 2.0 kW로 계산합니다.** 겨울에 A/C와 난방을 함께 켜면 실제로는 난방(22°C에서 2.3 kW)이 더 들지만 앱은 2.0 kW만 셉니다. 이때 남은 시간이 약 10~15% 길게 나올 수 있어 "짧게 틀린다"는 원칙에 어긋납니다. 2차에서 고칩니다(`stay/EnergyModel.kt` `drawKw`).
 
+## 안전 규칙 = 테스트
+아래 규칙을 어기는 코드나 문구를 넣으면 단위 테스트(`./gradlew testDebugUnitTest`)가 실패합니다. 문구 테스트는 화면 문자열 파일을 직접 읽어 검사합니다.
+
+| 지키는 규칙 | 테스트 |
+|---|---|
+| 계산한 숫자에는 늘 "(추정)"이 붙는다 | `WordingRulesTest.computedValuesMarkedEstimate` |
+| 앱은 공조를 끄지 않는다고 말하고, 경고(K1·K2)도 공조를 끄거나 줄이라고 하지 않는다 | `WordingRulesTest.keepShareNeverLockedAndAppDoesNotControlClimate`, `WordingRulesTest.k1AndK2NeverTellThePersonToCutTheClimate` |
+| 뒷좌석을 "비었음"으로 표시하지 않고, 영수증에는 늘 "뒷좌석 직접 확인" 줄이 있다. 뒷좌석 센서를 읽지 못하면 "감지 안 됨"이 아니라 "확인 안 됨"이라고 쓴다 | `WordingRulesTest.rearSeatWording`, `StayEngineTest.receiptRowsOrderAndRearAlwaysCheck`, `StayEngineTest.rearReadFailureIsUnknownNotNotDetected` |
+| 수면·차박·보장 같은 금칙어가 없다(취급설명서 경고 인용만 예외) | `WordingRulesTest.noBannedWordsOutsideTheWarnings` |
+| 머무는 동안 60분마다, 야간에는 시작과 매시 고지가 다시 뜬다 | `StayEngineTest.hourNoticeEvery60Minutes`, `StayEngineTest.nightNoticeAtStartAndHourly` |
+| 주행 중 화면은 숫자 없이 짧은 안내뿐이고, 기어를 모르거나 연결이 끊기면 주행 중으로 보고 화면을 접는다 | `WordingRulesTest.drivingGlanceShortAndNumberFree`, `DrivingStateGateTest.unknownGearFailsSafeToDriving` |
+| 전기차로 확인되지 않으면 남은 시간을 숨기고 "시동" 고지를 한다 | `ModeAndEnergyTest.modeRules`, `StayEngineTest.reducedModeHasNoEnergyAnywhere` |
+| 기다림 깃발은 표시만 하고 안심 문구를 쓰지 않으며, 22시 뒤에는 보이지 않는다 | `WordingRulesTest.waitFlagWordingIsDisplayOnlyAndNeverReassures`, `WaitFlagTest.f8FlagHidesAtTwentyTwo` |
+| 섬 그림은 늘 원래 크기로 그린다. 부표 6개와 마지막 칸의 깃발도 그림 오른쪽 끝에서 8px 이상 안쪽에 든다 | `S1LayoutTest` |
+
 ## 라이선스
 - 코드는 [LICENSE](LICENSE)를 따릅니다.
 - 섬 그림, 아이콘, 화면 문구는 직접 만들었으며 외부 그림이나 캐릭터는 쓰지 않았습니다.
