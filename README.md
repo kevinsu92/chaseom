@@ -33,6 +33,23 @@
 - 릴리스 APK: `keystore.properties`를 `keystore.properties.example`처럼 준비한 뒤 `scripts/build-release.ps1`로 만듭니다.
 - Windows에서 경로에 한글이 있으면 AGP가 빌드를 거부합니다. 영문 경로에 클론하거나, 드라이브 문자를 자동으로 연결(`subst`)하는 위 스크립트를 쓰세요.
 
+**심사위원 3분 재현 (에뮬레이터 없이)**
+
+시연의 핵심 숫자(배터리 19%에서 약 2시간 47분, 다이얼 −21분, 열선 카드 +16분)는 화면 없이 두 줄로 다시 낼 수 있습니다.
+
+1. Python 3.9 이상만 있으면 됩니다(외부 패키지 없음, 약 1초).
+   ```bash
+   python tools/compare_public.py --check
+   ```
+   첫 줄에 `167분 = 약 2시간 47분`, `−21분 (167 → 146)`, `+16분 (146 → 162)`이 나옵니다. 이 스크립트는 `EnergyModel.kt` 식을 32비트 Float 그대로 옮겼고, 단위 테스트의 외기온별 표(−20·−15·−10·0·25°C)와 다르면 실패합니다. 이어서 공개 실측 21행과의 대조표를 내고, [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)가 출력과 같은지 확인합니다.
+2. 같은 숫자를 앱 코드 자체로 확인하려면 JVM 단위 테스트를 돌립니다(JDK 17 이상과 Android SDK 필요, 에뮬레이터 불필요).
+   ```bash
+   ./gradlew :app:testDebugUnitTest --tests app.chaseom.stay.OutsideTempGapTest
+   ```
+   `heroFollowsOutsideTemperature`(167), `demoToastUnchangedAtMinus10`(−21), `emulatorReadingKeepsTheDemo`(+16)가 통과합니다(이 클래스 8개). 새 클론에서 잰 시간은 Gradle과 의존성을 처음 받을 때 약 4분 14초, 그다음부터 약 41초입니다(2026-11-13, Windows 11, `--no-daemon`). 3분 안에 끝내려면 1번만으로 충분하고, 2번은 처음 받는 시간이 더 듭니다.
+
+**실차 대신 한 검증과 그 오차**: 실차에서 재지 않았으므로, 조건이 공개된 정차 실측(미국 에너지부·아르곤 연구소 2024, ADAC 2021·2022, INL 등)을 같은 식에 넣어 비교했습니다. 영하 10°C 부근에서는 대부분 앱이 더 많이 쓴다고 계산합니다. **영하 18°C에서는 실제 소모가 앱보다 1.15~1.26배 커서, 배터리 19~20%일 때 화면 숫자가 약 18~32분 깁니다.** 전체 표와 출처는 [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)에 있습니다.
+
 ## 3. 테스트 환경 및 필요한 설정
 | 항목 | 값 |
 |---|---|
@@ -46,7 +63,7 @@
 | 권한 | Pleos `CAR_ENERGY`, `CAR_CLIMATE`, `CAR_SEATS`, `CAR_WINDOWS`, `CAR_DOORS`, `CAR_LIGHTS` / AAOS `CAR_INFO`, `CAR_ENERGY_PORTS`, `CAR_POWERTRAIN`, `CAR_EXTERIOR_ENVIRONMENT` / `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE`. 모두 normal 권한이라 런타임 팝업이 없습니다. 빌드 때 SDK와 AndroidX가 `VEHICLE_BINDING`과 앱 자신의 권한을 더 넣습니다. |
 
 - 모든 화면과 수치는 에뮬레이터에서 확인했고, 실차에서는 확인하지 않았습니다.
-- 남은 시간은 차의 공조 상태에 공개 계수표를 곱해 낸 추정입니다. 계수와 출처는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에, 공개 실측 9건(기관 시험 3건 포함)과의 대조는 같은 문서 §6에 있습니다. 아주 추운 날, 처음 데우는 동안, 직사광선 아래에서는 실제 소모가 더 클 수 있습니다.
+- 남은 시간은 차의 공조 상태에 공개 계수표를 곱해 낸 추정입니다. 계수와 출처는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에, 공개 실측 9건(기관 시험 3건 포함)과의 대조는 같은 문서 §6에 있습니다. 아주 추운 날, 처음 데우는 동안, 직사광선 아래에서는 실제 소모가 더 클 수 있습니다. 그 크기(영하 18°C에서 1.15~1.26배)는 [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)에 있습니다.
 - 에뮬레이터에서 신호별로 확인한 사실은 [docs/PLATFORM_NOTES.md](docs/PLATFORM_NOTES.md)에 있습니다. 알려진 한계는 아래 '한계' 절에 있습니다.
 
 ## 4. APK 위치

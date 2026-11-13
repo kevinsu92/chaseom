@@ -18,6 +18,7 @@
 | `python tools/scenario.py <폴더>` | 시나리오(안전 배너, 환율 카드, 내일 몫 배너, 영수증, 주행 중 화면)를 돌리며 단계마다 스크린샷을 남깁니다 | **`pm clear`로 초기화**합니다. 내일 몫 설정이 기본값(30 km)으로 돌아갑니다 |
 | `python tools/measure.py <apk> <json>` | release APK의 성능을 재서 JSON에 APK sha256과 함께 남깁니다. 항목은 토스트 첫 프레임, P→D 접힘, 앱 시작, CPU, 메모리입니다. README 검증 표의 원본입니다 | 그대로 둠 |
 | `python tools/check_hash.py` | `apk/`의 APK sha256이 README 검증 표·`docs/evidence/measure_release.json`의 해시와 같은지 확인합니다(제출 직전) | 에뮬레이터 필요 없음 |
+| `python tools/compare_public.py [--check\|--write]` | 앱 에너지 식(`EnergyModel.kt`)을 그대로 옮겨 시연 숫자(167분 / −21분 / +16분)를 다시 내고, 공개 정차 실측과 같은 조건으로 대조해 `docs/PUBLIC_COMPARISON.md`를 만들거나 확인합니다 | 에뮬레이터 필요 없음 |
 | `python tools/edges.py <폴더>` | 엣지 상태(시작 직후 "연결 중", 충전 뒤 새 체류, 10분 안 재시작은 이어 감, 충전 중 영수증)를 캡처합니다 | 그대로 둠 |
 
 시간 측정은 앱이 남기는 `PROBE` 로그 한 줄(벽시계 시각과 차량 신호 값만, 사용자 입력은 없음)을 씁니다. 이 로그는 평소에는 꺼져 있고, 도구가 시작할 때 `adb shell setprop log.tag.PROBE D`로 켭니다. 호스트와 에뮬레이터의 시계 차를 8회 왕복 중 가장 빠른 값으로 보정하므로 오차는 약 ±20 ms입니다.
