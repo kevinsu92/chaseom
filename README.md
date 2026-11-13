@@ -25,30 +25,12 @@
    - 배터리 8%: 내일 몫 아래 경고가 나옵니다.
    - 운전석 문 열기: 떠나기 전 영수증이 나옵니다.
    - 기어 **D**: 섬과 숫자를 바로 접습니다. 주행 중에는 시스템이 앱 화면을 가립니다.
-4. 같은 조작을 자동으로 재생하려면 `python tools/demo.py`를 실행합니다. 단계마다 화면 문구를 출력하고 끝에 `6/6 장면 확인`을 냅니다. 도구 설명은 [tools/README.md](tools/README.md)에 있습니다.
 
 **소스에서 빌드**
 - `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`이 필요합니다.
 - 디버그 빌드와 단위 테스트: `./gradlew assembleDebug`, `./gradlew testDebugUnitTest` (테스트 222개).
 - 릴리스 APK: `keystore.properties`를 `keystore.properties.example`처럼 준비한 뒤 `scripts/build-release.ps1`로 만듭니다.
 - Windows에서 경로에 한글이 있으면 AGP가 빌드를 거부합니다. 영문 경로에 클론하거나, 드라이브 문자를 자동으로 연결(`subst`)하는 위 스크립트를 쓰세요.
-
-**심사위원 3분 재현 (에뮬레이터 없이)**
-
-시연의 핵심 숫자(배터리 19%에서 약 2시간 47분, 다이얼 −21분, 열선 카드 +16분)는 화면 없이 두 줄로 다시 낼 수 있습니다.
-
-1. Python 3.9 이상만 있으면 됩니다(외부 패키지 없음, 약 1초).
-   ```bash
-   python tools/compare_public.py --check
-   ```
-   첫 단락에 `167분 = 약 2시간 47분`, `−21분 (167 → 146)`, `+16분 (146 → 162)`이 나옵니다. 이 스크립트는 `EnergyModel.kt` 식을 32비트 Float 그대로 옮겼고, 단위 테스트의 외기온별 표(−20·−15·−10·0·25°C)와 다르면 실패합니다. 이어서 공개 실측 20행과의 대조표를 내고, [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)가 출력과 같은지 확인합니다.
-2. 같은 숫자를 앱 코드 자체로 확인하려면 JVM 단위 테스트를 돌립니다(JDK 17 이상과 Android SDK 필요: `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`. 에뮬레이터 불필요).
-   ```bash
-   ./gradlew :app:testDebugUnitTest --tests app.chaseom.stay.OutsideTempGapTest
-   ```
-   `heroFollowsOutsideTemperature`(167), `demoToastUnchangedAtMinus10`(−21), `emulatorReadingKeepsTheDemo`(+16)가 통과합니다(이 클래스 8개). 새 클론에서 잰 시간은 Gradle과 의존성을 처음 받을 때 약 4분 14초, 그다음부터 약 41초입니다(2026-11-13, Windows 11, `--no-daemon`). 3분 안에는 1번만 돌리면 되고, 2번은 처음 받는 시간이 더 듭니다.
-
-**실차 대신 한 검증과 그 오차**: 실차에서 재지 않았으므로, 조건이 공개된 정차 실측(미국 에너지부·아르곤 연구소 2024, ADAC 2021·2022, INL 등)을 같은 식에 넣어 비교했습니다. 영하 10°C 부근에서는 대부분 앱이 더 많이 쓴다고 계산합니다. 영하 6.7°C에서는 기관 시험 2대 중 1대가 앱 계산보다 약 17% 더 써서, 배터리 19%에서 화면 숫자가 약 24분 깁니다. **영하 18°C에서는 실제 소모가 앱보다 1.15~1.26배 커서, 배터리 19~20%일 때 화면 숫자가 약 18~32분 깁니다.** 전체 표와 출처는 [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)에 있습니다.
 
 ## 3. 테스트 환경 및 필요한 설정
 | 항목 | 값 |
@@ -63,15 +45,15 @@
 | 권한 | Pleos `CAR_ENERGY`, `CAR_CLIMATE`, `CAR_SEATS`, `CAR_WINDOWS`, `CAR_DOORS`, `CAR_LIGHTS` / AAOS `CAR_INFO`, `CAR_ENERGY_PORTS`, `CAR_POWERTRAIN`, `CAR_EXTERIOR_ENVIRONMENT` / `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE`. 모두 normal 권한이라 런타임 팝업이 없습니다. 빌드 때 SDK와 AndroidX가 `VEHICLE_BINDING`과 앱 자신의 권한을 더 넣습니다. |
 
 - 모든 화면과 수치는 에뮬레이터에서 확인했고, 실차에서는 확인하지 않았습니다.
-- 남은 시간은 차의 공조 상태에 공개 계수표를 곱해 낸 추정입니다. 계수와 출처는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에, 공개 실측 20건(기관 시험 9건 포함)과의 대조는 [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)에 있습니다(그중 05_qa가 원문을 대조한 기존 9건은 같은 문서 §6). 아주 추운 날, 처음 데우는 동안, 직사광선 아래에서는 실제 소모가 더 클 수 있습니다. 그 크기(영하 18°C에서 1.15~1.26배)는 [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)에 있습니다.
-- 에뮬레이터에서 신호별로 확인한 사실은 [docs/PLATFORM_NOTES.md](docs/PLATFORM_NOTES.md)에 있습니다. 알려진 한계는 아래 '한계' 절에 있습니다.
+- 남은 시간은 차의 공조 상태에 공개 계수표를 곱해 낸 추정입니다. 계수, 출처, 공개 실측과의 대조는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에 있습니다. 아주 추운 날(영하 18°C에서 실제 소모가 1.15~1.26배), 처음 데우는 동안, 직사광선 아래에서는 실제 소모가 더 클 수 있습니다.
+- 알려진 한계는 아래 '한계' 절에 있습니다.
 
 ## 4. APK 위치
 - **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `9ab0d0c32bb5ef143eee24974c5d5caadc3bbfadfbdb58a72e29b027258ca857`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4) (sha256 `f55b61dc34f68a76cb8bf5358bd1519eb74865798da86568f0deed2cca975480`)
 
 ## 검증 표
-위 APK를 에뮬레이터에서 두 번 잰 값의 범위입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)과 [docs/evidence/measure_run2.json](docs/evidence/measure_run2.json)입니다. 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`, 해시 대조는 `python tools/check_hash.py`를 씁니다.
+위 APK를 에뮬레이터에서 두 번 잰 값의 범위입니다. 첫 측정의 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)입니다.
 
 | 항목 | 값 |
 |---|---|
@@ -92,21 +74,6 @@
 - **재연결은 AAOS 차량 서비스에만 있습니다.** AAOS `Car` 연결은 하나(`vehicle/CarConnection.kt`)이고, 차량 서비스가 다시 시작되면 기어·실내 속성·UX 제한을 다시 등록합니다. 끊긴 동안은 기어를 모름으로 보고 화면을 접습니다(`DrivingStateGateTest`). Pleos Vehicle SDK는 한 번만 초기화하지만, SDK에 연결이 끊겼음을 알리는 콜백이 문서에 없어 다시 붙이지 않습니다. '연결됨'은 첫 기어 값을 받은 뒤에만 표시합니다.
 - **외기온은 영하 10°C보다 추울 때만 씁니다.** AAOS `ENV_OUTSIDE_TEMPERATURE`(normal 권한)를 읽어, 영하 10°C보다 추우면 난방 부하를 (설정온도 − 외기온) / 32로 늘립니다. 그보다 따뜻하거나, 값을 못 읽거나, −40~60°C 밖이면 영하 10°C로 계산합니다. 계수를 잰 조건이 영하 10°C이고 온화한 날의 선형식은 검증되지 않았기 때문에, 외기온으로 남은 시간을 늘리지는 않습니다(짧게 틀리는 쪽). 냉방(2.0 kW)은 외기와 무관한 상단값 그대로입니다.
 - **A/C를 켜면 난방 대신 냉방 2.0 kW로 계산합니다.** 겨울에 A/C와 난방을 함께 켜면 실제로는 난방(22°C에서 2.3 kW)이 더 들지만 앱은 2.0 kW만 셉니다. 이때 남은 시간이 약 10~15% 길게 나올 수 있어 "짧게 틀린다"는 원칙에 어긋납니다. 2차에서 고칩니다(`stay/EnergyModel.kt` `drawKw`).
-
-## 안전 규칙 = 테스트
-아래 규칙을 어기는 코드나 문구를 넣으면 단위 테스트(`./gradlew testDebugUnitTest`)가 실패합니다. 문구 테스트는 화면 문자열 파일을 직접 읽어 검사합니다.
-
-| 지키는 규칙 | 테스트 |
-|---|---|
-| 계산한 숫자에는 늘 "(추정)"이 붙는다 | `WordingRulesTest.computedValuesMarkedEstimate` |
-| 앱은 공조를 끄지 않는다고 말하고, 경고(K1·K2)도 공조를 끄거나 줄이라고 하지 않는다 | `WordingRulesTest.keepShareNeverLockedAndAppDoesNotControlClimate`, `WordingRulesTest.k1AndK2NeverTellThePersonToCutTheClimate` |
-| 뒷좌석을 "비었음"으로 표시하지 않고, 영수증에는 늘 "뒷좌석 직접 확인" 줄이 있다. 뒷좌석 센서를 읽지 못하면 "감지 안 됨"이 아니라 "확인 안 됨"이라고 쓴다 | `WordingRulesTest.rearSeatWording`, `StayEngineTest.receiptRowsOrderAndRearAlwaysCheck`, `StayEngineTest.rearReadFailureIsUnknownNotNotDetected` |
-| 수면·차박·보장 같은 금칙어가 없다(취급설명서 경고 인용만 예외) | `WordingRulesTest.noBannedWordsOutsideTheWarnings` |
-| 머무는 동안 60분마다, 야간에는 시작과 매시 고지가 다시 뜬다 | `StayEngineTest.hourNoticeEvery60Minutes`, `StayEngineTest.nightNoticeAtStartAndHourly` |
-| 주행 중 화면은 숫자 없이 짧은 안내뿐이고, 기어를 모르거나 연결이 끊기면 주행 중으로 보고 화면을 접는다 | `WordingRulesTest.drivingGlanceShortAndNumberFree`, `DrivingStateGateTest.unknownGearFailsSafeToDriving` |
-| 전기차로 확인되지 않으면 남은 시간을 숨기고 "시동" 고지를 한다 | `ModeAndEnergyTest.modeRules`, `StayEngineTest.reducedModeHasNoEnergyAnywhere` |
-| 기다림 깃발은 표시만 하고 안심 문구를 쓰지 않으며, 22시 뒤에는 보이지 않는다 | `WordingRulesTest.waitFlagWordingIsDisplayOnlyAndNeverReassures`, `WaitFlagTest.f8FlagHidesAtTwentyTwo` |
-| 섬 그림은 늘 원래 크기로 그린다. 부표 6개와 마지막 칸의 깃발도 그림 오른쪽 끝에서 8px 이상 안쪽에 든다 | `S1LayoutTest` |
 
 ## 라이선스
 - 코드는 [LICENSE](LICENSE)를 따릅니다.
