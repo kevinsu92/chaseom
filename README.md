@@ -51,7 +51,7 @@
 
 ## 4. APK 위치
 - **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `4e9e09fe9ce6e8403b7226b19350c85e4be67b3cc570d753d4ddcf66e53616de`)
-- 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4)
+- 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4) (sha256 `e8ceed1fa3f8b82b472812833d0bf8d888b571cec5cc59613281adbb95a7b4b7`)
 
 ## 검증 표
 위 APK를 에뮬레이터에서 두 번 잰 값의 범위입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)과 [docs/evidence/measure_run2.json](docs/evidence/measure_run2.json)입니다. 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`, 해시 대조는 `python tools/check_hash.py`를 씁니다.
@@ -69,7 +69,7 @@
 다른 세션이 함께 돌아 호스트 부하가 큰 때에는 앱 시작 최대 1.6초, 접힘 최대 63 ms까지 관찰했습니다(같은 앱 코드의 이전 빌드). 모두 Pleos 기준(시작 10초 이내) 안입니다.
 
 ## 한계 (2차에서 고칠 것)
-- **2열 탑승 값을 뒤집어 읽습니다.** Pleos Connect Emulator 2.1.0에서는 Virtual Console의 2열 "Occupied"가 SDK에 `false`로 들어오고(차량 서비스의 AAOS 원값은 정의대로 옴), 앱은 release에서도 이 값을 뒤집어 읽습니다(`OCCUPANCY_SDK_INVERTED`). 실차에서 SDK 값이 바르게 오면 탑승한 좌석이 "감지 안 됨"으로 보일 수 있습니다. 그래서 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증의 "뒷좌석 직접 확인" 줄을 늘 보여 줍니다. 2차에서 AAOS 원값을 직접 읽도록 바꿀 예정입니다.
+- **2열 탑승 값을 뒤집어 읽습니다.** Pleos Connect Emulator 2.1.0에서는 Virtual Console의 2열 "Occupied"가 SDK에 `false`로 들어오고(차량 서비스의 AAOS 원값은 정의대로 옴), 앱은 release에서도 이 값을 뒤집어 읽습니다(`OCCUPANCY_SDK_INVERTED`). 실차에서 SDK 값이 바르게 오면 탑승한 좌석이 "감지 안 됨"으로 보일 수 있습니다. 그래서 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증의 "뒷좌석 직접 확인" 줄을 늘 보여 줍니다. 2차에서는 Pleos에 SDK 탑승 값의 방향을 확인받고, SDK 버전을 고정한 채(현재 2.3.2) 버전이 바뀔 때마다 방향 테스트를 다시 돌릴 예정입니다. AAOS `SEAT_OCCUPANCY`를 직접 읽으려면 signature 권한(`CONTROL_CAR_SEATS`)이 필요해 서드파티 앱에서는 쓸 수 없습니다.
 - **차량 연결을 하나로 묶지 않았습니다.** 차 상태를 읽는 부분과 기어를 읽는 부분이 Vehicle SDK를 각자 초기화하고(2회), AAOS `Car` 연결은 세 곳에서 따로 엽니다. 초기화 직후 바로 '연결됨'으로 보고, 차량 서비스가 끊긴 뒤 다시 연결하지 않습니다. 기어를 모르거나 연결이 끊기면 주행 중으로 보고 화면을 접습니다(`DrivingStateGateTest`). 2차에서 연결 하나로 합치고 재연결을 넣을 예정입니다.
 - **외기온을 쓰지 않습니다.** 바깥 온도 신호 대신 영하 10°C를 가정해 계산하고, 이 가정을 앱 정보 화면에 적어 둡니다. 2차에서 외기온 신호를 반영할 예정입니다.
 
