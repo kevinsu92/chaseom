@@ -51,7 +51,7 @@
 
 ## 4. APK 위치
 - **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `4e9e09fe9ce6e8403b7226b19350c85e4be67b3cc570d753d4ddcf66e53616de`)
-- 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4) (sha256 `e8ceed1fa3f8b82b472812833d0bf8d888b571cec5cc59613281adbb95a7b4b7`)
+- 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4) (sha256 `01aec50f3c1a78616bbc008562f65280a422020c1a6ae7a61fdd669562b6ce82`)
 
 ## 검증 표
 위 APK를 에뮬레이터에서 두 번 잰 값의 범위입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)과 [docs/evidence/measure_run2.json](docs/evidence/measure_run2.json)입니다. 다시 재려면 `python tools/measure.py apk/Chaseom_Chaseom_release.apk out.json`, 해시 대조는 `python tools/check_hash.py`를 씁니다.
