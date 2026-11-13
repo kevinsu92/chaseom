@@ -20,6 +20,8 @@ data class CabinState(
     /** km per kWh as reported by the vehicle, if any. */
     val evEfficiencyKmPerKwh: Float? = null,
     val chargePortOpen: Boolean? = null,
+    /** AAOS ENV_OUTSIDE_TEMPERATURE in Celsius (0.5 C steps); null = not readable (model assumes -10 C). */
+    val outsideTempC: Float? = null,
     // Climate (driver zone)
     val hvacPowerOn: Boolean? = null,
     val acOn: Boolean? = null,

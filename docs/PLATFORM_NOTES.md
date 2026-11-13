@@ -8,7 +8,7 @@ Pleos Connect Emulator 2.1.0과 Virtual Console(VC)에서 차섬이 읽는 신�
 | 공조 전원·A/C·풍량·내기순환 | Vehicle SDK HVAC | **운전석 영역(`ROW_1_LEFT`)으로 구독하면 거부**됨(`area ID: 0x1 not supported`). `check…Capabilities`가 주는 영역(에뮬레이터: 1·2열 묶음)으로는 정상 | capability가 준 영역 중 운전석을 포함한 것을 골라 구독 |
 | 설정온도·좌석 열선 | HVAC / Seat | 운전석·조수석 영역으로 정상. 열선 VC 값 −3..3 중 음수는 통풍 | 0 미만은 0단으로 처리 |
 | 등받이 각도 | Seat | SDK 경로는 정상(READ_WRITE, 0..100). 그러나 **VC 등받이 조작이 차량 값에 들어가지 않음**(값이 0에 고정, 이벤트 0건, VC 카드도 숨김) | 등받이 고지는 차가 값을 줄 때만 켜짐. 에뮬레이터에서는 꺼짐 |
-| 2열 탑승 | Seat Occupancy | 이벤트는 즉시 옴. **값이 VC와 반대**(VC "Occupied" → SDK `false`) | VC 기준으로 반전(`OCCUPANCY_SDK_INVERTED`). 어느 쪽이든 앱은 "비었음"이라고 말하지 않음 |
+| 2열 탑승 | Seat Occupancy | 이벤트는 즉시 옴. **값이 VC와 반대**(VC "Occupied" → SDK `false`) | 에뮬레이터 빌드에서만 반전(`Occupancy.isEmulatorBuild`); 실차는 SDK 값 그대로. `READ_CAR_SEATS`가 이미 허용되면 AAOS `SEAT_OCCUPANCY` 원값 우선. 어느 쪽이든 앱은 "비었음"이라고 말하지 않음 |
 | 연료 종류 | AAOS `INFO_FUEL_TYPE` | `[10]` = 전기 | 전기 단독 + SOC·용량을 읽을 때만 전체 모드, 그 밖에는 축소 모드 |
 | 배터리 용량 | AAOS `INFO_EV_BATTERY_CAPACITY` | 77,400 Wh | kWh로 변환 |
 | 전비 | `EvBattery.getCumulativeEvEfficiency` | `ERROR_NOT_SUPPORTED_PROPERTY` | 기본값 5 km/kWh ([ENERGY_MODEL](ENERGY_MODEL.md)) |

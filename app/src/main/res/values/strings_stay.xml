@@ -126,7 +126,7 @@
     <string name="s_save">저장</string>
     <string name="s_about">앱 정보</string>
     <string name="about_v2l">현대차 V2L 방전 제한처럼 하한을 두고, 공조 체류에 내일 이동 거리 기준으로 넓혔어요</string>
-    <string name="about_model">계산: 배터리 용량 × (현재 %% − 내일 몫 %%) ÷ 지금 설정의 소비 전력. 소비 전력은 출처 계수표로 추정해요(영하 10°C 정상상태 기준, 아래 표)</string>
+    <string name="about_model">계산: 배터리 용량 × (현재 %% − 내일 몫 %%) ÷ 지금 설정의 소비 전력. 소비 전력은 출처 계수표로 추정해요(차량이 알려 주는 외기온 기준 정상상태, 외기온을 못 읽으면 영하 10°C 기준, 아래 표)</string>
     <string name="about_fuel_ev">차종: 전기차로 확인됨</string>
     <string name="about_fuel_reduced">차종: 전기차로 확인되지 않음 (경고·하차 확인만)</string>
 

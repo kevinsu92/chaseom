@@ -28,6 +28,10 @@
     <uses-permission android:name="android.car.permission.CAR_INFO" />
     <uses-permission android:name="android.car.permission.CAR_ENERGY_PORTS" />
     <uses-permission android:name="android.car.permission.CAR_POWERTRAIN" />
+    <!-- Build G: outside temperature for the heating estimate (normal permission). -->
+    <uses-permission android:name="android.car.permission.CAR_EXTERIOR_ENVIRONMENT" />
+    <!-- Build G: AAOS SEAT_OCCUPANCY. Dangerous; never requested at runtime, used only if already granted. -->
+    <uses-permission android:name="android.car.permission.READ_CAR_SEATS" />
     <!-- Stay service: keeps signals alive while another app is in front. Normal. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />

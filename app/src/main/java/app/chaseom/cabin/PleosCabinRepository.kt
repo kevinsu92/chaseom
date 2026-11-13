@@ -26,8 +26,13 @@ import android.car.VehiclePropertyIds
 import android.car.hardware.CarPropertyValue
 import android.car.hardware.property.CarPropertyManager
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import app.chaseom.Probe
+import app.chaseom.stay.EnergyModel
+import app.chaseom.vehicle.CarConnection
+import app.chaseom.vehicle.CarUser
 import app.chaseom.vehicle.DataSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -50,6 +55,7 @@ import kotlinx.coroutines.launch
 class PleosCabinRepository(
     context: Context,
     private val scope: CoroutineScope,
+    private val carConnection: CarConnection,
 ) : CabinRepository {
 
     private val appContext = context.applicationContext
@@ -58,8 +64,15 @@ class PleosCabinRepository(
     override val source = DataSource.PLEOS_SDK
 
     private var vehicle: Vehicle? = null
-    private var car: Car? = null
     private var propertyManager: CarPropertyManager? = null
+    private var carSubscribed = false
+
+    // Rear occupancy, raw per source; [Occupancy.resolve] decides (AAOS wins, Pleos inverted on the emulator only).
+    private val invertPleosOccupancy = Occupancy.isEmulatorBuild(Build.HARDWARE, Build.FINGERPRINT, Build.PRODUCT)
+    private var pleosRearLeft: Boolean? = null
+    private var pleosRearRight: Boolean? = null
+    private var aaosRearLeft: Int? = null
+    private var aaosRearRight: Int? = null
     private var pollJob: Job? = null
     private val pollGate = PollGate(start = { vehicle?.let { startPolling(it) } }, stop = ::stopPolling)
     private var powerArea: SeatArea? = null
@@ -135,14 +148,37 @@ class PleosCabinRepository(
         override fun onFailed(e: Exception) = fail("backrestPassenger", e)
     }
     private val rearLeftOccListener = object : SeatOccupancyListener {
-        override fun onSeatOccupancyUpdated(value: Boolean?) =
-            set("occRearLeft", value) { it.copy(rearLeftOccupied = occupied(value)) }
+        override fun onSeatOccupancyUpdated(value: Boolean?) {
+            pleosRearLeft = value
+            set("occRearLeft", value) { it.withRear() }
+        }
         override fun onFailed(e: Exception) = fail("occRearLeft", e)
     }
     private val rearRightOccListener = object : SeatOccupancyListener {
-        override fun onSeatOccupancyUpdated(value: Boolean?) =
-            set("occRearRight", value) { it.copy(rearRightOccupied = occupied(value)) }
+        override fun onSeatOccupancyUpdated(value: Boolean?) {
+            pleosRearRight = value
+            set("occRearRight", value) { it.withRear() }
+        }
         override fun onFailed(e: Exception) = fail("occRearRight", e)
+    }
+    private val occupancyCallback = object : CarPropertyManager.CarPropertyEventCallback {
+        override fun onChangeEvent(value: CarPropertyValue<*>) {
+            val v = (value.value as? Int)?.takeIf { value.status == CAR_STATUS_AVAILABLE }
+            when (value.areaId) {
+                Occupancy.AREA_ROW_2_LEFT -> aaosRearLeft = v
+                Occupancy.AREA_ROW_2_RIGHT -> aaosRearRight = v
+                else -> return
+            }
+            set("aaosOcc.${value.areaId}", v) { it.withRear() }
+        }
+        override fun onErrorEvent(propertyId: Int, areaId: Int) = Unit
+    }
+    private val outsideCallback = object : CarPropertyManager.CarPropertyEventCallback {
+        override fun onChangeEvent(value: CarPropertyValue<*>) {
+            val c = (value.value as? Float)?.takeIf { value.status == CAR_STATUS_AVAILABLE }
+            setOutside(c)
+        }
+        override fun onErrorEvent(propertyId: Int, areaId: Int) = setOutside(null)
     }
     private val doorListeners = doorAreas.keys.associateWith { key ->
         object : DoorPositionListener {
@@ -186,7 +222,8 @@ class PleosCabinRepository(
             return
         }
         vehicle = v
-        _state.update { it.copy(connected = true, lastError = null) }
+        // "connected" turns true on the first answer from the Pleos service (see [set]), not right after initialize().
+        _state.update { it.copy(lastError = null) }
 
         guard("soc") {
             v.getEvBattery().getEvBatteryStateOfCharge({ s -> socListener.onEvBatteryStateOfChargeUpdated(s) }, { fail("soc", it) })
@@ -273,7 +310,10 @@ class PleosCabinRepository(
         doorAreas.forEach { (key, area) -> guard("door.$key") { v.getDoor().registerDoorPosition(area, doorListeners.getValue(key)) } }
         windowAreas.forEach { (key, area) -> guard("window.$key") { v.getWindow().registerWindowPosition(area, windowListeners.getValue(key)) } }
 
-        startCarProperties()
+        if (!carSubscribed) {
+            carSubscribed = true
+            carConnection.subscribe(carUser)
+        }
         pollGate.ready(true)
     }
 
@@ -316,23 +356,34 @@ class PleosCabinRepository(
         guard("release") { v.release() }
         vehicle = null
         try {
-            propertyManager?.unregisterCallback(portCallback)
-            car?.disconnect()
+            propertyManager?.let { pm ->
+                pm.unregisterCallback(portCallback)
+                pm.unregisterCallback(outsideCallback)
+                pm.unregisterCallback(occupancyCallback)
+            }
         } catch (t: Throwable) {
-            Log.w(TAG, "car disconnect: ${t.message}")
+            Log.w(TAG, "car unregister: ${t.message}")
         }
         propertyManager = null
-        car = null
         _state.update { it.copy(connected = false) }
     }
 
     // ---- AAOS standard properties ------------------------------------------------------------
 
-    private fun startCarProperties() {
+    /** Follows the shared car connection: registers on ready, drops the manager when the car service goes away. */
+    private val carUser = object : CarUser {
+        override fun onReady(handle: Car) = startCarProperties(handle)
+        override fun onLost() {
+            propertyManager = null
+            aaosRearLeft = null
+            aaosRearRight = null
+            _state.update { it.copy(outsideTempC = null).withRear() }
+        }
+    }
+
+    private fun startCarProperties(c: Car) {
         try {
-            val c = Car.createCar(appContext) ?: return
             val cpm = c.getCarManager(Car.PROPERTY_SERVICE) as? CarPropertyManager ?: return
-            car = c
             propertyManager = cpm
             try {
                 @Suppress("UNCHECKED_CAST")
@@ -356,11 +407,29 @@ class PleosCabinRepository(
             } catch (t: Throwable) {
                 fail("chargePort", t)
             }
+            // Outside temperature (CAR_EXTERIOR_ENVIRONMENT, normal permission): corrects the heating estimate.
+            // Unreadable -> null -> the model keeps its -10 C assumption.
             try {
-                val gear = cpm.getProperty<Int>(VehiclePropertyIds.GEAR_SELECTION, 0)?.value
-                probe("aaosGear", gear)
+                val p = cpm.getProperty<Float>(VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE, 0)
+                setOutside(p?.value?.takeIf { p.status == CAR_STATUS_AVAILABLE })
+                cpm.registerCallback(outsideCallback, VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE, OUTSIDE_RATE_HZ)
             } catch (t: Throwable) {
-                fail("aaosGear", t)
+                fail("outsideTemp", t)
+                setOutside(null)
+            }
+            if (appContext.checkSelfPermission(PERMISSION_READ_CAR_SEATS) == PackageManager.PERMISSION_GRANTED) {
+                try {
+                    aaosRearLeft = cpm.getProperty<Int>(VehiclePropertyIds.SEAT_OCCUPANCY, Occupancy.AREA_ROW_2_LEFT)
+                        ?.takeIf { it.status == CAR_STATUS_AVAILABLE }?.value
+                    aaosRearRight = cpm.getProperty<Int>(VehiclePropertyIds.SEAT_OCCUPANCY, Occupancy.AREA_ROW_2_RIGHT)
+                        ?.takeIf { it.status == CAR_STATUS_AVAILABLE }?.value
+                    set("aaosOcc", "$aaosRearLeft/$aaosRearRight") { it.withRear() }
+                    cpm.registerCallback(occupancyCallback, VehiclePropertyIds.SEAT_OCCUPANCY, CarPropertyManager.SENSOR_RATE_ONCHANGE)
+                } catch (t: Throwable) {
+                    fail("aaosOcc", t)
+                }
+            } else {
+                probe("aaosOcc", "no READ_CAR_SEATS; Pleos value, inverted=$invertPleosOccupancy")
             }
         } catch (t: Throwable) {
             fail("car", t)
@@ -454,8 +523,19 @@ class PleosCabinRepository(
 
     private inline fun set(name: String, value: Any?, crossinline transform: (CabinState) -> CabinState) {
         probe(name, value)
-        _state.update(transform)
+        _state.update { transform(it).let { s -> if (s.connected) s else s.copy(connected = true) } }
     }
+
+    /** Stored to 0.5 C so a CONTINUOUS sensor does not recompose the screen on every tiny change. */
+    private fun setOutside(celsius: Float?) {
+        val c = EnergyModel.validOutsideC(celsius)?.let { Math.round(it * 2f) / 2f }
+        setIfChanged("outsideTemp", c) { st, x -> (st.outsideTempC != x) to st.copy(outsideTempC = x) }
+    }
+
+    private fun CabinState.withRear(): CabinState = copy(
+        rearLeftOccupied = Occupancy.resolve(aaosRearLeft, pleosRearLeft, invertPleosOccupancy),
+        rearRightOccupied = Occupancy.resolve(aaosRearRight, pleosRearRight, invertPleosOccupancy),
+    )
 
     private fun <T> setIfChanged(name: String, value: T, transform: (CabinState, T) -> Pair<Boolean, CabinState>) {
         _state.update { st ->
@@ -464,9 +544,6 @@ class PleosCabinRepository(
             next
         }
     }
-
-    private fun occupied(sdkValue: Boolean?): Boolean? =
-        if (OCCUPANCY_SDK_INVERTED) sdkValue?.not() else sdkValue
 
     /** Prefer an area that covers the driver seat, otherwise the first supported one. */
     private fun pickArea(areas: List<SeatArea>): SeatArea =
@@ -494,12 +571,9 @@ class PleosCabinRepository(
         private const val POLL_MS = 1000L
         private const val LIGHT_READ_TIMEOUT_MS = 300L
 
-        /**
-         * On the Pleos Connect 2.1.0 emulator the SDK reports `false` when the
-         * Virtual Console says "Occupied" (and `true` for "Empty"), for both rear seats. Inverted
-         * so the demo matches the console. Real-car meaning still to be confirmed.
-         * Safe either way: the UI never shows "empty", and "check the rear seat" is always shown.
-         */
-        const val OCCUPANCY_SDK_INVERTED = true
+        /** Outside temperature changes slowly; the slowest useful rate (the platform clamps to the sensor's min). */
+        private const val OUTSIDE_RATE_HZ = 0.1f
+        private const val CAR_STATUS_AVAILABLE = 0
+        private const val PERMISSION_READ_CAR_SEATS = "android.car.permission.READ_CAR_SEATS"
     }
 }

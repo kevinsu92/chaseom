@@ -11,6 +11,8 @@ data class ClimateSetting(
     val acOn: Boolean?,
     val recircOn: Boolean? = null,
     val driverSeatHeat: Int?,
+    /** Outside temperature from the car (AAOS ENV_OUTSIDE_TEMPERATURE); null = unknown, heating then assumes -10 C. */
+    val outsideC: Float? = null,
 )
 
 /**
@@ -19,8 +21,8 @@ data class ClimateSetting(
  * Neither the Pleos SDK nor AAOS exposes per-item climate power and the emulator does not report EV
  * efficiency, so the app multiplies the car's own climate state by a published coefficient table.
  * Sources and grades: docs/ENERGY_MODEL.md (same table as the proposal's "숫자 근거표").
- * Heating assumes -10 C outside (no outside
- * temperature signal), so the app labels the estimate "영하 10°C 기준".
+ * Heating scales with the inside-outside difference. Build G reads the car's outside temperature
+ * (ENV_OUTSIDE_TEMPERATURE); when it cannot be read the model keeps the old -10 C assumption.
  */
 object EnergyModel {
     /** Base load while parked with the car on: INL accessory-off auxiliary load proxy + margin. */
@@ -28,8 +30,17 @@ object EnergyModel {
     /** Cabin heating at a 22 C set point. ADAC 2022 (-10 C outside) holds 20 C with 1.5-2.0 kW; the app takes
      *  more (2.3 kW) so the stay time errs short. (2.3 kWh was an ID.3 warm-up energy, not a holding power.) */
     const val HEAT_KW_AT_22C = 2.3f
-    /** Heating scales with (set + 10) / 32: steady-state loss ~ inside-outside difference, -10 C outside. */
+    /** Heating scales with (set - outside) / 32: steady-state loss ~ inside-outside difference.
+     *  32 = 22 C set - (-10 C) outside, the condition the 2.3 kW coefficient was taken at. */
     const val HEAT_OUTSIDE_C = -10f
+    /** Outside readings outside this range are treated as a sensor fault (fall back to [HEAT_OUTSIDE_C]). */
+    const val OUTSIDE_MIN_C = -40f
+    const val OUTSIDE_MAX_C = 60f
+
+    fun validOutsideC(c: Float?): Float? = c?.takeIf { !it.isNaN() && it in OUTSIDE_MIN_C..OUTSIDE_MAX_C }
+
+    /** The outside temperature the heating term uses. */
+    fun heatOutsideC(s: ClimateSetting): Float = validOutsideC(s.outsideC) ?: HEAT_OUTSIDE_C
     const val HEAT_REFERENCE_DELTA = 32f
     /** Cooling with A/C on, replaces heating (owner reports 1-2 kW, upper value). */
     const val AC_KW = 2.0f
@@ -61,7 +72,7 @@ object EnergyModel {
             AC_KW
         } else {
             val t = s.setTempC ?: 22f
-            val heat = (HEAT_KW_AT_22C * (t - HEAT_OUTSIDE_C) / HEAT_REFERENCE_DELTA).coerceAtLeast(0f)
+            val heat = (HEAT_KW_AT_22C * (t - heatOutsideC(s)) / HEAT_REFERENCE_DELTA).coerceAtLeast(0f)
             if (s.recircOn == true) heat * RECIRC_HEAT_FACTOR else heat
         }
         return BASE_KW + cabin + fan + seat

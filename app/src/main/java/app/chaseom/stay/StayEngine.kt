@@ -107,6 +107,7 @@ class StayEngine(
             acOn = cabin.acOn,
             recircOn = cabin.recirculationOn,
             driverSeatHeat = cabin.driverSeatHeat,
+            outsideC = cabin.outsideTempC,
         )
 
         val backrestSupported = cabin.backrestMin != null && cabin.backrestMax != null && cabin.backrestMax > cabin.backrestMin

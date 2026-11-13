@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import app.chaseom.cabin.CabinRepository
 import app.chaseom.cabin.PleosCabinRepository
 import app.chaseom.stay.StayController
+import app.chaseom.vehicle.CarConnection
 import app.chaseom.vehicle.CarUxRestrictionSource
 import app.chaseom.vehicle.DrivingRestriction
 import app.chaseom.vehicle.DrivingStateGate
@@ -32,15 +33,18 @@ class AppContainer(context: Context) {
     private val appContext = context.applicationContext
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
+    /** The single AAOS car service connection, shared by gear, cabin properties and UX restrictions. */
+    val carConnection = CarConnection(appContext)
+
     private val useFakes = BuildConfig.FAKE_DATA_ALLOWED && !isServicePresent(VEHICLE_ACTION)
 
     val vehicleRepository: VehicleRepository =
-        (if (useFakes) Fakes.vehicle(appScope) else null) ?: PleosVehicleRepository(appContext)
+        (if (useFakes) Fakes.vehicle(appScope) else null) ?: PleosVehicleRepository(carConnection)
 
     val cabinRepository: CabinRepository =
-        (if (useFakes) Fakes.cabin() else null) ?: PleosCabinRepository(appContext, appScope)
+        (if (useFakes) Fakes.cabin() else null) ?: PleosCabinRepository(appContext, appScope, carConnection)
 
-    val carUxRestrictions = CarUxRestrictionSource(appContext)
+    val carUxRestrictions = CarUxRestrictionSource(carConnection)
 
     // With fake vehicle data the scripted gear drives the gate on its own (demo/test mode);
     // with the real SDK, the AAOS CarUxRestrictions signal is combined in as well.

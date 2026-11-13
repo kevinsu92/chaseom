@@ -1,12 +1,9 @@
 package app.chaseom.vehicle
 
-import ai.pleos.playground.vehicle.Vehicle
-import ai.pleos.playground.vehicle.listener.EvBatteryStateOfChargeListener
 import android.car.Car
 import android.car.VehiclePropertyIds
 import android.car.hardware.CarPropertyValue
 import android.car.hardware.property.CarPropertyManager
-import android.content.Context
 import android.util.Log
 import app.chaseom.Probe
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,31 +12,28 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Gear from the documented AAOS property `GEAR_SELECTION` (CAR_POWERTRAIN, normal permission), EV SOC
- * from the Pleos Vehicle SDK. The Pleos `Vehicle.getGear()` domain is not in the public Pleos
- * documentation, so it is not used (the official alternative is GEAR_SELECTION).
- * Other cabin signals live in PleosCabinRepository.
+ * Gear from the documented AAOS property `GEAR_SELECTION` (CAR_POWERTRAIN, normal permission). The Pleos
+ * `Vehicle.getGear()` domain is not in the public Pleos documentation, so it is not used.
+ * All other signals, SOC included, live in PleosCabinRepository (build G: the Pleos `Vehicle` is created
+ * once, there; before, this class made a second `Vehicle` only to read SOC again).
  *
- * Signatures verified against Vehicle-2.3.2.aar (class files) on 2026-11-08.
- * Each domain read is async: getXxx(onComplete, onFailed). Each listener extends VehicleListener
- * (onFailed). A property that is not supported simply stays null and records lastError.
+ * Connection state follows the shared [CarConnection]: CONNECTED only after the car service is up AND the
+ * first gear read answered; when the car service goes away the gear becomes UNKNOWN (treated as driving)
+ * and the state returns to CONNECTING until the service is back and the callback is registered again.
  */
-class PleosVehicleRepository(context: Context) : VehicleRepository {
+class PleosVehicleRepository(private val carConnection: CarConnection) : VehicleRepository, CarUser {
 
-    private val appContext = context.applicationContext
     private val _state = MutableStateFlow(VehicleSnapshot())
     override val state: StateFlow<VehicleSnapshot> = _state.asStateFlow()
     override val source = DataSource.PLEOS_SDK
 
-    private var vehicle: Vehicle? = null
-
-    private var car: Car? = null
+    private var subscribed = false
     private var propertyManager: CarPropertyManager? = null
     private val gearCallback = object : CarPropertyManager.CarPropertyEventCallback {
         override fun onChangeEvent(value: CarPropertyValue<*>) {
             val g = value.value as? Int
             Probe.log("gear=$g status=${value.status}")
-            _state.update { it.copy(gear = gearFromProperty(value.status, g)) }
+            _state.update { it.copy(gear = gearFromProperty(value.status, g), connection = ConnectionState.CONNECTED) }
         }
 
         // A gear we cannot read is treated as driving (UNKNOWN fails safe in DrivingStateGate).
@@ -48,67 +42,51 @@ class PleosVehicleRepository(context: Context) : VehicleRepository {
             recordError("gear", null)
         }
     }
-    private val socListener = object : EvBatteryStateOfChargeListener {
-        override fun onEvBatteryStateOfChargeUpdated(value: Int?) = _state.update { it.copy(evSocPercent = value) }
-        override fun onFailed(e: Exception) = recordError("evSoc", e)
-    }
 
     @Synchronized
     override fun start() {
-        if (vehicle != null) return
+        if (subscribed) return
+        subscribed = true
         _state.update { it.copy(connection = ConnectionState.CONNECTING, lastError = null) }
-        val v = try {
-            Vehicle(appContext).also { it.initialize() }
-        } catch (t: Throwable) {
-            Log.e(TAG, "Vehicle.initialize failed", t)
-            _state.update { it.copy(connection = ConnectionState.FAILED, lastError = t.message) }
-            return
-        }
-        vehicle = v
-        _state.update { it.copy(connection = ConnectionState.CONNECTED) }
+        carConnection.subscribe(this)
+    }
 
-        // Initial reads (async), then subscribe for changes. Each call is guarded separately so one
-        // unsupported domain does not prevent the others from working.
-        guard("gear") {
-            val c = Car.createCar(appContext) ?: error("Car service not available")
-            val cpm = c.getCarManager(Car.PROPERTY_SERVICE) as? CarPropertyManager ?: error("no CarPropertyManager")
-            car = c
+    @Synchronized
+    override fun onReady(handle: Car) {
+        try {
+            val cpm = handle.getCarManager(Car.PROPERTY_SERVICE) as? CarPropertyManager ?: error("no CarPropertyManager")
             propertyManager = cpm
             val p = cpm.getProperty<Int>(VehiclePropertyIds.GEAR_SELECTION, 0)
-            _state.update { it.copy(gear = if (p == null) GearPosition.UNKNOWN else gearFromProperty(p.status, p.value)) }
+            _state.update {
+                it.copy(
+                    gear = if (p == null) GearPosition.UNKNOWN else gearFromProperty(p.status, p.value),
+                    connection = if (p == null) ConnectionState.CONNECTING else ConnectionState.CONNECTED,
+                    lastError = null,
+                )
+            }
             cpm.registerCallback(gearCallback, VehiclePropertyIds.GEAR_SELECTION, CarPropertyManager.SENSOR_RATE_ONCHANGE)
+        } catch (t: Throwable) {
+            _state.update { it.copy(gear = GearPosition.UNKNOWN, connection = ConnectionState.FAILED) }
+            recordError("gear", t)
         }
-        guard("evSoc") {
-            v.getEvBattery().getEvBatteryStateOfCharge(
-                { s -> _state.update { it.copy(evSocPercent = s) } },
-                { e -> recordError("evSoc", e) },
-            )
-            v.getEvBattery().registerEvBatteryStateOfCharge(socListener)
-        }
+    }
+
+    /** Car service crashed or is restarting: old managers are invalid, gear is unknown until it is back. */
+    @Synchronized
+    override fun onLost() {
+        propertyManager = null
+        _state.update { it.copy(gear = GearPosition.UNKNOWN, connection = ConnectionState.CONNECTING) }
     }
 
     @Synchronized
     override fun stop() {
-        val v = vehicle ?: return
-        guard("unregister") {
+        try {
             propertyManager?.unregisterCallback(gearCallback)
-            car?.disconnect()
-            v.getEvBattery().unregisterEvBatteryStateOfCharge(socListener)
+        } catch (t: Throwable) {
+            recordError("unregister", t)
         }
         propertyManager = null
-        car = null
-        guard("release") { v.release() }
-        vehicle = null
         _state.update { it.copy(connection = ConnectionState.DISCONNECTED) }
-    }
-
-    private inline fun guard(what: String, block: () -> Unit) {
-        try {
-            block()
-        } catch (t: Throwable) {
-            if (what == "gear") _state.update { it.copy(gear = GearPosition.UNKNOWN) }
-            recordError(what, t)
-        }
     }
 
     private fun recordError(what: String, t: Throwable?) {

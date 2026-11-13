@@ -17,7 +17,7 @@
     <string name="svc_text">머무는 중 · 떠날 때 영수증을 보여 드려요</string>
 
     <!-- About: coefficient source line (engineering assumptions until confirmed on a real car) -->
-    <string name="about_coeff">소비 계수 (출처, 영하 10°C 기준 추정): 기본 0.30kW (INL 보조부하 측정) · 난방 2.3kW × (설정온도 + 10) / 32 (ADAC 2022) · 냉방 2.0kW(사용자 보고 상단값) · 내기순환 난방 × 0.76 · 풍량 단당 0.03kW · 열선 1·2·3단 0.049·0.066·0.100kW (MDPI 2023) · 전비 5km/kWh(상온 상한, 겨울엔 더 낮을 수 있음)</string>
+    <string name="about_coeff">소비 계수 (출처 기반 추정): 기본 0.30kW (INL 보조부하 측정) · 난방 2.3kW × (설정온도 − 외기온) / 32 (ADAC 2022, 외기온은 차량 신호, 못 읽으면 영하 10°C) · 냉방 2.0kW(사용자 보고 상단값) · 내기순환 난방 × 0.76 · 풍량 단당 0.03kW · 열선 1·2·3단 0.049·0.066·0.100kW (MDPI 2023) · 전비 5km/kWh(상온 상한, 겨울엔 더 낮을 수 있음)</string>
     <string name="about_backrest_none">이 차는 등받이 각도를 읽을 수 없어 등받이 고지를 쓰지 않아요</string>
 
 </resources>

@@ -27,8 +27,10 @@ class PleosApp : Application() {
  */
 class SdkLifecycleBinder(private val container: AppContainer) : DefaultLifecycleObserver {
     override fun onStart(owner: LifecycleOwner) {
+        // Users subscribe first; the one car connection then serves them all (and again after a car service restart).
         container.carUxRestrictions.start()
         container.vehicleRepository.start()
         container.cabinRepository.start()
+        container.carConnection.start()
     }
 }

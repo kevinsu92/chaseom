@@ -27,31 +27,32 @@ class StayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        try {
+        val ok = try {
             if (android.os.Build.VERSION.SDK_INT >= 34) {
                 startForeground(NOTIFICATION_ID, notification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
             } else {
                 startForeground(NOTIFICATION_ID, notification()) // minSdk 28; Pleos Connect is API 34
             }
-            foreground = true
+            true
         } catch (t: Throwable) {
             Log.w(TAG, "startForeground failed: ${t.message}")
-            requested = false; pendingStop = false
-            stopSelf()
-            return START_NOT_STICKY
+            false
         }
-        // A stop that came before startForeground (P -> D right after P) is done only now.
-        if (pendingStop) {
-            pendingStop = false; requested = false; foreground = false
-            stopSelf()
+        when (state.onStartCommand(ok)) {
+            StayServiceState.AfterStart.KEEP_RUNNING -> Unit
+            StayServiceState.AfterStart.STOP_AFTER_FOREGROUND -> {
+                // A stop that came before startForeground (P -> D right after P) is done only now. Remove the
+                // notification first so it does not stay up in gear D (review S4).
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf()
+            }
+            StayServiceState.AfterStart.STOP_FAILED -> stopSelf()
         }
         return START_NOT_STICKY
     }
 
     override fun onDestroy() {
-        // Only foreground: requested / pendingStop may already belong to a newer start() (D -> P while this
-        // instance's destroy is still queued). The system delivers this destroy before the next create/start.
-        foreground = false
+        state.onDestroy()
         super.onDestroy()
     }
 
@@ -78,18 +79,13 @@ class StayService : Service() {
         private const val CHANNEL = "stay"
         private const val NOTIFICATION_ID = 1
 
-        // Main-thread state. A service started with startForegroundService must reach startForeground before it
-        // stops; stopping it earlier (gear D within a moment of P, e.g. right after a cold start) makes the system
-        // crash the app with ForegroundServiceDidNotStartInTimeException. So a stop before that point is deferred.
-        @Volatile private var requested = false
-        @Volatile private var foreground = false
-        @Volatile private var pendingStop = false
+        // Main-thread state; the rules are in StayServiceState (JVM-tested).
+        private val state = StayServiceState()
 
         /** true when the start was accepted; false (background start not allowed, API 31+) lets the caller retry. */
         fun start(context: Context): Boolean = try {
             context.startForegroundService(Intent(context, StayService::class.java))
-            requested = true
-            pendingStop = false
+            state.onStartAccepted()
             true
         } catch (t: Throwable) {
             // The app process still runs the stay while it lives; StayController tries again on its next update.
@@ -98,12 +94,8 @@ class StayService : Service() {
         }
 
         fun stop(context: Context) {
-            if (!requested) return
-            if (foreground) {
-                requested = false; foreground = false
+            if (state.stop() == StayServiceState.StopAction.STOP_SERVICE_NOW) {
                 context.stopService(Intent(context, StayService::class.java))
-            } else {
-                pendingStop = true // onStartCommand stops it right after startForeground
             }
         }
     }
