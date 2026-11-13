@@ -108,12 +108,15 @@ class S1LayoutTest {
         assertEquals(null, flagPlace(fc(app.chaseom.stay.WaitOutcome.BELOW_KEEP, 47), buoys = 0))
     }
 
-    @Test fun flagLineWrapsOnlyBetweenPhrases() {
-        // External S1S2 #8: "약 33분 / 짧아요" must not split; only " · " is a break point.
-        val line = keepPhrases("오후 7:35 깃발 · 오늘 머물 시간이 깃발보다 약 33분 짧아요 (추정)")
-        val parts = line.split(" · ")
-        assertEquals(2, parts.size)
-        parts.forEach { assertFalse(it.contains(' ')) }
-        assertEquals("오후 7:35 깃발 · 오늘 머물 시간이 깃발보다 약 33분 짧아요 (추정)", line.replace(' ', ' '))
+    @Test fun flagLineKeepsOnlyTheShortTailTogether() {
+        // External S1S2 #8: "약 33분 / 짧아요" must not split, but the long start may still wrap at spaces (eng1 W2).
+        val nb = ' '
+        val line = keepPhrases("오후 7:35 깃발 · 오늘 머물 시간이 깃발보다 약 2시간 29분 짧아요 (추정)")
+        assertTrue(line.endsWith("약${nb}2시간${nb}29분${nb}짧아요${nb}(추정)"))
+        assertTrue(line.contains("오늘 머물 시간이 깃발보다 약"))
+        assertTrue(line.startsWith("오후 7:35 깃발 · "))
+        // No "약": only "(추정)" sticks to the word before it.
+        assertEquals("비슷한 체감 카드로 바꾸면 +15분${nb}(추정)", keepPhrases("비슷한 체감 카드로 바꾸면 +15분 (추정)"))
+        assertEquals("오후 7:35 깃발 · 오늘 머물 시간이 깃발보다 약 2시간 29분 짧아요 (추정)", line.replace(nb, ' '))
     }
 }
