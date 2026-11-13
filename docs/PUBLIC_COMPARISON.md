@@ -26,7 +26,7 @@
 | D1 | [DOE·ANL 2024, 외기 0°F(−17.8°C), 실내 22.2°C 유지, BEV 1 / BEV 2](https://www.energy.gov/sites/default/files/2024-10/Impact_of_Cold_Ambient_Temperature_on_BEV_Performance_v15_TechEditFinal_12Sep2024__0.pdf) — 앱이 적게 잡는다 | A | 원문 p.11–12 | 3.77 / 4.12 | 22.2°C·풍량 3, 외기 −17.8°C 반영 | 3.26 | 0.87 / 0.79 | **실측이 더 큼** |
 | D2 | [DOE·ANL 2024, 외기 20°F(−6.7°C), 실내 22.2°C 유지, BEV 1 / BEV 2](https://www.energy.gov/sites/default/files/2024-10/Impact_of_Cold_Ambient_Temperature_on_BEV_Performance_v15_TechEditFinal_12Sep2024__0.pdf) — 1대는 많이, 1대는 적게 잡는다 | A | 원문 p.11–12 | 2.33 / 3.15 | 22.2°C·풍량 3 (−10°C보다 따뜻해 −10°C로 계산) | 2.70 | 1.16 / 0.86 | **섞임** |
 | D3 | [DOE·ANL 2024, 외기 95°F(35°C), 냉방, BEV 1 / BEV 2](https://www.energy.gov/sites/default/files/2024-10/Impact_of_Cold_Ambient_Temperature_on_BEV_Performance_v15_TechEditFinal_12Sep2024__0.pdf) | A | 원문 p.11–12 | 1.50 / 0.99 | A/C·풍량 3 | 2.39 | 1.59 / 2.40 | 앱이 더 많이 씀 |
-| D4 | [DOE·ANL 2024, 외기 72°F(22.2°C), 공조 꺼짐, BEV 1 / BEV 2](https://www.energy.gov/sites/default/files/2024-10/Impact_of_Cold_Ambient_Temperature_on_BEV_Performance_v15_TechEditFinal_12Sep2024__0.pdf) | A | 원문 p.11–12 | 0.23 / 0.14 | 공조 꺼짐 (기본 부하) | 0.30 | 1.33 / 2.08 | 앱이 더 많이 씀 |
+| D4 | [DOE·ANL 2024, 외기 72°F(22.2°C), 공조 소비 0 W(외기 = 실내), BEV 1 / BEV 2](https://www.energy.gov/sites/default/files/2024-10/Impact_of_Cold_Ambient_Temperature_on_BEV_Performance_v15_TechEditFinal_12Sep2024__0.pdf) | A | 원문 p.11–12 | 0.23 / 0.14 | 공조 꺼짐 (기본 부하) | 0.30 | 1.33 / 2.08 | 앱이 더 많이 씀 |
 | H1 | [ADAC 2022, 외기 −10°C, 실내 20°C 유지 (전기차 7종, 현대 코나 일렉트릭 포함)](https://www.adac.de/rund-ums-fahrzeug/elektromobilitaet/tests/heizung-elektroauto/) | A | QA | 1.50–2.00 | 20°C·풍량 3 | 2.55 | 1.27–1.70 | 앱이 더 많이 씀 |
 | H3 | [ADAC 2021 겨울 정체, −9 ~ −14°C, 22°C + 시트 열선 + 미등, 12시간 (Zoe / e-Up)](https://www.adac.de/rund-ums-fahrzeug/elektromobilitaet/info/haertetest-winter-stau/) — 외기온을 못 읽으면 앱 2.76 kW, Zoe 대비 0.92배. Zoe 값에는 미등 부하 포함 | A | QA | 3.00 / 2.20 | 22°C·풍량 3·열선 2단, 외기 −14°C 반영 | 3.04 | 1.01 / 1.38 | 앱이 더 많이 씀 |
 | H2 | [ADAC 2022, 코나 일렉트릭을 20°C까지 데우는 첫 약 25분](https://www.adac.de/rund-ums-fahrzeug/elektromobilitaet/tests/heizung-elektroauto/) — 차가운 차를 처음 데우는 25분만 적게 잡는다 | A | QA | 3.60 | 20°C·풍량 3 | 2.55 | 0.71 | **실측이 더 큼** |
@@ -38,7 +38,6 @@
 | N5 | [Tesla Model 3 LR (EVsmart), 평균 −5°C, 20°C, 내기순환, 38시간](https://blog.evsmart.net/t/stuck-in-snow-storm-test-with-electric-vehicles-at-minus-five-degrees-en/2096) — 용량 가정 | B | 에이전트 | 1.60 | 20°C·풍량 3·내기순환 | 2.03 | 1.27 | 앱이 더 많이 씀 |
 | H4 | [Tesla 캠프 모드, 추운 날 (2차 인용)](https://electriccarscheme.com/blog/tesla-model-y-camp-mode-complete-ev-camping-guide-2025) | B | QA | 1.50–1.90 | 22°C·풍량 3 | 2.69 | 1.42–1.79 | 앱이 더 많이 씀 |
 | K1 | [기아 EV9, 한여름 밤 유틸리티 모드 냉방, 약 8시간](https://economist.co.kr/article/view/ecn202607240017) | B | 에이전트 | 0.87 | A/C·풍량 3 | 2.39 | 2.75 | 앱이 더 많이 씀 |
-| K2 | [현대 아이오닉 9, 약 22°C, 차박 하룻밤](https://evcentral.com.au/?p=44552) — 인용 전 한 번 더 확인 권장 | B | 에이전트 | 1.10 | 22°C·풍량 3 (온화한 날도 −10°C로 계산) | 2.69 | 2.45 | 앱이 더 많이 씀 |
 | O1 | [현대 코나 일렉트릭 (오너), 약 −3°C, 21°C, 4시간](https://www.insideevsforum.com/community/threads/how-long-could-you-idle-your-kona-in-the-cold-and-stay-warm.12830/) | C | 에이전트 | 1.12 | 21°C·풍량 3 | 2.62 | 2.34 | 앱이 더 많이 씀 |
 | O2 | [기아 레이 EV (오너), 약 −3°C, 약 22.5°C, 10시간](https://www.clien.net/service/board/cm_car/18419549) | C | 에이전트 | 1.20 | 22.5°C·풍량 3 | 2.73 | 2.27 | 앱이 더 많이 씀 |
 | M1 | [현대 아이오닉 5 N (오너), 온화한 날, 23°C, 약 7시간](https://brunch.co.kr/@8fda19a51618425/95) | C | QA | 0.48 | 23°C·풍량 3 (온화한 날도 −10°C로 계산) | 2.76 | 5.75 | 앱이 더 많이 씀 |
@@ -65,7 +64,13 @@ DOE는 유지 시간을 "사용 가능 에너지 ÷ (공조 + 기타 전력)"으
 | 19% | 137분 (2시간 17분) | 119분 / 109분 | 18분 / 28분 |
 | 20% | 152분 (2시간 32분) | 131분 / 120분 | 21분 / 32분 |
 
-참고로 같은 외기에서 시연 설정(22°C·풍량 3, 19%)은 138분 → 26°C·풍량 6 124분(−14분) → 열선 카드 135분(+11분)으로 계산됩니다.
+**영하 6.7°C(DOE 20°F) BEV 2**: 시연 조건에 가장 가까운 기관 시험입니다. 앱은 이 차의 소비를 약 14% 적게 잡습니다(실측 3.15 kW가 앱 2.70 kW보다 약 17% 큼). 같은 시험의 BEV 1은 앱보다 덜 썼습니다.
+
+| 배터리 | 앱 화면 (22.2°C·풍량 3, −10°C로 계산) | BEV 2 실측 전력으로 계산 | 앱이 길게 말하는 분 |
+|---|---|---|---|
+| 19% | 166분 (2시간 46분, 시연 22°C에서는 167분) | 142분 (2시간 22분) | 24분 |
+
+참고로 영하 17.8°C를 읽으면 시연 설정(22°C·풍량 3, 19%)은 138분 → 26°C·풍량 6 124분(−14분) → 열선 카드 135분(+11분)으로 계산됩니다.
 
 **앱과 문서가 이미 말하고 있는 것**
 - 화면의 계산 숫자에는 모두 "(추정)"이 붙습니다(`WordingRulesTest.computedValuesMarkedEstimate`).
@@ -76,7 +81,7 @@ DOE는 유지 시간을 "사용 가능 에너지 ÷ (공조 + 기타 전력)"으
 
 ## 4. 결론
 
-1. **외기 −5 ~ −10°C 부근에서는 대부분 앱이 더 많이 쓴다고 계산합니다.** ADAC 2022(A, 7종), DOE BEV 1(A), B등급 4건(N1·N2·N4·N5), C등급 2건(O1·O2)이 그렇습니다(15대 중 14대). 예외는 DOE BEV 2(−6.7°C, A)로, 앱이 약 14% 적게 잡습니다.
+1. **외기 −3 ~ −10°C 부근에서는 대부분 앱이 더 많이 쓴다고 계산합니다.** ADAC 2022(A, 7종), DOE BEV 1(A), B등급 4건(N1·N2·N4·N5), C등급 2건(O1·O2)이 그렇습니다(15대 중 14대). 예외는 DOE BEV 2(−6.7°C, A)로, 앱이 소비를 약 14% 적게 잡아 배터리 19%에서 남은 시간이 약 24분 깁니다(§3).
 2. **영하 18°C에서는 기관 시험 2대 모두 실제가 더 씁니다.** 앱의 남은 시간은 1.15~1.26배, 배터리 19~20%에서 약 18~32분 깁니다(§3).
 3. **차가운 차를 처음 데우는 25분(H2), 폭염 직사광선 + 배터리 냉각(C1)도 실제가 더 클 수 있습니다.** C1은 순간값 1건이라 크기를 모릅니다.
 4. **냉방(DOE 35°C, ADAC 2024 35°C + 일사), 공조 꺼짐, 온화한 날은 앱이 더 많이 씁니다.** 온화한 날은 2~6배 과대입니다. 외기온으로 남은 시간을 늘리지 않기 때문입니다(짧게 틀리는 쪽).
@@ -92,4 +97,4 @@ DOE는 유지 시간을 "사용 가능 에너지 ÷ (공조 + 기타 전력)"으
 
 - DOE·ANL Program Record "Impact of Cold Ambient Temperature and Extreme Conditions on Electric Vehicles" (2024-09-12, Table 2): [PDF](https://www.energy.gov/sites/default/files/2024-10/Impact_of_Cold_Ambient_Temperature_on_BEV_Performance_v15_TechEditFinal_12Sep2024__0.pdf)
 - 기존 9건과 등급 규칙: `docs/ENERGY_MODEL.md` §6.
-- 쓰지 않은 것: Rivian R1T·F-150 Lightning 눈 속 정차(복귀 충전량이라 충전 손실 포함 상한), 아이오닉 5 0.74 kW·EV6 1.5 kW 전언(원 영상 미확인), 현대 아이오닉 5 차박(부하 혼합), Tesla 시트 열선 57 Wh(단위 시간 불명확, 정성 근거로만).
+- 쓰지 않은 것: Rivian R1T·F-150 Lightning 눈 속 정차(복귀 충전량이라 충전 손실 포함 상한), 아이오닉 5 0.74 kW·EV6 1.5 kW 전언(원 영상 미확인), 현대 아이오닉 5 차 안 하룻밤 정차 기록(온풍기·전기장판 등 부하 혼합), 현대 아이오닉 9 차 안 하룻밤 정차 기사(약 1.1 kW, 원문 재확인 전이라 공개 표에서 뺌), Tesla 시트 열선 57 Wh(단위 시간 불명확, 정성 근거로만).

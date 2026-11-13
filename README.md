@@ -41,14 +41,14 @@
    ```bash
    python tools/compare_public.py --check
    ```
-   첫 줄에 `167분 = 약 2시간 47분`, `−21분 (167 → 146)`, `+16분 (146 → 162)`이 나옵니다. 이 스크립트는 `EnergyModel.kt` 식을 32비트 Float 그대로 옮겼고, 단위 테스트의 외기온별 표(−20·−15·−10·0·25°C)와 다르면 실패합니다. 이어서 공개 실측 21행과의 대조표를 내고, [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)가 출력과 같은지 확인합니다.
-2. 같은 숫자를 앱 코드 자체로 확인하려면 JVM 단위 테스트를 돌립니다(JDK 17 이상과 Android SDK 필요, 에뮬레이터 불필요).
+   첫 단락에 `167분 = 약 2시간 47분`, `−21분 (167 → 146)`, `+16분 (146 → 162)`이 나옵니다. 이 스크립트는 `EnergyModel.kt` 식을 32비트 Float 그대로 옮겼고, 단위 테스트의 외기온별 표(−20·−15·−10·0·25°C)와 다르면 실패합니다. 이어서 공개 실측 20행과의 대조표를 내고, [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)가 출력과 같은지 확인합니다.
+2. 같은 숫자를 앱 코드 자체로 확인하려면 JVM 단위 테스트를 돌립니다(JDK 17 이상과 Android SDK 필요: `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`. 에뮬레이터 불필요).
    ```bash
    ./gradlew :app:testDebugUnitTest --tests app.chaseom.stay.OutsideTempGapTest
    ```
-   `heroFollowsOutsideTemperature`(167), `demoToastUnchangedAtMinus10`(−21), `emulatorReadingKeepsTheDemo`(+16)가 통과합니다(이 클래스 8개). 새 클론에서 잰 시간은 Gradle과 의존성을 처음 받을 때 약 4분 14초, 그다음부터 약 41초입니다(2026-11-13, Windows 11, `--no-daemon`). 3분 안에 끝내려면 1번만으로 충분하고, 2번은 처음 받는 시간이 더 듭니다.
+   `heroFollowsOutsideTemperature`(167), `demoToastUnchangedAtMinus10`(−21), `emulatorReadingKeepsTheDemo`(+16)가 통과합니다(이 클래스 8개). 새 클론에서 잰 시간은 Gradle과 의존성을 처음 받을 때 약 4분 14초, 그다음부터 약 41초입니다(2026-11-13, Windows 11, `--no-daemon`). 3분 안에는 1번만 돌리면 되고, 2번은 처음 받는 시간이 더 듭니다.
 
-**실차 대신 한 검증과 그 오차**: 실차에서 재지 않았으므로, 조건이 공개된 정차 실측(미국 에너지부·아르곤 연구소 2024, ADAC 2021·2022, INL 등)을 같은 식에 넣어 비교했습니다. 영하 10°C 부근에서는 대부분 앱이 더 많이 쓴다고 계산합니다. **영하 18°C에서는 실제 소모가 앱보다 1.15~1.26배 커서, 배터리 19~20%일 때 화면 숫자가 약 18~32분 깁니다.** 전체 표와 출처는 [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)에 있습니다.
+**실차 대신 한 검증과 그 오차**: 실차에서 재지 않았으므로, 조건이 공개된 정차 실측(미국 에너지부·아르곤 연구소 2024, ADAC 2021·2022, INL 등)을 같은 식에 넣어 비교했습니다. 영하 10°C 부근에서는 대부분 앱이 더 많이 쓴다고 계산합니다. 영하 6.7°C에서는 기관 시험 2대 중 1대가 앱 계산보다 약 17% 더 써서, 배터리 19%에서 화면 숫자가 약 24분 깁니다. **영하 18°C에서는 실제 소모가 앱보다 1.15~1.26배 커서, 배터리 19~20%일 때 화면 숫자가 약 18~32분 깁니다.** 전체 표와 출처는 [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)에 있습니다.
 
 ## 3. 테스트 환경 및 필요한 설정
 | 항목 | 값 |

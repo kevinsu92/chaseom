@@ -152,7 +152,7 @@ ROWS: List[Row] = [
     Row("D3", "DOE·ANL 2024, 외기 95°F(35°C), 냉방, BEV 1 / BEV 2", "A", "원문 p.11–12",
         (0.956 + 0.544, 0.755 + 0.239), Climate(ac=True, set_c=22.2, outside_c=35), "A/C·풍량 3", DOE,
         doe_usable_kwh=(59.3, 64.2)),
-    Row("D4", "DOE·ANL 2024, 외기 72°F(22.2°C), 공조 꺼짐, BEV 1 / BEV 2", "A", "원문 p.11–12",
+    Row("D4", "DOE·ANL 2024, 외기 72°F(22.2°C), 공조 소비 0 W(외기 = 실내), BEV 1 / BEV 2", "A", "원문 p.11–12",
         (0.226, 0.144), Climate(power_on=False), "공조 꺼짐 (기본 부하)", DOE),
     # docs/ENERGY_MODEL.md section 6 (PUBLIC_MEASUREMENTS v3, 05_qa VERIFIED)
     Row("H1", "ADAC 2022, 외기 −10°C, 실내 20°C 유지 (전기차 7종, 현대 코나 일렉트릭 포함)", "A", "QA",
@@ -186,9 +186,6 @@ ROWS: List[Row] = [
         "https://electriccarscheme.com/blog/tesla-model-y-camp-mode-complete-ev-camping-guide-2025"),
     Row("K1", "기아 EV9, 한여름 밤 유틸리티 모드 냉방, 약 8시간", "B", "에이전트",
         (0.87,), Climate(ac=True), "A/C·풍량 3", "https://economist.co.kr/article/view/ecn202607240017"),
-    Row("K2", "현대 아이오닉 9, 약 22°C, 차박 하룻밤", "B", "에이전트",
-        (1.1,), Climate(set_c=22, outside_c=22), "22°C·풍량 3 (온화한 날도 −10°C로 계산)", "https://evcentral.com.au/?p=44552",
-        note="인용 전 한 번 더 확인 권장"),
     Row("O1", "현대 코나 일렉트릭 (오너), 약 −3°C, 21°C, 4시간", "C", "에이전트",
         (1.12,), Climate(set_c=21, outside_c=-3), "21°C·풍량 3",
         "https://www.insideevsforum.com/community/threads/how-long-could-you-idle-your-kona-in-the-cold-and-stay-warm.12830/"),
@@ -286,6 +283,16 @@ def markdown() -> str:
     hold = [f"| BEV {i + 1} | {e} kWh | {e / app18:.1f}시간 | {d:.1f}시간 | {e / app18 / d:.2f}배 |"
             for i, (e, d) in enumerate(zip(d1.doe_usable_kwh, d1.doe_hold_h))]
     b18, h18, s18 = demo_numbers(-17.8)
+    # D2 BEV 2 (-6.7 C): the condition closest to the demo, where one institution-tested car still draws more.
+    d2 = next(r for r in ROWS if r.id == "D2")
+    app7 = draw_kw(d2.app)
+    d2_rows, d2_gap = [], 0
+    for soc in (19,):  # at 20 % the app value passes the 3-hour display cap
+        a, m = minutes_for_kw(app7, soc), minutes_for_kw(d2.measured_kw[1], soc)
+        d2_rows.append(f"| {soc}% | {a}분 ({hm(a)}, 시연 22°C에서는 {b}분) | {m}분 ({hm(m)}) | {a - m}분 |")
+        d2_gap = a - m
+    d2_pct = round((d2.measured_kw[1] / app7 - 1) * 100)   # measured above app
+    d2_under = round((1 - app7 / d2.measured_kw[1]) * 100)  # app below measured
 
     out = [
         "# 공개 실측 대조표 — 실차 대신 같은 식으로 맞춰 보기",
@@ -348,7 +355,14 @@ def markdown() -> str:
         "|---|---|---|---|",
         *soc_rows,
         "",
-        f"참고로 같은 외기에서 시연 설정(22°C·풍량 3, 19%)은 {b18}분 → 26°C·풍량 6 {h18}분({signed(h18 - b18)}분) → 열선 카드 {s18}분({signed(s18 - h18)}분)으로 계산됩니다.",
+        f"**영하 6.7°C(DOE 20°F) BEV 2**: 시연 조건에 가장 가까운 기관 시험입니다. 앱은 이 차의 소비를 약 {d2_under}% 적게 잡습니다(실측 {d2.measured_kw[1]:.2f} kW가 앱 {app7:.2f} kW보다 약 {d2_pct}% 큼)."
+        " 같은 시험의 BEV 1은 앱보다 덜 썼습니다.",
+        "",
+        "| 배터리 | 앱 화면 (22.2°C·풍량 3, −10°C로 계산) | BEV 2 실측 전력으로 계산 | 앱이 길게 말하는 분 |",
+        "|---|---|---|---|",
+        *d2_rows,
+        "",
+        f"참고로 영하 17.8°C를 읽으면 시연 설정(22°C·풍량 3, 19%)은 {b18}분 → 26°C·풍량 6 {h18}분({signed(h18 - b18)}분) → 열선 카드 {s18}분({signed(s18 - h18)}분)으로 계산됩니다.",
         "",
         "**앱과 문서가 이미 말하고 있는 것**",
         "- 화면의 계산 숫자에는 모두 \"(추정)\"이 붙습니다(`WordingRulesTest.computedValuesMarkedEstimate`).",
@@ -361,8 +375,9 @@ def markdown() -> str:
         "",
         "## 4. 결론",
         "",
-        "1. **외기 −5 ~ −10°C 부근에서는 대부분 앱이 더 많이 쓴다고 계산합니다.** ADAC 2022(A, 7종), DOE BEV 1(A), "
-        "B등급 4건(N1·N2·N4·N5), C등급 2건(O1·O2)이 그렇습니다(15대 중 14대). 예외는 DOE BEV 2(−6.7°C, A)로, 앱이 약 14% 적게 잡습니다.",
+        "1. **외기 −3 ~ −10°C 부근에서는 대부분 앱이 더 많이 쓴다고 계산합니다.** ADAC 2022(A, 7종), DOE BEV 1(A), "
+        "B등급 4건(N1·N2·N4·N5), C등급 2건(O1·O2)이 그렇습니다(15대 중 14대). "
+        f"예외는 DOE BEV 2(−6.7°C, A)로, 앱이 소비를 약 {d2_under}% 적게 잡아 배터리 19%에서 남은 시간이 약 {d2_gap}분 깁니다(§3).",
         f"2. **영하 18°C에서는 기관 시험 2대 모두 실제가 더 씁니다.** 앱의 남은 시간은 {big.replace('영하 18°C에서 ', '')} 깁니다(§3).",
         "3. **차가운 차를 처음 데우는 25분(H2), 폭염 직사광선 + 배터리 냉각(C1)도 실제가 더 클 수 있습니다.** C1은 순간값 1건이라 크기를 모릅니다.",
         "4. **냉방(DOE 35°C, ADAC 2024 35°C + 일사), 공조 꺼짐, 온화한 날은 앱이 더 많이 씁니다.** 온화한 날은 2~6배 과대입니다. "
@@ -382,7 +397,8 @@ def markdown() -> str:
         f"- DOE·ANL Program Record \"Impact of Cold Ambient Temperature and Extreme Conditions on Electric Vehicles\" (2024-09-12, Table 2): [PDF]({DOE})",
         "- 기존 9건과 등급 규칙: `docs/ENERGY_MODEL.md` §6.",
         "- 쓰지 않은 것: Rivian R1T·F-150 Lightning 눈 속 정차(복귀 충전량이라 충전 손실 포함 상한), 아이오닉 5 0.74 kW·EV6 1.5 kW 전언(원 영상 미확인), "
-        "현대 아이오닉 5 차박(부하 혼합), Tesla 시트 열선 57 Wh(단위 시간 불명확, 정성 근거로만).",
+        "현대 아이오닉 5 차 안 하룻밤 정차 기록(온풍기·전기장판 등 부하 혼합), "
+        "현대 아이오닉 9 차 안 하룻밤 정차 기사(약 1.1 kW, 원문 재확인 전이라 공개 표에서 뺌), Tesla 시트 열선 57 Wh(단위 시간 불명확, 정성 근거로만).",
         "",
     ]
     return "\n".join(out)
