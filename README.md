@@ -29,7 +29,8 @@
    - 기어 **D**: 섬과 숫자를 바로 접습니다. 주행 중에는 시스템이 앱 화면을 가립니다.
 
 **소스에서 빌드**
-- `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`이 필요합니다.
+- JDK 17 이상(`JAVA_HOME`, 예: Android Studio에 들어 있는 JBR)과 Android SDK(`ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`)가 필요합니다.
+- macOS/Linux에서는 처음 한 번 `chmod +x gradlew`가 필요할 수 있습니다.
 - 디버그 빌드와 단위 테스트: `./gradlew assembleDebug`, `./gradlew testDebugUnitTest` (테스트 335개).
 - 릴리스 APK: `keystore.properties`를 `keystore.properties.example`처럼 준비한 뒤 `scripts/build-release.ps1`로 만듭니다.
 - Windows에서 경로에 한글이 있으면 AGP가 빌드를 거부합니다. 영문 경로에 클론하거나, 드라이브 문자를 자동으로 연결(`subst`)하는 위 스크립트를 쓰세요.
