@@ -51,7 +51,7 @@
 - 알려진 한계는 아래 '한계' 절에 있습니다.
 
 ## 4. APK 위치
-- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `9ab0d0c32bb5ef143eee24974c5d5caadc3bbfadfbdb58a72e29b027258ca857`)
+- **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, 버전 1.3.0, sha256 `4113257fbf06c58dddc93e587bc71356dfda716e5083b2bda6efc7d21f6eabad`)
 - 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4) (sha256 `27c1b2795f5e86ec1462956c72991dfc2da3c97503e8287b8b3b5feb1ce98cab`)
 
 ## 검증 표
