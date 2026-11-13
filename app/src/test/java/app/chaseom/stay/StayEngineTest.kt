@@ -164,14 +164,15 @@ class StayEngineTest {
         }
     }
 
-    @Test fun rearRowNeverHasADotForAnyOccupancy() {
+    // F6: someone detected on a rear seat gets the attention dot (like an open window); unknown and empty do not.
+    @Test fun rearRowDotOnlyWhenSomeoneIsDetected() {
         listOf(null, true, false).forEach { l ->
             listOf(null, true, false).forEach { rr ->
                 val e = StayEngine(); e.at(0)
                 val rec = e.at(2 * min, ev.copy(driverDoorOpen = true, rearLeftOccupied = l, rearRightOccupied = rr)).receipt!!
                 val rear = rec.rows.filterIsInstance<ReceiptRow.Rear>().single()
-                assertFalse(rear.dot)
                 val expected = if (l == true || rr == true) true else if (l == null || rr == null) null else false
+                assertEquals(expected == true, rear.dot)
                 assertEquals(expected, rear.detected)
                 assertTrue(rec.rearCheckAlways)
             }

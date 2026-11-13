@@ -165,7 +165,7 @@ private fun ReceiptLine(row: ReceiptRow, size: ChaseomUi.Size, last: Boolean = f
         is ReceiptRow.Rear -> stringResource(R.string.e_rear) to
             stringResource(when (row.detected) { true -> R.string.e_rear_detected; false -> R.string.e_rear_not_detected; null -> R.string.e_unknown })
     }
-    val grey = row is ReceiptRow.Rear // neutral grey either way, never green
+    val grey = row is ReceiptRow.Rear && row.detected != true // detected: dot + normal ink (F6); never green
     // Rows 56 dp with a 1 dp line, label Regular / value Medium 26, label column 224 (Small 168).
     // The attention dot stays (an open window etc.) in the sun amber: warning colours belong to banners only.
     val k = cui()

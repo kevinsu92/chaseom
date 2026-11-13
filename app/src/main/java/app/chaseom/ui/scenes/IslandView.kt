@@ -425,11 +425,17 @@ private fun IslandLabels(ui: StayUi, set: H1Set, k: Float, picW: Float, boxHdp: 
 /**
  * S1: tomorrow's share as one chip on the dock top ("내일 30km"), replacing the boat's three crates. At K1 / K2
  * ([outline], IslandInfo.crateOutline: keep banner NEAR or BELOW) the chip border turns amber (day #A86C00 4.37:1,
- * night #F0B850; #E0A030 was 2.27:1). Size and place follow the picture's scale [k] (dp per canvas px).
+ * night #F0B850; #E0A030 was 2.27:1) and the chip is filled with an amber tint (F8). Size and place follow the picture's scale [k] (dp per canvas px).
  */
 @Composable
 private fun KeepChip(keepKm: Int, leftKm: Int?, outline: Boolean, night: Boolean, set: H1Set, k: Float) {
-    val bg = if (night) Color(0xFF2B3140) else Color.White
+    // F8: at K1 / K2 the chip is also filled amber (a light tint by day, a dark tint at night) so it reads as a warning.
+    val bg = when {
+        outline && night -> Color(0xFF4A3A1C)
+        outline -> Color(0xFFFFE9B8)
+        night -> Color(0xFF2B3140)
+        else -> Color.White
+    }
     val ink = if (night) Color(0xFFD6DAE0) else Color(0xFF4A4E57)
     val edge = when {
         outline && night -> Color(0xFFF0B850)
