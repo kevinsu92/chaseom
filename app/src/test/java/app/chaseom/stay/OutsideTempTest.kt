@@ -51,10 +51,14 @@ class OutsideTempTest {
     @Test fun exchangeComparesAtTheSameOutsideTemperature() {
         val keep = EnergyModel.keepPercent(30, 77.4f, 5f)
         val s = ClimateSetting(true, 26f, 3, false, false, 0, outsideC = 0f)
-        fun m(c: ClimateSetting) = EnergyModel.minutesToKeep(20, keep, 77.4f, EnergyModel.drawKw(c))
+        fun m(c: ClimateSetting) = EnergyModel.minutesToKeep(15, keep, 77.4f, EnergyModel.drawKw(c))
             .coerceAtMost(EnergyModel.DISPLAY_CAP_MINUTES)
         val gain = m(s.copy(setTempC = 21f, driverSeatHeat = 2)) - m(s)
-        val x = EnergyModel.exchange(20, 77.4f, keep, s, emptySet())
-        if (gain >= EnergyModel.MIN_GAIN_MINUTES) assertEquals(gain, x?.gainMinutes) else assertNull(x)
+        assertTrue("fixture must offer a card, gain=$gain", gain >= EnergyModel.MIN_GAIN_MINUTES)
+        val x = EnergyModel.exchange(15, 77.4f, keep, s, emptySet())
+        assertEquals(gain, x?.gainMinutes)
+        // At -10 C (outside unknown) the same swap gains a different amount: the card follows the outside temperature.
+        val cold = EnergyModel.exchange(15, 77.4f, keep, s.copy(outsideC = null), emptySet())
+        assertTrue(cold?.gainMinutes != x?.gainMinutes)
     }
 }

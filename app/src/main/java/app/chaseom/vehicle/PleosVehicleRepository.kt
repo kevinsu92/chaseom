@@ -28,9 +28,11 @@ class PleosVehicleRepository(private val carConnection: CarConnection) : Vehicle
     override val source = DataSource.PLEOS_SDK
 
     private var subscribed = false
-    private var propertyManager: CarPropertyManager? = null
+    @Volatile private var propertyManager: CarPropertyManager? = null
     private val gearCallback = object : CarPropertyManager.CarPropertyEventCallback {
         override fun onChangeEvent(value: CarPropertyValue<*>) {
+            // A late event from a manager dropped by onLost() must not bring back PARK / CONNECTED.
+            if (propertyManager == null) return
             val g = value.value as? Int
             Probe.log("gear=$g status=${value.status}")
             _state.update { it.copy(gear = gearFromProperty(value.status, g), connection = ConnectionState.CONNECTED) }
@@ -56,15 +58,17 @@ class PleosVehicleRepository(private val carConnection: CarConnection) : Vehicle
         try {
             val cpm = handle.getCarManager(Car.PROPERTY_SERVICE) as? CarPropertyManager ?: error("no CarPropertyManager")
             propertyManager = cpm
-            val p = cpm.getProperty<Int>(VehiclePropertyIds.GEAR_SELECTION, 0)
-            _state.update {
-                it.copy(
-                    gear = if (p == null) GearPosition.UNKNOWN else gearFromProperty(p.status, p.value),
-                    connection = if (p == null) ConnectionState.CONNECTING else ConnectionState.CONNECTED,
-                    lastError = null,
-                )
-            }
+            // Subscribe first: if the one-off read below fails, the next gear event still connects us.
             cpm.registerCallback(gearCallback, VehiclePropertyIds.GEAR_SELECTION, CarPropertyManager.SENSOR_RATE_ONCHANGE)
+            val p = try {
+                cpm.getProperty<Int>(VehiclePropertyIds.GEAR_SELECTION, 0)
+            } catch (t: Throwable) {
+                recordError("gearRead", t)
+                null
+            }
+            if (p != null) {
+                _state.update { it.copy(gear = gearFromProperty(p.status, p.value), connection = ConnectionState.CONNECTED, lastError = null) }
+            }
         } catch (t: Throwable) {
             _state.update { it.copy(gear = GearPosition.UNKNOWN, connection = ConnectionState.FAILED) }
             recordError("gear", t)

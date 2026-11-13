@@ -15,6 +15,8 @@ import android.util.Log
  *    calls [User.onLost] (the old managers are dropped), then [User.onReady] with the new one.
  *  - [lost] calls [User.onLost] once; a second [lost] does nothing.
  *  - One user that throws does not stop the others.
+ *  - Adding the same user twice is ignored.
+ *  - Callbacks run after the lock is released (a user may take its own lock; no lock-order inversion).
  */
 class SharedHandle<T : Any> {
     interface User<T> {
@@ -23,32 +25,42 @@ class SharedHandle<T : Any> {
     }
 
     private val users = mutableListOf<User<T>>()
-    var current: T? = null
+    @Volatile var current: T? = null
         private set
     /** How many times the handle came up; 2 or more means it reconnected at least once. */
     var readyCount = 0
         private set
 
-    @Synchronized
+    private val lock = Any()
+
     fun add(user: User<T>) {
-        users += user
-        current?.let { h -> safe { user.onReady(h) } }
+        val h = synchronized(lock) {
+            if (users.any { it === user }) return
+            users += user
+            current
+        }
+        h?.let { safe { user.onReady(it) } }
     }
 
-    @Synchronized
     fun ready(handle: T) {
-        if (current === handle) return
-        if (current != null) lost()
-        current = handle
-        readyCount++
-        users.toList().forEach { u -> safe { u.onReady(handle) } }
+        val (hadOld, snapshot) = synchronized(lock) {
+            if (current === handle) return
+            val old = current != null
+            current = handle
+            readyCount++
+            old to users.toList()
+        }
+        if (hadOld) snapshot.forEach { u -> safe { u.onLost() } }
+        snapshot.forEach { u -> safe { u.onReady(handle) } }
     }
 
-    @Synchronized
     fun lost() {
-        if (current == null) return
-        current = null
-        users.toList().forEach { u -> safe { u.onLost() } }
+        val snapshot = synchronized(lock) {
+            if (current == null) return
+            current = null
+            users.toList()
+        }
+        snapshot.forEach { u -> safe { u.onLost() } }
     }
 
     private inline fun safe(block: () -> Unit) {

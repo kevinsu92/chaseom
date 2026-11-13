@@ -37,6 +37,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resValue("string", "app_name", appLabel)
+        // The rear-seat mapping is checked per Pleos SDK version (cabin/Occupancy.kt).
+        buildConfigField("String", "PLEOS_VEHICLE_SDK", "\"${libs.versions.pleosVehicle.get()}\"")
     }
 
     // AAOS Car API (CarUxRestrictionsManager), provided by the platform at runtime.

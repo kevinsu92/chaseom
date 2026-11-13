@@ -26,9 +26,8 @@ import android.car.VehiclePropertyIds
 import android.car.hardware.CarPropertyValue
 import android.car.hardware.property.CarPropertyManager
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
 import android.util.Log
+import app.chaseom.BuildConfig
 import app.chaseom.Probe
 import app.chaseom.stay.EnergyModel
 import app.chaseom.vehicle.CarConnection
@@ -67,12 +66,9 @@ class PleosCabinRepository(
     private var propertyManager: CarPropertyManager? = null
     private var carSubscribed = false
 
-    // Rear occupancy, raw per source; [Occupancy.resolve] decides (AAOS wins, Pleos inverted on the emulator only).
-    private val invertPleosOccupancy = Occupancy.isEmulatorBuild(Build.HARDWARE, Build.FINGERPRINT, Build.PRODUCT)
-    private var pleosRearLeft: Boolean? = null
-    private var pleosRearRight: Boolean? = null
-    private var aaosRearLeft: Int? = null
-    private var aaosRearRight: Int? = null
+    // Rear occupancy: mapped by the verified Pleos SDK version (see Occupancy).
+    @Volatile private var pleosRearLeft: Boolean? = null
+    @Volatile private var pleosRearRight: Boolean? = null
     private var pollJob: Job? = null
     private val pollGate = PollGate(start = { vehicle?.let { startPolling(it) } }, stop = ::stopPolling)
     private var powerArea: SeatArea? = null
@@ -160,18 +156,6 @@ class PleosCabinRepository(
             set("occRearRight", value) { it.withRear() }
         }
         override fun onFailed(e: Exception) = fail("occRearRight", e)
-    }
-    private val occupancyCallback = object : CarPropertyManager.CarPropertyEventCallback {
-        override fun onChangeEvent(value: CarPropertyValue<*>) {
-            val v = (value.value as? Int)?.takeIf { value.status == CAR_STATUS_AVAILABLE }
-            when (value.areaId) {
-                Occupancy.AREA_ROW_2_LEFT -> aaosRearLeft = v
-                Occupancy.AREA_ROW_2_RIGHT -> aaosRearRight = v
-                else -> return
-            }
-            set("aaosOcc.${value.areaId}", v) { it.withRear() }
-        }
-        override fun onErrorEvent(propertyId: Int, areaId: Int) = Unit
     }
     private val outsideCallback = object : CarPropertyManager.CarPropertyEventCallback {
         override fun onChangeEvent(value: CarPropertyValue<*>) {
@@ -359,7 +343,6 @@ class PleosCabinRepository(
             propertyManager?.let { pm ->
                 pm.unregisterCallback(portCallback)
                 pm.unregisterCallback(outsideCallback)
-                pm.unregisterCallback(occupancyCallback)
             }
         } catch (t: Throwable) {
             Log.w(TAG, "car unregister: ${t.message}")
@@ -375,9 +358,7 @@ class PleosCabinRepository(
         override fun onReady(handle: Car) = startCarProperties(handle)
         override fun onLost() {
             propertyManager = null
-            aaosRearLeft = null
-            aaosRearRight = null
-            _state.update { it.copy(outsideTempC = null).withRear() }
+            _state.update { it.copy(outsideTempC = null) }
         }
     }
 
@@ -411,25 +392,12 @@ class PleosCabinRepository(
             // Unreadable -> null -> the model keeps its -10 C assumption.
             try {
                 val p = cpm.getProperty<Float>(VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE, 0)
+                probe("outsideTempRaw", "${p?.value} status=${p?.status}")
                 setOutside(p?.value?.takeIf { p.status == CAR_STATUS_AVAILABLE })
                 cpm.registerCallback(outsideCallback, VehiclePropertyIds.ENV_OUTSIDE_TEMPERATURE, OUTSIDE_RATE_HZ)
             } catch (t: Throwable) {
                 fail("outsideTemp", t)
                 setOutside(null)
-            }
-            if (appContext.checkSelfPermission(PERMISSION_READ_CAR_SEATS) == PackageManager.PERMISSION_GRANTED) {
-                try {
-                    aaosRearLeft = cpm.getProperty<Int>(VehiclePropertyIds.SEAT_OCCUPANCY, Occupancy.AREA_ROW_2_LEFT)
-                        ?.takeIf { it.status == CAR_STATUS_AVAILABLE }?.value
-                    aaosRearRight = cpm.getProperty<Int>(VehiclePropertyIds.SEAT_OCCUPANCY, Occupancy.AREA_ROW_2_RIGHT)
-                        ?.takeIf { it.status == CAR_STATUS_AVAILABLE }?.value
-                    set("aaosOcc", "$aaosRearLeft/$aaosRearRight") { it.withRear() }
-                    cpm.registerCallback(occupancyCallback, VehiclePropertyIds.SEAT_OCCUPANCY, CarPropertyManager.SENSOR_RATE_ONCHANGE)
-                } catch (t: Throwable) {
-                    fail("aaosOcc", t)
-                }
-            } else {
-                probe("aaosOcc", "no READ_CAR_SEATS; Pleos value, inverted=$invertPleosOccupancy")
             }
         } catch (t: Throwable) {
             fail("car", t)
@@ -523,7 +491,8 @@ class PleosCabinRepository(
 
     private inline fun set(name: String, value: Any?, crossinline transform: (CabinState) -> CabinState) {
         probe(name, value)
-        _state.update { transform(it).let { s -> if (s.connected) s else s.copy(connected = true) } }
+        // "connected" = the Pleos service has answered with a value at least once.
+        _state.update { transform(it).let { s -> if (s.connected || value == null) s else s.copy(connected = true) } }
     }
 
     /** Stored to 0.5 C so a CONTINUOUS sensor does not recompose the screen on every tiny change. */
@@ -533,8 +502,8 @@ class PleosCabinRepository(
     }
 
     private fun CabinState.withRear(): CabinState = copy(
-        rearLeftOccupied = Occupancy.resolve(aaosRearLeft, pleosRearLeft, invertPleosOccupancy),
-        rearRightOccupied = Occupancy.resolve(aaosRearRight, pleosRearRight, invertPleosOccupancy),
+        rearLeftOccupied = Occupancy.resolve(pleosRearLeft, BuildConfig.PLEOS_VEHICLE_SDK),
+        rearRightOccupied = Occupancy.resolve(pleosRearRight, BuildConfig.PLEOS_VEHICLE_SDK),
     )
 
     private fun <T> setIfChanged(name: String, value: T, transform: (CabinState, T) -> Pair<Boolean, CabinState>) {
@@ -574,6 +543,5 @@ class PleosCabinRepository(
         /** Outside temperature changes slowly; the slowest useful rate (the platform clamps to the sensor's min). */
         private const val OUTSIDE_RATE_HZ = 0.1f
         private const val CAR_STATUS_AVAILABLE = 0
-        private const val PERMISSION_READ_CAR_SEATS = "android.car.permission.READ_CAR_SEATS"
     }
 }
