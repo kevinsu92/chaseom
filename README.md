@@ -53,7 +53,7 @@
 
 ## 4. APK 위치
 - **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, 버전 1.3.0, sha256 `4113257fbf06c58dddc93e587bc71356dfda716e5083b2bda6efc7d21f6eabad`)
-- 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4) (sha256 `5ce7419b37a61505c7296b04a749eb65ca79fa136dc52aae22b4ec8fa0d1b7b9`)
+- 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4) (sha256 `5874e834cd8cfe7f76882ee2d5e3123fadfbd9794c521b2e2c9edfdd5552e2b2`)
 
 ## 검증 표
 위 APK(1.3.0)를 에뮬레이터에서 잰 값입니다. 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)입니다. 측정 때 PC 부하가 높았습니다(호스트 CPU 68~93%, 에뮬레이터 load 8.7). 그래서 시간 값은 부하가 낮을 때보다 길게 나왔을 수 있습니다.
