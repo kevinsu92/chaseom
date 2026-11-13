@@ -221,9 +221,7 @@ fun StayFullScene(ui: StayUi, actions: StayActions, modifier: Modifier) {
             } else {
                 val scroll = rememberScrollState()
                 Column(Modifier.fillMaxWidth().verticalScroll(scroll)) {
-                    androidx.compose.runtime.CompositionLocalProvider(LocalPageScroll provides scroll) {
-                        MainColumn(ui, heroSize, Modifier.fillMaxWidth(), actions, toastPlace)
-                    }
+                    MainColumn(ui, heroSize, Modifier.fillMaxWidth(), actions, toastPlace)
                     if (!islandFace) {
                         Spacer(Modifier.height(PleosDimens.space24))
                         SideColumn(ui, actions, Modifier.fillMaxWidth())

@@ -1,4 +1,5 @@
-"""Build G S1/S2 island captures: Large and Small windows, day and night, without a flag, with a flag and at K1.
+"""Build G S1/S2 island captures for the 2-second check (UXR C1-C10): Large and Small windows, day and night.
+States per window/theme: no flag, reach (first choice), short (last choice), swap card open, cap (6 buoys), K1.
 Usage: python tools/s1_shots.py <out_dir> [package]
 Uses the Virtual Console only (tools/vc.py). Night = `cmd uimode night yes`, always restored to `no` at the end."""
 import re
@@ -10,46 +11,48 @@ import vc
 PKG = sys.argv[2] if len(sys.argv) > 2 else "app.chaseom.debug"
 
 
-def tap_first(pattern, timeout=5.0):
-    end = time.time() + timeout
-    while time.time() < end:
-        m = re.search(r'text="(' + pattern + r')"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', vc.screen_xml())
+def choices():
+    for _ in range(8):
+        m = re.findall(r'text="([^"]*까지 \(\+[^"]*\))"', vc.screen_xml())
         if m:
-            x1, y1, x2, y2 = map(int, m.groups()[1:])
-            vc.adb("shell", "input", "tap", str((x1 + x2) // 2), str((y1 + y2) // 2))
-            return m.group(1)
+            return m
         time.sleep(0.5)
-    return None
+    return []
+
+
+def plant(which):
+    """Plant a flag: which = 0 (earliest choice) or -1 (latest)."""
+    vc.tap_text("깃발 내리기", timeout=1)
+    time.sleep(1)
+    if vc.tap_text("몇 시까지 기다려요? (선택)", timeout=3):
+        time.sleep(1.2)
+        c = choices()
+        if c:
+            vc.tap_text(c[which])
+    time.sleep(2.5)
 
 
 def scene(out, tag):
     vc.base_state(soc=19)
-    time.sleep(1)
     vc.set_car(temp=26, fan=7)
     time.sleep(4)
     vc.tap_text("깃발 내리기", timeout=1)
     time.sleep(1.5)
-    vc.shot(out, f"{tag}_a_noflag")
-    if vc.tap_text("몇 시까지 기다려요? (선택)", timeout=3):
-        time.sleep(1.2)
-        # the longest choice, so the flag stands past the last buoy (short case)
-        picked = None
-        for _ in range(6):
-            m = re.findall(r'text="([^"]*까지 \(\+[^"]*\))"', vc.screen_xml())
-            if m:
-                picked = m[-1]
-                break
-            time.sleep(0.5)
-        if picked:
-            vc.tap_text(picked)
-    time.sleep(2.5)
-    vc.shot(out, f"{tag}_b_flag")
-    vc.set_car(temp=21, fan=3, seat=2)
+    vc.shot(out, f"{tag}_1_noflag")
+    plant(0)
+    vc.shot(out, f"{tag}_2_reach")
+    plant(-1)
+    vc.shot(out, f"{tag}_3_short")
+    vc.set_car(temp=21, fan=3, seat=2)  # swap: the stay grows, the card under the flag lines
     time.sleep(3)
-    vc.shot(out, f"{tag}_c_flag_after_swap")
-    vc.set_car(seat=0, temp=26, fan=7, soc=9)
+    vc.shot(out, f"{tag}_4_swap")
+    vc.set_car(seat=0, temp=22, fan=1, soc=95)  # 3 hours or more: six buoys
     time.sleep(4)
-    vc.shot(out, f"{tag}_d_k1")
+    plant(-1)
+    vc.shot(out, f"{tag}_5_cap")
+    vc.set_car(temp=26, fan=7, soc=9)  # near tomorrow's share: K1
+    time.sleep(4)
+    vc.shot(out, f"{tag}_6_k1")
     vc.tap_text("깃발 내리기", timeout=1)
 
 

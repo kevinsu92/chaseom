@@ -49,8 +49,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -68,8 +66,6 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.core.graphics.get
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -154,6 +150,8 @@ internal const val BUOY_SCALE = 2
 internal const val FLAG_GAP = 8f
 internal const val PLATE_W = 36f
 internal const val PLATE_H = 6f
+/** Flag pole ink of flag_row_l1 (L and S), also the plate colour. */
+internal val FLAG_POLE = Color(0xFF464F5C)
 
 /** S2: canvas x of buoy slot [i]'s centre (1-based). */
 internal fun buoyCenter(set: H1Set, i: Int): Float = set.buoyX0 + (i - 0.5f) * set.buoyPitch
@@ -197,33 +195,6 @@ internal fun h1SetFor(widthDp: Float): H1Set = if (widthDp >= 1200f) H1Set.Large
 private const val BATCH_MS = 300L
 /** Water step change; other changes use [Island.FADE_MS]. */
 private const val WATER_MS = 600
-/** The picture never shrinks below this share of its natural height (scaled, not cropped). */
-internal const val MIN_FIT = 0.75f
-
-/**
- * The page scroll around the island. The space left on the first screen is measured from the picture's top in the
- * unscrolled page, so scrolling never resizes the picture.
- */
-val LocalPageScroll = androidx.compose.runtime.staticCompositionLocalOf<androidx.compose.foundation.ScrollState?> { null }
-
-/**
- * Picture box height in dp. [left] is the height left for the box on the first screen (null = not measured yet).
- * Without cards ([fill]) the box takes the height left; with cards it never grows past [natural].
- * Either way, when [left] is under [natural] the box shrinks to it, never below [MIN_FIT] of [natural].
- * No separate minimum: on Small the natural height (about 525 dp at 840 dp) is under the old 560 dp minimum, and a
- * minimum above [left] would push the flag line off the first screen and make the height jump at [natural].
- */
-internal fun islandBoxHeight(natural: Float, fill: Boolean, left: Float?): Float = when {
-    left == null -> natural
-    // Without cards the box is exactly the height left (taller than natural: more sky; shorter: scaled).
-    fill -> maxOf(natural * MIN_FIT, left)
-    else -> minOf(natural, maxOf(natural * MIN_FIT, left))
-}
-
-/** Picture width in dp: a box shorter than [natural] scales the whole picture by the same ratio (no crop). */
-internal fun islandPicWidth(fullW: Float, natural: Float, boxH: Float): Float =
-    if (boxH < natural) fullW * (boxH / natural) else fullW
-
 /**
  * Information island, H1 art. Each element has one meaning (IslandInfo):
  * sun size = set temperature, buoys = stay time, water = battery (5 steps), crate frame = tomorrow's share.
@@ -716,8 +687,8 @@ internal fun DrawScope.drawFlagS1(set: H1Set, bmp: (Int) -> ImageBitmap, name: S
     val top = flagTop(set)
     val left = cx - BUOY_SCALE * (set.poleL + set.poleR) / 2f
     val poleW = BUOY_SCALE * (set.poleR - set.poleL).toFloat()
-    val poleColor = runCatching { Color(img.asAndroidBitmap()[(set.poleL + set.poleR) / 2, set.clothBottom + 6]) }
-        .getOrDefault(Color(0xFF484F5A)).copy(alpha = 1f)
+    // The layer's own pole colour (measured from the WebP): ink by day, white on the night asset.
+    val poleColor = if (name.endsWith("_night")) Color.White else FLAG_POLE
     scale(scale, scale, pivot = Offset(cx, set.waterY)) {
         drawImage(img, srcOffset = androidx.compose.ui.unit.IntOffset.Zero,
             srcSize = androidx.compose.ui.unit.IntSize(img.width, set.flagRows),
