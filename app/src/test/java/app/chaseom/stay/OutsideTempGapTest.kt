@@ -87,4 +87,22 @@ class OutsideTempGapTest {
         }
         assertEquals(Triple(167, 146, 162), Triple(m(22f, 3, 0, null), m(26f, 6, 0, null), m(21f, 6, 2, null))) // unreadable
     }
+
+    // Director §8.1-4 / eng5: the K1 banner (under 30 min left) and a swap card never show together, so the
+    // Small screen cannot overflow with both. Exhaustive over climate settings and outside temperatures <= -10 C.
+    @Test fun noSwapCardWhileNearTheKeepShare() {
+        val cap = 77.4f
+        val keep = EnergyModel.keepPercent(30, cap, 5f)
+        var worst = 0
+        for (o in listOf(-10f, -15f, -20f, -30f, -40f)) for (soc in 10..30) for (t in 16..32) for (fan in 0..8)
+            for (ac in listOf(false, true)) for (rc in listOf(false, true)) for (seat in 0..3) {
+                val c = ClimateSetting(true, t.toFloat(), fan, ac, rc, seat, outsideC = o)
+                val m = EnergyModel.minutesToKeep(soc, keep, cap, EnergyModel.drawKw(c))
+                if (soc <= keep || m >= 30) continue
+                val x = EnergyModel.exchange(soc, cap, keep, c, emptySet())
+                assertNull("K1 + card at outside=$o soc=$soc $c", x)
+                worst = maxOf(worst, m)
+            }
+        assertTrue(worst in 1..29)
+    }
 }
