@@ -150,7 +150,7 @@ class WordingRulesTest {
         val night = Regex("모닥불|캠프|캠핑|텐트|달빛|별|밤|잠자")
         assertEquals(emptyMap<String, String>(), island.filterValues { night.containsMatchIn(it) })
         // The cause chip says what draws the island and that nothing is measured inside.
-        assertEquals("섬은 공조 설정·배터리로 그려요 · 실내 측정 아님", strings["is_legend"])
+        assertEquals("섬은 공조 설정과 머물 시간으로 그려요 · 실내 측정 아님", strings["is_legend"])
         assertTrue(strings.getValue("is_cd").contains("추정"))
     }
 

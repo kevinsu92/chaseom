@@ -24,10 +24,10 @@ def tight(out, tag):
     # Stay on 26 C / fan 7: the swap card proposes 21 C + seat heat 2, so switching to it would close the card.
     time.sleep(3)
     vc.shot(out, f"{tag}_7_k1_flag_card")
-    vc.tap_text("섬은 공조 설정·배터리로 그려요 · 실내 측정 아님", timeout=2)
+    vc.tap_text("섬은 공조 설정과 머물 시간으로 그려요 · 실내 측정 아님", timeout=2)
     time.sleep(1.5)
     vc.shot(out, f"{tag}_8_fold_open")
-    vc.tap_text("섬은 공조 설정·배터리로 그려요 · 실내 측정 아님", timeout=2)
+    vc.tap_text("섬은 공조 설정과 머물 시간으로 그려요 · 실내 측정 아님", timeout=2)
     vc.tap_text("깃발 내리기", timeout=1)
 
 

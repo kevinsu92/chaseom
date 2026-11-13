@@ -85,9 +85,9 @@ fun WaitFlagRow(ui: StayUi, actions: StayActions) {
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite }) {
-                Text(line, style = ChaseomUi.body.copy(fontWeight = FontWeight.SemiBold), color = k.text1)
+                Text(keepPhrases(line), style = ChaseomUi.body.copy(fontWeight = FontWeight.SemiBold), color = k.text1)
                 if (!f.airQuiet && f.outcome == WaitOutcome.SHORT && f.swapGainMinutes != null) {
-                    Text(stringResource(R.string.wf_short_swap, signedDuration(f.swapGainMinutes)), style = ChaseomUi.body, color = k.text1)
+                    Text(keepPhrases(stringResource(R.string.wf_short_swap, signedDuration(f.swapGainMinutes))), style = ChaseomUi.body, color = k.text1)
                 }
                 Text(stringResource(R.string.wf_note), style = ChaseomUi.caption, color = k.text2)
             }
@@ -95,6 +95,18 @@ fun WaitFlagRow(ui: StayUi, actions: StayActions) {
             LightPillButton(stringResource(R.string.wf_remove), { actions.removeWaitFlag() })
         }
     }
+}
+
+/**
+ * External S1S2 #8: on Small "약 33분 / 짧아요" split mid-statement. Only the short tail of a phrase is bound with
+ * no-break spaces: from "약 " to the phrase end ("약 2시간 29분 짧아요 (추정)", about 300 px), or else just "(추정)" to
+ * the word before it. The rest still wraps at spaces, so a long phrase never breaks inside a Korean word (UAX 14
+ * lets Hangul break between syllables once a no-break run is wider than the line).
+ */
+internal fun keepPhrases(text: String): String = text.split(" · ").joinToString(" · ") { phrase ->
+    val i = phrase.indexOf("약 ")
+    if (i >= 0) phrase.substring(0, i) + phrase.substring(i).replace(' ', ' ')
+    else phrase.replace(" (추정)", " (추정)")
 }
 
 /** Flag mark: a pole from [top] to [bottom] at [x] with a small pennant to the right. */
