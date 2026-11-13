@@ -63,7 +63,7 @@
 | 권한 | Pleos `CAR_ENERGY`, `CAR_CLIMATE`, `CAR_SEATS`, `CAR_WINDOWS`, `CAR_DOORS`, `CAR_LIGHTS` / AAOS `CAR_INFO`, `CAR_ENERGY_PORTS`, `CAR_POWERTRAIN`, `CAR_EXTERIOR_ENVIRONMENT` / `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SPECIAL_USE`. 모두 normal 권한이라 런타임 팝업이 없습니다. 빌드 때 SDK와 AndroidX가 `VEHICLE_BINDING`과 앱 자신의 권한을 더 넣습니다. |
 
 - 모든 화면과 수치는 에뮬레이터에서 확인했고, 실차에서는 확인하지 않았습니다.
-- 남은 시간은 차의 공조 상태에 공개 계수표를 곱해 낸 추정입니다. 계수와 출처는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에, 공개 실측 9건(기관 시험 3건 포함)과의 대조는 같은 문서 §6에 있습니다. 아주 추운 날, 처음 데우는 동안, 직사광선 아래에서는 실제 소모가 더 클 수 있습니다. 그 크기(영하 18°C에서 1.15~1.26배)는 [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)에 있습니다.
+- 남은 시간은 차의 공조 상태에 공개 계수표를 곱해 낸 추정입니다. 계수와 출처는 [docs/ENERGY_MODEL.md](docs/ENERGY_MODEL.md)에, 공개 실측 20건(기관 시험 9건 포함)과의 대조는 [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)에 있습니다(그중 05_qa가 원문을 대조한 기존 9건은 같은 문서 §6). 아주 추운 날, 처음 데우는 동안, 직사광선 아래에서는 실제 소모가 더 클 수 있습니다. 그 크기(영하 18°C에서 1.15~1.26배)는 [docs/PUBLIC_COMPARISON.md](docs/PUBLIC_COMPARISON.md)에 있습니다.
 - 에뮬레이터에서 신호별로 확인한 사실은 [docs/PLATFORM_NOTES.md](docs/PLATFORM_NOTES.md)에 있습니다. 알려진 한계는 아래 '한계' 절에 있습니다.
 
 ## 4. APK 위치
