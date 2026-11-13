@@ -133,16 +133,20 @@
 
     <!-- Face: small weather island (flag FACE_ISLAND). Picture has no text; chips only. -->
     <string name="is_legend">섬은 공조 설정·배터리로 그려요 · 실내 측정 아님</string>
-    <!-- Legend: picture shapes = values, no numbers. -->
+    <!-- Legend: picture shapes = values, no numbers. Build G S1: three symbols (sun, buoy, flag); battery is the
+         header number and tomorrow's share is the dock chip (h_bar_keep), so no water or crate item. -->
     <string name="is_lg_sun">해 = 설정 온도</string>
-    <string name="is_lg_water">물 = 배터리</string>
     <string name="is_lg_buoy">부표 1개 = 30분</string>
-    <string name="is_lg_keep">짐 = 내일 몫</string>
     <!-- Only while the cloud shows; N = minutes recirculation has been on. -->
     <string name="is_lg_air">구름 = 내기순환 %1$d분째 (공기 측정 아님)</string>
     <!-- Far rain legend: only while the AUTO wiper is wiping. -->
     <string name="is_lg_rain">먼 비 = 와이퍼 AUTO 작동</string>
     <string name="is_lg_flag">깃발 = 내가 고른 시각</string>
+    <!-- Build G S1: tomorrow's share as one chip on the dock (replaces the crates). -->
+    <string name="is_keep_chip">내일 %1$dkm</string>
+    <!-- Build G S1: the line folded under the (i) note names what left the picture, only things on screen. -->
+    <string name="is_fold_line">배터리 = 위 숫자 줄 · 내일 몫 = 부두 칩 · 구름 = 내기순환 · 먼 비 = 와이퍼</string>
+    <string name="is_fold_open">그림 설명 펼치기</string>
     <!-- Next to the sun for 2.5 s after the set temperature changes; "설정" always. -->
     <string name="is_sun_change">설정 %1$s → %2$s°C</string>
     <string name="is_cd">섬 그림: 공조 설정·배터리로 그려요. 지금 설정으로 %1$s 머물 수 있어요 (추정), 배터리 %2$d%%, 내일 몫 %3$dkm</string>
