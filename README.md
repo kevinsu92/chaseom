@@ -50,7 +50,7 @@
 
 ## 4. APK 위치
 - **`apk/Chaseom_Chaseom_release.apk`** (release 빌드, 서명됨, sha256 `9ab0d0c32bb5ef143eee24974c5d5caadc3bbfadfbdb58a72e29b027258ca857`)
-- 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4) (sha256 `f55b61dc34f68a76cb8bf5358bd1519eb74865798da86568f0deed2cca975480`)
+- 시연 영상: [video/차섬_시연영상.mp4](video/차섬_시연영상.mp4) (sha256 `27c1b2795f5e86ec1462956c72991dfc2da3c97503e8287b8b3b5feb1ce98cab`)
 
 ## 검증 표
 위 APK를 에뮬레이터에서 두 번 잰 값의 범위입니다. 첫 측정의 원자료는 [docs/evidence/measure_release.json](docs/evidence/measure_release.json)입니다.
