@@ -62,12 +62,12 @@
 | 다이얼 → 토스트가 화면에 뜨기까지 (10회씩) | 중앙값 31–32 ms, 최대 109 ms |
 | 머무는 화면을 연 뒤 섬의 첫 프레임 (10회씩, 첫 표본 포함) | 중앙값 37–38 ms, 최대 107 ms |
 | 기어 P → D, 섬과 숫자가 사라지기까지 (10회씩) | 중앙값 10–12 ms, 최대 22 ms |
-| 앱 시작 (콜드 스타트, 3회씩) | 1.2–2.1초 (F6/F8 화면 변경 전 APK 36263f91에서 잰 값) |
+| 앱 시작 (콜드 스타트, 3회씩) | 1.0–1.1초 (1,019–1,118 ms) |
 | 정지 화면 CPU (30초) | 평균 0.13–0.38% |
 | 10초마다 다이얼 1회, 60초 평균 CPU | 0.5% (전환 순간 최대 4%) |
 | 메모리 (PSS) | 53 MB |
 
-다른 세션이 함께 돌아 호스트 부하가 큰 때에는 앱 시작 최대 1.6초, 접힘 최대 63 ms까지 관찰했습니다(같은 앱 코드의 이전 빌드). 모두 Pleos 기준(시작 10초 이내) 안입니다.
+두 번의 측정에서 앱 시작은 가장 길 때 1.1초, 접힘은 가장 길 때 22 ms였습니다. 모두 Pleos 기준(시작 10초 이내) 안입니다.
 
 ## 한계 (2차에서 고칠 것)
 - **2열 탑승 값은 SDK 2.3.2의 변환을 확인한 뒤 뒤집어 읽습니다.** Pleos Vehicle SDK 2.3.2는 AAOS 원값(0 모름, 1 비었음, 2 탑승)을 `원값 == 1`일 때 `true`로 바꿉니다(바이트코드와 에뮬레이터 로그로 확인). 그래서 SDK의 `true`는 "비었음"입니다. 이 변환은 에뮬레이터가 아니라 APK 안의 SDK에서 일어나므로, 실차 VHAL이 AAOS 표준 값(0/1/2)을 줄 때는 실차에서도 같습니다. 실차의 원값은 확인하지 못했습니다. 앱은 확인한 SDK 버전에서만 값을 뒤집고, 다른 버전이면 "확인 안 됨"으로 둡니다. SDK 버전을 올리면 테스트가 먼저 실패합니다(`cabin/Occupancy.kt`). AAOS `SEAT_OCCUPANCY`를 직접 읽는 권한은 signature|privileged(`CONTROL_CAR_SEATS`)라 쓰지 않습니다. 어느 경우든 앱은 뒷좌석을 "비었음"이라고 말하지 않고, 영수증의 "뒷좌석 직접 확인" 줄을 늘 보여 줍니다.
@@ -88,7 +88,7 @@
 | 주행 중 화면은 숫자 없이 짧은 안내뿐이고, 기어를 모르거나 연결이 끊기면 주행 중으로 보고 화면을 접는다 | `WordingRulesTest.drivingGlanceShortAndNumberFree`, `DrivingStateGateTest.unknownGearFailsSafeToDriving` |
 | 전기차로 확인되지 않으면 남은 시간을 숨기고 "시동" 고지를 한다 | `ModeAndEnergyTest.modeRules`, `StayEngineTest.reducedModeHasNoEnergyAnywhere` |
 | 기다림 깃발은 표시만 하고 안심 문구를 쓰지 않으며, 22시 뒤에는 보이지 않는다 | `WordingRulesTest.waitFlagWordingIsDisplayOnlyAndNeverReassures`, `WaitFlagTest.f8FlagHidesAtTwentyTwo` |
-| 섬 그림은 잘리지 않는다. 카드가 함께 뜨면 같은 비율로 줄인다(최소 75%) | `IslandFitTest` |
+| 섬 그림은 늘 원래 크기로 그린다. 부표 6개와 마지막 칸의 깃발도 그림 오른쪽 끝에서 8px 이상 안쪽에 든다 | `S1LayoutTest` |
 
 ## 라이선스
 - 코드는 [LICENSE](LICENSE)를 따릅니다.
