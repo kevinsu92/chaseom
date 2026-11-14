@@ -74,5 +74,5 @@
   "max": 90
  },
  "guest_load1_at_start": "6.87",
- "host_note": "Only emulator-5554 running; host baseline 60-80 % from background apps. Start gate: host CPU < 85 %, guest load1 < 4."
+ "host_note": "Only emulator-5554 running; host baseline 60-80 % from background apps. Start gate (host CPU < 85 %, guest load1 < 4) was not met for this run (guest load1 6.87, host CPU up to 90 %); README states this."
 }

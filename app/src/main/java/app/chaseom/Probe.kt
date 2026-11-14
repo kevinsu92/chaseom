@@ -3,7 +3,7 @@ package app.chaseom
 import android.util.Log
 
 /**
- * Timing lines for the measurement tools (tools/measure.py, tools/demo.py). Off by default, so a
+ * Timing lines for the measurement script (not in this repository). Off by default, so a
  * normal install logs nothing. The tools switch it on with `adb shell setprop log.tag.PROBE D`.
  *
  * Lines may carry only the wall clock and vehicle signal values. Never log user input (keep
